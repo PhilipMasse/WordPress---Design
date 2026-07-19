@@ -2260,7 +2260,7 @@ function berre_hero_media_page() {
                     </div>
 
                     <!-- VIDÉO LOCALE -->
-                    <div class="berre-panel <?php echo $m['type']==='video_local'?'active':''; ?>" id="panel-video-local">
+                    <div class="berre-panel <?php echo $m['type']==='video_local'?'active':''; ?>" id="panel-video_local">
                         <div class="berre-field">
                             <label>Fichier vidéo (MP4 recommandé)</label>
                             <input type="hidden" name="hero_video_id" id="hero_video_id" value="<?php echo intval($m['video_id']); ?>">
@@ -2279,7 +2279,7 @@ function berre_hero_media_page() {
                     </div>
 
                     <!-- YOUTUBE -->
-                    <div class="berre-panel <?php echo $m['type']==='video_youtube'?'active':''; ?>" id="panel-youtube">
+                    <div class="berre-panel <?php echo $m['type']==='video_youtube'?'active':''; ?>" id="panel-video_youtube">
                         <div class="berre-field">
                             <label>URL YouTube</label>
                             <input type="url" name="hero_youtube_url" id="hero_youtube_url"
