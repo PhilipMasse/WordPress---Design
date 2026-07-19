@@ -1055,10 +1055,6 @@ function berre_icons_html( $links, $icons, $class = '' ) {
     return berre_ar_grid( $links, $icons, strpos( $class, 'secondary' ) !== false );
 }
 
-    $html .= '</div>';
-    return $html;
-}
-
 
 /* ============================================================
    RÉINITIALISATION DES TEMPLATES FSE
