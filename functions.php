@@ -2129,3 +2129,329 @@ add_action( 'admin_init', function() {
         exit;
     }
 });
+
+
+/* ============================================================
+   MÉDIA HERO — Page d'administration
+   Gère la photo ou vidéo de fond de la page d'accueil
+   Option WP : berre_hero_media
+   ============================================================ */
+
+/* ── Valeurs par défaut ── */
+function berre_hero_media_defaults() {
+    return [
+        'type'        => 'photo',      // 'photo' | 'video_local' | 'video_youtube'
+        'photo_id'    => 0,
+        'photo_url'   => '',
+        'video_id'    => 0,
+        'video_url'   => '',
+        'youtube_url' => '',
+        'overlay'     => 20,           // opacité overlay sombre 0-80
+        'height'      => 480,          // hauteur en px
+    ];
+}
+
+function berre_get_hero_media() {
+    $saved = get_option( 'berre_hero_media' );
+    return empty($saved) ? berre_hero_media_defaults() : array_merge(berre_hero_media_defaults(), $saved);
+}
+
+/* ── Menu admin ── */
+add_action( 'admin_menu', function() {
+    add_menu_page(
+        'Photo / Vidéo Hero',
+        'Photo / Vidéo',
+        'manage_options',
+        'berre-hero-media',
+        'berre_hero_media_page',
+        'dashicons-format-video',
+        57
+    );
+} );
+
+/* ── Sauvegarde ── */
+add_action( 'admin_init', function() {
+    if ( ! isset($_POST['berre_save_hero_media']) ) return;
+    if ( ! wp_verify_nonce($_POST['berre_hero_nonce'] ?? '', 'berre_save_hero_media') ) wp_die('Sécurité invalide.');
+    if ( ! current_user_can('manage_options') ) wp_die('Permission refusée.');
+
+    $type = in_array($_POST['hero_type'] ?? '', ['photo','video_local','video_youtube']) ? $_POST['hero_type'] : 'photo';
+
+    update_option('berre_hero_media', [
+        'type'        => $type,
+        'photo_id'    => intval($_POST['hero_photo_id'] ?? 0),
+        'photo_url'   => esc_url_raw($_POST['hero_photo_url'] ?? ''),
+        'video_id'    => intval($_POST['hero_video_id'] ?? 0),
+        'video_url'   => esc_url_raw($_POST['hero_video_url'] ?? ''),
+        'youtube_url' => esc_url_raw($_POST['hero_youtube_url'] ?? ''),
+        'overlay'     => max(0, min(80, intval($_POST['hero_overlay'] ?? 20))),
+        'height'      => max(300, min(900, intval($_POST['hero_height'] ?? 480))),
+    ]);
+
+    set_transient('berre_hero_saved', true, 10);
+} );
+
+/* ── Page admin ── */
+function berre_hero_media_page() {
+    $m = berre_get_hero_media();
+    $saved = get_transient('berre_hero_saved');
+    if ($saved) delete_transient('berre_hero_saved');
+    ?>
+    <style>
+    .berre-hero-wrap { max-width:900px; margin-top:20px; }
+    .berre-hero-card { background:#fff;border:1px solid #ddd;border-radius:8px;overflow:hidden;margin-bottom:20px; }
+    .berre-hero-card-head { background:#f6f7f7;border-bottom:1px solid #eee;padding:14px 20px; }
+    .berre-hero-card-head h2 { margin:0;font-size:14px; }
+    .berre-hero-card-body { padding:20px; }
+    .berre-type-tabs { display:flex;gap:0;border:1.5px solid #ddd;border-radius:6px;overflow:hidden;max-width:450px;margin-bottom:20px; }
+    .berre-type-tab { flex:1;padding:10px;text-align:center;cursor:pointer;font-size:13px;font-weight:600;color:#555;background:#f9f9f9;border:none;border-right:1px solid #ddd;transition:all .15s; }
+    .berre-type-tab:last-child { border-right:none; }
+    .berre-type-tab.active { background:#2D6AB0;color:#fff; }
+    .berre-panel { display:none; }
+    .berre-panel.active { display:block; }
+    .berre-field { margin-bottom:14px; }
+    .berre-field label { display:block;font-size:12px;font-weight:600;color:#333;margin-bottom:5px; }
+    .berre-field input[type=text],.berre-field input[type=url],.berre-field input[type=number] { width:100%;max-width:500px;padding:7px 10px;border:1px solid #ddd;border-radius:4px;font-size:13px; }
+    .berre-preview-box { border-radius:8px;overflow:hidden;position:relative;background:#1a1a2e;margin-top:16px; }
+    .berre-preview-box img,.berre-preview-box video { width:100%;height:260px;object-fit:cover;display:block; }
+    .berre-preview-box .overlay { position:absolute;inset:0;background:rgba(0,0,0,0);pointer-events:none; }
+    .berre-preview-empty { height:260px;display:flex;align-items:center;justify-content:center;color:#888;flex-direction:column;gap:8px; }
+    .berre-preview-empty svg { opacity:.3; }
+    .berre-slider-row { display:flex;align-items:center;gap:12px; }
+    .berre-slider-row input[type=range] { flex:1;max-width:300px; }
+    .berre-slider-val { font-size:12px;color:#666;min-width:32px; }
+    </style>
+
+    <div class="wrap berre-hero-wrap">
+        <h1>🎬 Photo / Vidéo — Page d'accueil</h1>
+        <?php if ($saved): ?><div class="notice notice-success is-dismissible"><p>✅ Sauvegardé avec succès.</p></div><?php endif; ?>
+
+        <form method="post" id="berre-hero-form">
+            <?php wp_nonce_field('berre_save_hero_media','berre_hero_nonce'); ?>
+
+            <!-- TYPE -->
+            <div class="berre-hero-card">
+                <div class="berre-hero-card-head"><h2>Type de fond</h2></div>
+                <div class="berre-hero-card-body">
+                    <div class="berre-type-tabs">
+                        <button type="button" class="berre-type-tab <?php echo $m['type']==='photo'?'active':''; ?>" data-type="photo">📷 Photo</button>
+                        <button type="button" class="berre-type-tab <?php echo $m['type']==='video_local'?'active':''; ?>" data-type="video_local">🎬 Vidéo locale</button>
+                        <button type="button" class="berre-type-tab <?php echo $m['type']==='video_youtube'?'active':''; ?>" data-type="video_youtube">▶ YouTube</button>
+                    </div>
+                    <input type="hidden" name="hero_type" id="hero_type" value="<?php echo esc_attr($m['type']); ?>">
+
+                    <!-- PHOTO -->
+                    <div class="berre-panel <?php echo $m['type']==='photo'?'active':''; ?>" id="panel-photo">
+                        <div class="berre-field">
+                            <label>Photo de fond</label>
+                            <input type="hidden" name="hero_photo_id" id="hero_photo_id" value="<?php echo intval($m['photo_id']); ?>">
+                            <input type="hidden" name="hero_photo_url" id="hero_photo_url" value="<?php echo esc_attr($m['photo_url']); ?>">
+                            <?php if (!empty($m['photo_url'])): ?>
+                                <div class="berre-preview-box"><img src="<?php echo esc_url($m['photo_url']); ?>" id="photo-preview" alt="Aperçu"></div>
+                            <?php else: ?>
+                                <div class="berre-preview-box"><div class="berre-preview-empty" id="photo-preview-empty"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg><span>Aucune photo sélectionnée</span></div></div>
+                            <?php endif; ?>
+                            <p style="margin-top:10px;display:flex;gap:8px">
+                                <button type="button" id="pick-photo" class="button button-primary">📷 Choisir dans la médiathèque</button>
+                                <button type="button" id="clear-photo" class="button" style="color:#c00" <?php echo empty($m['photo_url'])?'disabled':''; ?>>✕ Supprimer</button>
+                            </p>
+                            <p style="color:#888;font-size:12px">Format recommandé : 1600×900px minimum, JPEG ou WebP.</p>
+                        </div>
+                    </div>
+
+                    <!-- VIDÉO LOCALE -->
+                    <div class="berre-panel <?php echo $m['type']==='video_local'?'active':''; ?>" id="panel-video-local">
+                        <div class="berre-field">
+                            <label>Fichier vidéo (MP4 recommandé)</label>
+                            <input type="hidden" name="hero_video_id" id="hero_video_id" value="<?php echo intval($m['video_id']); ?>">
+                            <input type="hidden" name="hero_video_url" id="hero_video_url" value="<?php echo esc_attr($m['video_url']); ?>">
+                            <?php if (!empty($m['video_url'])): ?>
+                                <div class="berre-preview-box"><video id="video-preview" src="<?php echo esc_url($m['video_url']); ?>" muted autoplay loop playsinline></video></div>
+                            <?php else: ?>
+                                <div class="berre-preview-box"><div class="berre-preview-empty" id="video-preview-empty"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg><span>Aucune vidéo sélectionnée</span></div></div>
+                            <?php endif; ?>
+                            <p style="margin-top:10px;display:flex;gap:8px">
+                                <button type="button" id="pick-video" class="button button-primary">🎬 Choisir dans la médiathèque</button>
+                                <button type="button" id="clear-video" class="button" style="color:#c00" <?php echo empty($m['video_url'])?'disabled':''; ?>>✕ Supprimer</button>
+                            </p>
+                            <p style="color:#888;font-size:12px">MP4/WebM. La vidéo sera muette, en boucle, sans contrôles.</p>
+                        </div>
+                    </div>
+
+                    <!-- YOUTUBE -->
+                    <div class="berre-panel <?php echo $m['type']==='video_youtube'?'active':''; ?>" id="panel-youtube">
+                        <div class="berre-field">
+                            <label>URL YouTube</label>
+                            <input type="url" name="hero_youtube_url" id="hero_youtube_url"
+                                value="<?php echo esc_attr($m['youtube_url']); ?>"
+                                placeholder="https://www.youtube.com/watch?v=...">
+                            <p style="color:#888;font-size:12px;margin-top:4px">La vidéo sera en lecture automatique, muette et en boucle.</p>
+                            <?php if (!empty($m['youtube_url'])): 
+                                preg_match('/(?:v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/', $m['youtube_url'], $yt);
+                                $ytid = $yt[1] ?? '';
+                            ?>
+                            <?php if ($ytid): ?>
+                            <div class="berre-preview-box" style="margin-top:12px">
+                                <img src="https://img.youtube.com/vi/<?php echo esc_attr($ytid); ?>/maxresdefault.jpg" style="width:100%;height:260px;object-fit:cover">
+                                <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center">
+                                    <div style="width:60px;height:60px;background:rgba(255,0,0,.85);border-radius:50%;display:flex;align-items:center;justify-content:center">
+                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="white"><polygon points="5,3 19,12 5,21"/></svg>
+                                    </div>
+                                </div>
+                            </div>
+                            <?php endif; ?>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- OPTIONS -->
+            <div class="berre-hero-card">
+                <div class="berre-hero-card-head"><h2>Options d'affichage</h2></div>
+                <div class="berre-hero-card-body">
+                    <div class="berre-field">
+                        <label>Hauteur du hero (px)</label>
+                        <div class="berre-slider-row">
+                            <input type="range" name="hero_height" id="hero_height" min="300" max="900" step="10" value="<?php echo intval($m['height']); ?>">
+                            <span class="berre-slider-val" id="height-val"><?php echo intval($m['height']); ?>px</span>
+                        </div>
+                    </div>
+                    <div class="berre-field">
+                        <label>Assombrissement de l'image/vidéo (%)</label>
+                        <div class="berre-slider-row">
+                            <input type="range" name="hero_overlay" id="hero_overlay" min="0" max="80" step="5" value="<?php echo intval($m['overlay']); ?>">
+                            <span class="berre-slider-val" id="overlay-val"><?php echo intval($m['overlay']); ?>%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <input type="submit" name="berre_save_hero_media" class="button button-primary button-large" value="💾 Enregistrer">
+        </form>
+    </div>
+
+    <script>
+    // Onglets type
+    document.querySelectorAll('.berre-type-tab').forEach(function(tab) {
+        tab.addEventListener('click', function() {
+            document.querySelectorAll('.berre-type-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.berre-panel').forEach(p => p.classList.remove('active'));
+            this.classList.add('active');
+            document.getElementById('panel-' + this.dataset.type).classList.add('active');
+            document.getElementById('hero_type').value = this.dataset.type;
+        });
+    });
+
+    // Sliders
+    document.getElementById('hero_height').addEventListener('input', function() {
+        document.getElementById('height-val').textContent = this.value + 'px';
+    });
+    document.getElementById('hero_overlay').addEventListener('input', function() {
+        document.getElementById('overlay-val').textContent = this.value + '%';
+    });
+
+    // Media pickers
+    function makePicker(btnId, clearId, hiddenIdField, hiddenUrlField, previewId, emptyId, type) {
+        var btn = document.getElementById(btnId);
+        var clr = document.getElementById(clearId);
+        if (!btn) return;
+
+        btn.addEventListener('click', function() {
+            if (typeof wp === 'undefined' || !wp.media) { alert('Module médias non disponible.'); return; }
+            var frame = wp.media({
+                title: type === 'video' ? 'Choisir la vidéo hero' : 'Choisir la photo hero',
+                button: { text: 'Utiliser' },
+                library: { type: type === 'video' ? 'video' : 'image' },
+                multiple: false
+            });
+            frame.on('select', function() {
+                var att = frame.state().get('selection').first().toJSON();
+                document.getElementById(hiddenIdField).value = att.id;
+                document.getElementById(hiddenUrlField).value = att.url;
+                // Mettre à jour la prévisualisation
+                var prev = document.getElementById(previewId);
+                var empty = document.getElementById(emptyId);
+                if (empty) empty.style.display = 'none';
+                if (prev) {
+                    prev.src = att.url;
+                    prev.style.display = 'block';
+                } else {
+                    var box = btn.closest('.berre-field').querySelector('.berre-preview-box');
+                    if (box) {
+                        var tag = type === 'video' ? '<video muted autoplay loop playsinline style="width:100%;height:260px;object-fit:cover">' : '<img style="width:100%;height:260px;object-fit:cover">';
+                        box.innerHTML = (type === 'video'
+                            ? '<video id="' + previewId + '" src="' + att.url + '" muted autoplay loop playsinline style="width:100%;height:260px;object-fit:cover"></video>'
+                            : '<img id="' + previewId + '" src="' + att.url + '" style="width:100%;height:260px;object-fit:cover">');
+                    }
+                }
+                if (clr) clr.disabled = false;
+            });
+            frame.open();
+        });
+
+        if (clr) clr.addEventListener('click', function() {
+            document.getElementById(hiddenIdField).value = '';
+            document.getElementById(hiddenUrlField).value = '';
+            var box = btn.closest('.berre-field').querySelector('.berre-preview-box');
+            if (box) {
+                var icon = type === 'video'
+                    ? '<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>'
+                    : '<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>';
+                box.innerHTML = '<div class="berre-preview-empty" style="height:260px;display:flex;align-items:center;justify-content:center;color:#888;flex-direction:column;gap:8px"><div style="opacity:.3">' + icon + '</div><span>Aucun fichier sélectionné</span></div>';
+            }
+            this.disabled = true;
+        });
+    }
+
+    makePicker('pick-photo', 'clear-photo', 'hero_photo_id', 'hero_photo_url', 'photo-preview', 'photo-preview-empty', 'image');
+    makePicker('pick-video', 'clear-video', 'hero_video_id', 'hero_video_url', 'video-preview', 'video-preview-empty', 'video');
+    </script>
+    <?php
+    wp_enqueue_media();
+}
+
+/* ── Shortcode [berre_hero] — rendu frontend ── */
+add_shortcode('berre_hero', function() {
+    $m = berre_get_hero_media();
+    $h = intval($m['height']);
+    $o = intval($m['overlay']);
+    $overlay_style = $o > 0 ? "position:absolute;inset:0;background:rgba(0,0,0," . ($o/100) . ");pointer-events:none;" : '';
+
+    ob_start();
+    echo '<div class="berre-hero" style="min-height:' . $h . 'px;position:relative;overflow:hidden;">';
+
+    if ($m['type'] === 'photo' && !empty($m['photo_url'])) {
+        echo '<img src="' . esc_url($m['photo_url']) . '" alt="Photo de la commune" '
+           . 'style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;" loading="eager">';
+
+    } elseif ($m['type'] === 'video_local' && !empty($m['video_url'])) {
+        echo '<video autoplay muted loop playsinline '
+           . 'style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;">'
+           . '<source src="' . esc_url($m['video_url']) . '" type="video/mp4">'
+           . '</video>';
+
+    } elseif ($m['type'] === 'video_youtube' && !empty($m['youtube_url'])) {
+        preg_match('/(?:v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/', $m['youtube_url'], $yt);
+        $ytid = $yt[1] ?? '';
+        if ($ytid) {
+            echo '<div style="position:absolute;inset:0;width:100%;height:100%;overflow:hidden;pointer-events:none;">';
+            echo '<iframe src="https://www.youtube-nocookie.com/embed/' . esc_attr($ytid)
+               . '?autoplay=1&mute=1&loop=1&playlist=' . esc_attr($ytid)
+               . '&controls=0&showinfo=0&rel=0&modestbranding=1&iv_load_policy=3" '
+               . 'style="position:absolute;top:50%;left:50%;width:177.78%;height:100%;min-height:56.25vw;transform:translate(-50%,-50%);" '
+               . 'frameborder="0" allow="autoplay;encrypted-media" allowfullscreen></iframe>';
+            echo '</div>';
+        }
+
+    } else {
+        // Placeholder si rien n'est configuré
+        echo '<div style="position:absolute;inset:0;background:linear-gradient(135deg,#102142,#2D6AB0);display:flex;align-items:center;justify-content:center;">';
+        echo '<p style="color:rgba(255,255,255,.4);font-size:14px;">📷 Ajoutez une photo ou vidéo dans <strong>Photo / Vidéo</strong></p>';
+        echo '</div>';
+    }
+
+    if ($overlay_style) echo '<div style="' . $overlay_style . '"></div>';
+    echo '</div>';
+    return ob_get_clean();
+});
