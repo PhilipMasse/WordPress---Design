@@ -40,12 +40,22 @@
 </div>
 <!-- /wp:group -->
 
-<!-- wp:query {"queryId":10,"query":{"perPage":5,"pages":0,"offset":0,"postType":"actualite","order":"desc","orderBy":"date","author":"","search":"","exclude":[],"sticky":"","inherit":false}} -->
+<!-- wp:query {"queryId":10,"query":{"perPage":4,"pages":0,"offset":0,"postType":"actualite","order":"desc","orderBy":"date","author":"","search":"","exclude":[],"sticky":"","inherit":false}} -->
 <div class="wp-block-query">
-<!-- wp:post-template -->
-<!-- wp:post-featured-image {"isLink":true} /-->
-<!-- wp:post-title {"isLink":true,"level":3} /-->
-<!-- wp:post-date /-->
+<!-- wp:post-template {"className":"berre-home-actu-grid"} -->
+<!-- wp:group {"className":"berre-home-actu-card","layout":{"type":"default"}} -->
+<div class="wp-block-group berre-home-actu-card">
+<!-- wp:post-featured-image {"isLink":true,"className":"berre-home-actu-card__img","aspectRatio":"16/9"} /-->
+<!-- wp:group {"className":"berre-home-actu-card__body","layout":{"type":"flex","orientation":"vertical","flexWrap":"nowrap"}} -->
+<div class="wp-block-group berre-home-actu-card__body">
+<!-- wp:post-terms {"term":"categorie_actu","className":"berre-home-actu-card__cat"} /-->
+<!-- wp:post-title {"isLink":true,"level":3,"className":"berre-home-actu-card__title"} /-->
+<!-- wp:post-excerpt {"numberOfWords":15,"className":"berre-home-actu-card__excerpt","moreText":""} /-->
+<!-- wp:post-date {"className":"berre-home-actu-card__date"} /-->
+</div>
+<!-- /wp:group -->
+</div>
+<!-- /wp:group -->
 <!-- /wp:post-template -->
 <!-- wp:query-no-results -->
 <!-- wp:paragraph --><p class="berre-query-empty">Aucune actualité disponible.</p><!-- /wp:paragraph -->
@@ -56,15 +66,9 @@
 </div>
 <!-- /wp:group -->
 
-<!-- AGENDA + VIDÉO -->
 <!-- wp:group {"className":"berre-section","layout":{"type":"constrained","contentSize":"1200px"}} -->
 <div class="wp-block-group berre-section">
 
-<!-- wp:columns {"className":"berre-split-cols"} -->
-<div class="wp-block-columns berre-split-cols">
-
-<!-- wp:column {"className":"berre-col-agenda"} -->
-<div class="wp-block-column berre-col-agenda">
 <!-- wp:group {"className":"berre-sec-head","layout":{"type":"flex","justifyContent":"space-between","verticalAlignment":"baseline"}} -->
 <div class="wp-block-group berre-sec-head">
 <!-- wp:heading {"level":2,"className":"berre-sec-title"} -->
@@ -75,30 +79,8 @@
 <!-- /wp:paragraph -->
 </div>
 <!-- /wp:group -->
+
 <!-- wp:shortcode -->[berre_calendrier_agenda]<!-- /wp:shortcode -->
-</div>
-<!-- /wp:column -->
-
-<!-- wp:column {"className":"berre-col-video"} -->
-<div class="wp-block-column berre-col-video">
-<!-- wp:group {"className":"berre-sec-head","layout":{"type":"flex","justifyContent":"space-between","verticalAlignment":"baseline"}} -->
-<div class="wp-block-group berre-sec-head">
-<!-- wp:heading {"level":2,"className":"berre-sec-title"} -->
-<h2 class="wp-block-heading berre-sec-title">Nos vidéos</h2>
-<!-- /wp:heading -->
-<!-- wp:paragraph -->
-<p><a href="https://www.youtube.com/@berrelesalpes" target="_blank" rel="noopener" class="berre-more-link">Chaîne YouTube →</a></p>
-<!-- /wp:paragraph -->
-</div>
-<!-- /wp:group -->
-<!-- wp:html -->
-<div class="berre-yt-placeholder"><div class="berre-yt-placeholder__inner"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.7)" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><polygon points="10,8 16,12 10,16" fill="rgba(255,255,255,0.7)" stroke="none"/></svg><p>Ajoutez votre vidéo YouTube dans l'éditeur<br><small>Supprimez ce bloc → collez l'URL YouTube</small></p></div></div>
-<!-- /wp:html -->
-</div>
-<!-- /wp:column -->
-
-</div>
-<!-- /wp:columns -->
 
 </div>
 <!-- /wp:group -->

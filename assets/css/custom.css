@@ -1895,3 +1895,129 @@ ul.berre-recents-grid,
   .berre-cal__event { font-size: 9px; }
   .berre-cal__popup { width: 240px; }
 }
+
+/* ══ ACTUALITÉS HOME — grille cards ══ */
+
+/* Grid 4 colonnes sur la home */
+.berre-home-actu-grid,
+ul.berre-home-actu-grid,
+.wp-block-post-template.berre-home-actu-grid {
+  display: grid !important;
+  grid-template-columns: repeat(4, 1fr) !important;
+  gap: 16px !important;
+  list-style: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+.berre-home-actu-grid > li,
+.berre-home-actu-grid > .wp-block-post {
+  margin: 0 !important;
+  padding: 0 !important;
+  list-style: none !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+/* Carte */
+.berre-home-actu-card {
+  background: #fff !important;
+  border-radius: 8px !important;
+  overflow: hidden !important;
+  border: 1px solid var(--bdr) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 !important;
+  transition: box-shadow .2s, transform .18s !important;
+}
+.berre-home-actu-card:hover {
+  box-shadow: 0 6px 20px rgba(0,0,0,.09) !important;
+  transform: translateY(-3px) !important;
+}
+
+/* Image */
+.berre-home-actu-card__img .wp-block-post-featured-image {
+  display: block !important;
+  width: 100% !important;
+  height: 160px !important;
+  overflow: hidden !important;
+}
+.berre-home-actu-card__img .wp-block-post-featured-image img {
+  width: 100% !important;
+  height: 160px !important;
+  object-fit: cover !important;
+  display: block !important;
+  transition: transform .3s !important;
+}
+.berre-home-actu-card:hover .berre-home-actu-card__img img {
+  transform: scale(1.04) !important;
+}
+.berre-home-actu-card__img .wp-block-post-featured-image:not(:has(img)) {
+  height: 160px !important;
+  background: linear-gradient(135deg, var(--blt), #c8dcf0) !important;
+}
+
+/* Corps */
+.berre-home-actu-card__body {
+  padding: 12px 14px 14px !important;
+  flex: 1 !important;
+  gap: 4px !important;
+}
+
+/* Catégorie */
+.berre-home-actu-card__cat .wp-block-post-terms,
+.berre-home-actu-card__cat a {
+  font-size: 9.5px !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: .1em !important;
+  color: var(--b) !important;
+  text-decoration: none !important;
+}
+
+/* Titre */
+.berre-home-actu-card__title,
+.berre-home-actu-card__title a {
+  font-family: var(--serif) !important;
+  font-size: 13.5px !important;
+  font-weight: 700 !important;
+  color: var(--t) !important;
+  text-decoration: none !important;
+  line-height: 1.35 !important;
+  margin: 2px 0 !important;
+  display: -webkit-box !important;
+  -webkit-line-clamp: 3 !important;
+  -webkit-box-orient: vertical !important;
+  overflow: hidden !important;
+}
+.berre-home-actu-card__title a:hover { color: var(--b) !important; }
+
+/* Extrait */
+.berre-home-actu-card__excerpt,
+.berre-home-actu-card__excerpt p {
+  font-size: 11.5px !important;
+  color: var(--ts) !important;
+  line-height: 1.5 !important;
+  margin: 0 !important;
+  display: -webkit-box !important;
+  -webkit-line-clamp: 2 !important;
+  -webkit-box-orient: vertical !important;
+  overflow: hidden !important;
+}
+
+/* Date */
+.berre-home-actu-card__date,
+.berre-home-actu-card__date time {
+  font-size: 10.5px !important;
+  color: var(--ts) !important;
+  margin-top: auto !important;
+  padding-top: 6px !important;
+  display: block !important;
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+  .berre-home-actu-grid { grid-template-columns: repeat(2, 1fr) !important; }
+}
+@media (max-width: 560px) {
+  .berre-home-actu-grid { grid-template-columns: 1fr !important; }
+}
