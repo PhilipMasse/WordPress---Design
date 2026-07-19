@@ -1,88 +1,65 @@
-<!-- wp:template-part {"slug":"header","tagName":"header"} /-->
+<!-- wp:template-part {"slug":"header"} /-->
 
-<!-- wp:group {"tagName":"main","className":"berre-main berre-main--page","layout":{"type":"default"}} -->
-<main class="wp-block-group berre-main berre-main--page">
+<!-- wp:group {"className":"berre-article-page","layout":{"type":"default"}} -->
+<div class="wp-block-group berre-article-page">
 
-  <!-- BREADCRUMB -->
-  <!-- wp:group {"className":"berre-breadcrumb-wrap","layout":{"type":"constrained","contentSize":"1200px"}} -->
-  <div class="wp-block-group berre-breadcrumb-wrap">
-    <!-- wp:html -->
-    <nav class="berre-breadcrumb" aria-label="Fil d'Ariane">
-      <a href="/">Accueil</a>
-      <span class="berre-breadcrumb__sep">›</span>
-      <span class="berre-breadcrumb__current"><!-- wp:post-title /--></span>
-    </nav>
-    <!-- /wp:html -->
+<!-- Carte blanche centrée -->
+<!-- wp:group {"className":"berre-article-container berre-page-container","layout":{"type":"constrained","contentSize":"900px"}} -->
+<div class="wp-block-group berre-article-container berre-page-container">
+
+<!-- Fil d'Ariane -->
+<!-- wp:html -->
+<nav class="berre-breadcrumb" aria-label="Fil d'Ariane">
+  <a href="/">Accueil</a><span>›</span>
+  <span class="berre-breadcrumb__cur" id="berre-page-bc-title"></span>
+  <script>
+    document.addEventListener('DOMContentLoaded',function(){
+      var el=document.getElementById('berre-page-bc-title');
+      if(el) el.textContent=document.querySelector('.berre-page-title')?.textContent||document.title.split('–')[0].trim();
+    });
+  </script>
+</nav>
+<!-- /wp:html -->
+
+<!-- Image à la une -->
+<!-- wp:post-featured-image {"isLink":false,"className":"berre-article-featured-img"} /-->
+
+<!-- Titre -->
+<!-- wp:post-title {"level":1,"className":"berre-article-title berre-page-title"} /-->
+
+<!-- Séparateur -->
+<!-- wp:separator {"className":"berre-sep-thin"} -->
+<hr class="wp-block-separator berre-sep-thin"/>
+<!-- /wp:separator -->
+
+<!-- Contenu -->
+<!-- wp:post-content {"className":"berre-article-content berre-page-content","layout":{"type":"constrained","contentSize":"860px"}} /-->
+
+<!-- Contact rapide en bas -->
+<!-- wp:html -->
+<div class="berre-page-contact-strip">
+  <div class="berre-page-contact-strip__inner">
+    <span class="berre-page-contact-strip__label">Une question ?</span>
+    <a href="tel:0493918007" class="berre-page-contact-strip__item">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2A19.79 19.79 0 0112 18.85a19.5 19.5 0 01-6-6A19.79 19.79 0 012.12 4.18 2 2 0 014.11 2h3a2 2 0 012 1.72c.13.96.36 1.9.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0122 16.92z"/></svg>
+      04 93 91 80 07
+    </a>
+    <a href="mailto:mairie@berrelesalpes.fr" class="berre-page-contact-strip__item">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+      mairie@berrelesalpes.fr
+    </a>
+    <a href="https://mesdemarches06.fr" target="_blank" rel="noopener" class="berre-page-contact-strip__item">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/></svg>
+      Démarches en ligne
+    </a>
   </div>
-  <!-- /wp:group -->
+</div>
+<!-- /wp:html -->
 
-  <!-- CONTENU PAGE -->
-  <!-- wp:group {"className":"berre-page-wrap","layout":{"type":"constrained","contentSize":"1200px"}} -->
-  <div class="wp-block-group berre-page-wrap">
-
-    <!-- wp:columns {"className":"berre-page-cols"} -->
-    <div class="wp-block-columns berre-page-cols">
-
-      <!-- CONTENU PRINCIPAL -->
-      <!-- wp:column {"width":"68%","className":"berre-page-main"} -->
-      <div class="wp-block-column berre-page-main" style="flex-basis:68%">
-
-        <!-- Image à la une si présente -->
-        <!-- wp:post-featured-image {"className":"berre-page-hero-img","style":{"border":{"radius":"8px"}}} /-->
-
-        <!-- Titre -->
-        <!-- wp:post-title {"className":"berre-page-title","level":1} /-->
-
-        <!-- Contenu -->
-        <!-- wp:post-content {"className":"berre-page-content","layout":{"type":"constrained","contentSize":"680px"}} /-->
-
-      </div>
-      <!-- /wp:column -->
-
-      <!-- SIDEBAR -->
-      <!-- wp:column {"width":"32%","className":"berre-page-sidebar"} -->
-      <div class="wp-block-column berre-page-sidebar" style="flex-basis:32%">
-
-        <!-- Bloc contact rapide -->
-        <!-- wp:html -->
-        <div class="berre-sidebar-card">
-          <h3 class="berre-sidebar-card__title">Contact</h3>
-          <div class="berre-sidebar-contact">
-            <a href="tel:0493918007" class="berre-sidebar-contact__item">
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M22 16.92v3a2 2 0 01-2.18 2A19.79 19.79 0 0112 18.85a19.5 19.5 0 01-6-6A19.79 19.79 0 012.12 4.18 2 2 0 014.11 2h3a2 2 0 012 1.72c.13.96.36 1.9.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0122 16.92z"/></svg>
-              <span>04 93 91 80 07</span>
-            </a>
-            <a href="mailto:mairie@berrelesalpes.fr" class="berre-sidebar-contact__item">
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-              <span>mairie@berrelesalpes.fr</span>
-            </a>
-          </div>
-        </div>
-        <!-- /wp:html -->
-
-        <!-- Raccourcis services -->
-        <!-- wp:html -->
-        <div class="berre-sidebar-card" style="margin-top:12px">
-          <h3 class="berre-sidebar-card__title">Démarches rapides</h3>
-          <div class="berre-sidebar-links">
-            <a href="https://mesdemarches06.fr" target="_blank" rel="noopener" class="berre-sidebar-link">Mes Démarches 06 →</a>
-            <a href="#" class="berre-sidebar-link">Paiement en ligne →</a>
-            <a href="#" class="berre-sidebar-link">Prendre rendez-vous →</a>
-            <a href="#" class="berre-sidebar-link">Retour à l'accueil →</a>
-          </div>
-        </div>
-        <!-- /wp:html -->
-
-      </div>
-      <!-- /wp:column -->
-
-    </div>
-    <!-- /wp:columns -->
-
-  </div>
-  <!-- /wp:group -->
-
-</main>
+</div>
 <!-- /wp:group -->
 
-<!-- wp:template-part {"slug":"footer","tagName":"footer"} /-->
+</div>
+<!-- /wp:group -->
+
+<!-- wp:template-part {"slug":"footer"} /-->

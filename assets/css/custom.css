@@ -2021,3 +2021,123 @@ ul.berre-home-actu-grid,
 @media (max-width: 560px) {
   .berre-home-actu-grid { grid-template-columns: 1fr !important; }
 }
+
+/* ══ PAGES STATIQUES ══ */
+
+/* Conteneur légèrement plus large que les articles */
+.berre-page-container {
+  max-width: 900px !important;
+  padding: 40px 52px 48px !important;
+}
+
+/* Titre page — même style que article mais sans clamp agressif */
+.berre-page-title {
+  font-family: var(--serif) !important;
+  font-size: 2rem !important;
+  font-weight: 800 !important;
+  color: #111 !important;
+  line-height: 1.25 !important;
+  letter-spacing: -.025em !important;
+  margin: 16px 0 20px !important;
+}
+
+/* Contenu page — même typo que article */
+.berre-page-content {
+  font-size: 15.5px !important;
+  line-height: 1.85 !important;
+  color: #333 !important;
+}
+.berre-page-content p { margin-bottom: 1.1em !important; }
+.berre-page-content h2 {
+  font-family: var(--serif) !important;
+  font-size: 1.4rem !important;
+  font-weight: 700 !important;
+  color: #111 !important;
+  margin: 2em 0 .6em !important;
+  padding-bottom: 8px !important;
+  border-bottom: 2px solid var(--b) !important;
+}
+.berre-page-content h3 {
+  font-family: var(--serif) !important;
+  font-size: 1.15rem !important;
+  font-weight: 700 !important;
+  color: #222 !important;
+  margin: 1.6em 0 .5em !important;
+}
+.berre-page-content ul,
+.berre-page-content ol {
+  padding-left: 1.5em !important;
+  margin-bottom: 1.1em !important;
+}
+.berre-page-content li { margin-bottom: .35em !important; line-height: 1.75 !important; }
+.berre-page-content a { color: var(--b) !important; text-decoration: underline !important; }
+.berre-page-content strong { font-weight: 700 !important; color: #111 !important; }
+.berre-page-content blockquote {
+  border-left: 3px solid var(--b) !important;
+  margin: 1.5em 0 !important;
+  padding: .7em 1.2em !important;
+  background: var(--blt) !important;
+  border-radius: 0 6px 6px 0 !important;
+  font-style: italic !important;
+  color: #555 !important;
+}
+.berre-page-content img {
+  max-width: 100% !important;
+  border-radius: 6px !important;
+  height: auto !important;
+}
+.berre-page-content table {
+  width: 100% !important;
+  border-collapse: collapse !important;
+  font-size: 14px !important;
+  margin: 1.2em 0 !important;
+}
+.berre-page-content th {
+  background: var(--bdd) !important;
+  color: #fff !important;
+  padding: 10px 12px !important;
+  text-align: left !important;
+  font-weight: 600 !important;
+  font-size: 12px !important;
+}
+.berre-page-content td {
+  padding: 9px 12px !important;
+  border-bottom: 1px solid #eee !important;
+  vertical-align: top !important;
+}
+.berre-page-content tr:nth-child(even) td { background: #fafafa !important; }
+
+/* Bande contact en bas de page */
+.berre-page-contact-strip {
+  margin-top: 36px;
+  border-top: 1px solid #ebebeb;
+  padding-top: 20px;
+}
+.berre-page-contact-strip__inner {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+.berre-page-contact-strip__label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #888;
+}
+.berre-page-contact-strip__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--b);
+  text-decoration: none;
+  transition: opacity .15s;
+}
+.berre-page-contact-strip__item:hover { opacity: .75; }
+
+/* Responsive page */
+@media (max-width: 700px) {
+  .berre-page-container { padding: 24px 20px 36px !important; }
+  .berre-page-title { font-size: 1.6rem !important; }
+}
