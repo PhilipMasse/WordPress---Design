@@ -1811,8 +1811,8 @@ function berre_page_editor_page() {
     <?php
     // Charger le script media de WP pour le sélecteur d'images
     wp_enqueue_media();
+    do_action( 'berre_outils_extra' );
 }
-
 /* ── Mode aperçu ── */
 add_action( 'template_redirect', function() {
     if ( ! isset( $_GET['berre_editor_preview'] ) ) return;
@@ -1972,4 +1972,140 @@ add_shortcode('berre_newsletter_content', function() {
         </div>
     </div>
     <?php return ob_get_clean();
+});
+
+
+/* ============================================================
+   MISE À JOUR AUTOMATIQUE DEPUIS GITHUB
+   Vérifie les releases GitHub toutes les 12h.
+   Notifie WordPress quand une nouvelle version est disponible.
+   ============================================================ */
+
+define( 'BERRE_GITHUB_REPO', 'PhilipMasse/WordPress---Design' );
+define( 'BERRE_THEME_SLUG',  'theme1-aerien' );
+
+/* ── Récupérer la dernière release GitHub (avec cache 12h) ── */
+function berre_get_github_release() {
+    $cache_key = 'berre_github_release';
+    $cached    = get_transient( $cache_key );
+    if ( $cached !== false ) return $cached;
+
+    $response = wp_remote_get(
+        'https://api.github.com/repos/' . BERRE_GITHUB_REPO . '/releases/latest',
+        [ 'headers' => [
+            'Accept'     => 'application/vnd.github+json',
+            'User-Agent' => 'WordPress/' . get_bloginfo( 'version' ) . '; ' . home_url(),
+        ], 'timeout' => 10 ]
+    );
+
+    if ( is_wp_error( $response ) || 200 !== (int) wp_remote_retrieve_response_code( $response ) ) {
+        set_transient( $cache_key, null, HOUR_IN_SECONDS );
+        return null;
+    }
+
+    $data = json_decode( wp_remote_retrieve_body( $response ), true );
+    set_transient( $cache_key, $data, 12 * HOUR_IN_SECONDS );
+    return $data;
+}
+
+/* ── Injecter la mise à jour dans le système WordPress ── */
+add_filter( 'pre_set_site_transient_update_themes', function( $transient ) {
+    if ( empty( $transient->checked ) ) return $transient;
+
+    $release  = berre_get_github_release();
+    if ( ! $release || empty( $release['tag_name'] ) ) return $transient;
+
+    $latest_version  = ltrim( $release['tag_name'], 'v' );
+    $current_version = wp_get_theme( BERRE_THEME_SLUG )->get( 'Version' );
+
+    if ( version_compare( $latest_version, $current_version, '>' ) ) {
+        // Trouver l'asset ZIP dans la release
+        $zip_url = null;
+        if ( ! empty( $release['assets'] ) ) {
+            foreach ( $release['assets'] as $asset ) {
+                if ( str_ends_with( $asset['name'], '.zip' ) ) {
+                    $zip_url = $asset['browser_download_url'];
+                    break;
+                }
+            }
+        }
+        // Fallback : zipball GitHub (source code)
+        if ( ! $zip_url ) $zip_url = $release['zipball_url'];
+
+        $transient->response[ BERRE_THEME_SLUG ] = [
+            'theme'        => BERRE_THEME_SLUG,
+            'new_version'  => $latest_version,
+            'url'          => $release['html_url'],
+            'package'      => $zip_url,
+            'requires'     => '6.0',
+            'requires_php' => '8.0',
+        ];
+    }
+
+    return $transient;
+} );
+
+/* ── Informations de la release dans la popup WordPress ── */
+add_filter( 'themes_api', function( $result, $action, $args ) {
+    if ( 'theme_information' !== $action || BERRE_THEME_SLUG !== $args->slug ) return $result;
+
+    $release = berre_get_github_release();
+    if ( ! $release ) return $result;
+
+    return (object) [
+        'name'          => 'Thème Aérien Berre-les-Alpes',
+        'slug'          => BERRE_THEME_SLUG,
+        'version'       => ltrim( $release['tag_name'], 'v' ),
+        'author'        => 'Mairie de Berre-les-Alpes',
+        'homepage'      => 'https://github.com/' . BERRE_GITHUB_REPO,
+        'sections'      => [
+            'description' => $release['body'] ?? 'Thème FSE pour la Mairie de Berre-les-Alpes.',
+            'changelog'   => '<pre>' . esc_html( $release['body'] ?? '' ) . '</pre>',
+        ],
+        'download_link' => $release['html_url'],
+        'last_updated'  => $release['published_at'] ?? '',
+        'requires'      => '6.0',
+        'requires_php'  => '8.0',
+    ];
+}, 10, 3 );
+
+/* ── Vider le cache après mise à jour ── */
+add_action( 'upgrader_process_complete', function( $upgrader, $hook_extra ) {
+    if ( ( $hook_extra['type'] ?? '' ) === 'theme' ) {
+        delete_transient( 'berre_github_release' );
+        delete_site_transient( 'update_themes' );
+    }
+}, 10, 2 );
+
+/* ── Bouton "Vérifier maintenant" dans Outils Thème ── */
+add_action( 'berre_outils_extra', function() {
+    delete_transient( 'berre_github_release' );
+    delete_site_transient( 'update_themes' );
+    $release = berre_get_github_release();
+    $current = wp_get_theme( BERRE_THEME_SLUG )->get( 'Version' );
+    $latest  = $release ? ltrim( $release['tag_name'], 'v' ) : '—';
+    $up_to_date = $release && ! version_compare( $latest, $current, '>' );
+    ?>
+    <div style="background:#fff;border:1px solid #ddd;border-radius:6px;padding:24px;max-width:700px;margin-top:16px">
+        <h2 style="margin:0 0 8px;font-size:16px">🔄 Mise à jour automatique (GitHub)</h2>
+        <table style="font-size:13px;margin-bottom:16px">
+            <tr><td style="color:#888;padding-right:16px">Dépôt :</td><td><a href="https://github.com/<?php echo BERRE_GITHUB_REPO; ?>" target="_blank"><?php echo BERRE_GITHUB_REPO; ?></a></td></tr>
+            <tr><td style="color:#888;padding-right:16px">Version actuelle :</td><td><strong><?php echo esc_html($current); ?></strong></td></tr>
+            <tr><td style="color:#888;padding-right:16px">Dernière release GitHub :</td><td><strong><?php echo esc_html($latest); ?></strong></td></tr>
+            <tr><td style="color:#888;padding-right:16px">Statut :</td><td><?php echo $up_to_date
+                ? '<span style="color:#46b450">✓ À jour</span>'
+                : '<span style="color:#dc3232">⬆ Mise à jour disponible — allez dans Apparence → Thèmes</span>'; ?></td></tr>
+        </table>
+        <a href="<?php echo wp_nonce_url(add_query_arg('berre_check_update', '1', admin_url('admin.php?page=berre-outils')), 'berre_check_update'); ?>"
+           class="button">🔍 Vérifier maintenant</a>
+    </div>
+    <?php
+} );
+add_action( 'admin_init', function() {
+    if ( isset($_GET['berre_check_update']) && wp_verify_nonce($_GET['_wpnonce']??'','berre_check_update') ) {
+        delete_transient('berre_github_release');
+        delete_site_transient('update_themes');
+        wp_redirect(admin_url('admin.php?page=berre-outils'));
+        exit;
+    }
 });
