@@ -74,3 +74,108 @@
   });
 
 })();
+
+
+/* ── Recherche header — overlay plein écran au clic sur la loupe ── */
+(function() {
+  'use strict';
+
+  // Créer l'overlay
+  var overlay = document.createElement('div');
+  overlay.id = 'berre-search-overlay';
+  overlay.setAttribute('role', 'dialog');
+  overlay.setAttribute('aria-label', 'Recherche');
+  overlay.style.cssText = [
+    'display:none',
+    'position:fixed',
+    'inset:0',
+    'z-index:99999',
+    'background:rgba(16,33,66,.9)',
+    'align-items:flex-start',
+    'justify-content:center',
+    'padding:72px 20px 20px'
+  ].join(';');
+
+  overlay.innerHTML =
+    '<div style="width:100%;max-width:600px">' +
+      '<form id="bso-form" action="/" method="get" style="display:flex;background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,.3)">' +
+        '<input type="search" name="s" id="bso-input" autocomplete="off"' +
+          ' placeholder="Rechercher sur le site de Berre-les-Alpes…"' +
+          ' style="flex:1;border:none;outline:none;padding:16px 18px;font-size:16px;font-family:inherit;color:#111">' +
+        '<button type="submit"' +
+          ' style="background:#2D6AB0;color:#fff;border:none;padding:0 22px;cursor:pointer;font-size:14px;font-weight:600;font-family:inherit;white-space:nowrap">' +
+          'Rechercher' +
+        '</button>' +
+      '</form>' +
+      '<button id="bso-close"' +
+        ' style="margin-top:14px;background:none;border:none;color:rgba(255,255,255,.6);cursor:pointer;font-size:14px;display:block;font-family:inherit">' +
+        '✕ Fermer (Echap)' +
+      '</button>' +
+    '</div>';
+
+  document.body.appendChild(overlay);
+
+  var input = document.getElementById('bso-input');
+  var form  = document.getElementById('bso-form');
+  var close = document.getElementById('bso-close');
+
+  function openOverlay() {
+    overlay.style.display = 'flex';
+    setTimeout(function() { input && input.focus(); }, 50);
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeOverlay() {
+    overlay.style.display = 'none';
+    document.body.style.overflow = '';
+    if (input) input.value = '';
+  }
+
+  // Fermeture
+  close.addEventListener('click', closeOverlay);
+  overlay.addEventListener('click', function(e) {
+    if (e.target === overlay) closeOverlay();
+  });
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeOverlay();
+  });
+
+  // Soumission
+  form.addEventListener('submit', function(e) {
+    e.preventDefault();
+    var q = (input.value || '').trim();
+    if (q) window.location.href = '/?s=' + encodeURIComponent(q);
+  });
+
+  // Ouvrir au clic sur TOUS les boutons de recherche du header
+  document.addEventListener('click', function(e) {
+    var btn = e.target.closest(
+      '.berre-hdr-search .wp-block-search__button, ' +
+      '.berre-hdr-search button[type="submit"], ' +
+      '.berre-hdr-search svg'
+    );
+    if (!btn) return;
+
+    // Desktop : si l'input est visible et a du contenu → laisser le form naturel
+    var hdrInput = document.querySelector('.berre-hdr-search input[type="search"]');
+    if (hdrInput && hdrInput.offsetParent !== null && (hdrInput.value || '').trim()) {
+      return; // submit normal
+    }
+
+    e.preventDefault();
+    e.stopPropagation();
+    openOverlay();
+  });
+
+  // Panneau blanc : soumettre au clic
+  document.addEventListener('click', function(e) {
+    var btn2 = e.target.closest('.berre-search-form button[type="submit"]');
+    if (!btn2) return;
+    var inp2 = btn2.closest('.berre-search-form') && btn2.closest('.berre-search-form').querySelector('input[type="search"]');
+    if (inp2 && (inp2.value || '').trim()) {
+      window.location.href = '/?s=' + encodeURIComponent(inp2.value.trim());
+    }
+    e.preventDefault();
+  });
+
+})();
