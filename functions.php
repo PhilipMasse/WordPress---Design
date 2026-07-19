@@ -1,0 +1,1968 @@
+<?php
+/**
+ * Thème Berre-les-Alpes — functions.php
+ * WordPress FSE Theme — Version 1.0.0
+ */
+
+defined( 'ABSPATH' ) || exit;
+
+/* ═══════════════════════════════════════════
+   1. SETUP DU THÈME
+═══════════════════════════════════════════ */
+function berre_setup() {
+	add_theme_support( 'wp-block-styles' );
+	add_theme_support( 'editor-styles' );
+	add_theme_support( 'responsive-embeds' );
+	add_theme_support( 'custom-logo', [
+		'height'      => 80,
+		'width'       => 200,
+		'flex-height' => true,
+		'flex-width'  => true,
+	] );
+	add_theme_support( 'post-thumbnails' );
+	add_theme_support( 'title-tag' );
+	add_theme_support( 'html5', [ 'search-form', 'comment-form', 'gallery', 'caption', 'style', 'script' ] );
+
+	load_theme_textdomain( 'theme1-aerien', get_template_directory() . '/languages' );
+
+	register_nav_menus( [
+		'primary'   => __( 'Navigation principale', 'theme1-aerien' ),
+		'footer'    => __( 'Pied de page', 'theme1-aerien' ),
+		'shortcuts' => __( 'Accès rapides', 'theme1-aerien' ),
+	] );
+}
+add_action( 'after_setup_theme', 'berre_setup' );
+
+
+/* ═══════════════════════════════════════════
+   2. CHARGEMENT DES ASSETS
+═══════════════════════════════════════════ */
+function berre_enqueue_assets() {
+	// Google Fonts
+	wp_enqueue_style(
+		'berre-google-fonts',
+		'https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Inter:wght@300;400;500;600&display=swap',
+		[],
+		null
+	);
+
+	// CSS principal
+	wp_enqueue_style(
+		'berre-custom',
+		get_template_directory_uri() . '/assets/css/custom.css',
+		[ 'berre-google-fonts' ],
+		wp_get_theme()->get( 'Version' )
+	);
+
+	// JS principal
+	wp_enqueue_script(
+		'berre-main',
+		get_template_directory_uri() . '/assets/js/main.js',
+		[],
+		wp_get_theme()->get( 'Version' ),
+		true
+	);
+
+	// Passage de variables PHP → JS
+	wp_localize_script( 'berre-main', 'berreData', [
+		'ajaxUrl'   => admin_url( 'admin-ajax.php' ),
+		'nonce'     => wp_create_nonce( 'berre_nonce' ),
+		'themeUrl'  => get_template_directory_uri(),
+		'siteUrl'   => get_site_url(),
+	] );
+}
+add_action( 'wp_enqueue_scripts', 'berre_enqueue_assets' );
+
+// CSS éditeur Gutenberg
+function berre_editor_styles() {
+	add_editor_style( 'assets/css/editor.css' );
+	add_editor_style( 'assets/css/custom.css' );
+	add_editor_style( 'https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Inter:wght@300;400;500;600&display=swap' );
+}
+add_action( 'after_setup_theme', 'berre_editor_styles' );
+
+
+/* ═══════════════════════════════════════════
+   3. CUSTOM POST TYPES
+═══════════════════════════════════════════ */
+
+// ── 3a. ACTUALITÉS ──────────────────────────
+function berre_register_cpt_actualite() {
+	register_post_type( 'actualite', [
+		'labels' => [
+			'name'               => __( 'Actualités',           'theme1-aerien' ),
+			'singular_name'      => __( 'Actualité',            'theme1-aerien' ),
+			'add_new'            => __( 'Ajouter',              'theme1-aerien' ),
+			'add_new_item'       => __( 'Ajouter une actualité','theme1-aerien' ),
+			'edit_item'          => __( 'Modifier',             'theme1-aerien' ),
+			'view_item'          => __( 'Voir',                 'theme1-aerien' ),
+			'all_items'          => __( 'Toutes les actualités','theme1-aerien' ),
+			'search_items'       => __( 'Rechercher',           'theme1-aerien' ),
+			'not_found'          => __( 'Aucune actualité',     'theme1-aerien' ),
+			'menu_name'          => __( 'Actualités',           'theme1-aerien' ),
+		],
+		'public'             => true,
+		'publicly_queryable' => true,
+		'show_ui'            => true,
+		'show_in_menu'       => true,
+		'show_in_rest'       => true,  // Gutenberg + REST API
+		'query_var'          => true,
+		'rewrite'            => [ 'slug' => 'actualites' ],
+		'capability_type'    => 'post',
+		'has_archive'        => true,
+		'hierarchical'       => false,
+		'menu_position'      => 5,
+		'menu_icon'          => 'dashicons-megaphone',
+		'supports'           => [ 'title', 'editor', 'thumbnail', 'excerpt', 'custom-fields', 'revisions' ],
+		'taxonomies'         => [ 'categorie_actu' ],
+	] );
+}
+add_action( 'init', 'berre_register_cpt_actualite' );
+
+// ── 3b. AGENDA ──────────────────────────────
+function berre_register_cpt_agenda() {
+	register_post_type( 'agenda', [
+		'labels' => [
+			'name'               => __( 'Agenda',               'theme1-aerien' ),
+			'singular_name'      => __( 'Événement',            'theme1-aerien' ),
+			'add_new'            => __( 'Ajouter',              'theme1-aerien' ),
+			'add_new_item'       => __( 'Ajouter un événement', 'theme1-aerien' ),
+			'edit_item'          => __( 'Modifier',             'theme1-aerien' ),
+			'view_item'          => __( 'Voir',                 'theme1-aerien' ),
+			'all_items'          => __( 'Tous les événements',  'theme1-aerien' ),
+			'search_items'       => __( 'Rechercher',           'theme1-aerien' ),
+			'not_found'          => __( 'Aucun événement',      'theme1-aerien' ),
+			'menu_name'          => __( 'Agenda',               'theme1-aerien' ),
+		],
+		'public'             => true,
+		'publicly_queryable' => true,
+		'show_ui'            => true,
+		'show_in_menu'       => true,
+		'show_in_rest'       => true,
+		'query_var'          => true,
+		'rewrite'            => [ 'slug' => 'agenda' ],
+		'capability_type'    => 'post',
+		'has_archive'        => true,
+		'hierarchical'       => false,
+		'menu_position'      => 6,
+		'menu_icon'          => 'dashicons-calendar-alt',
+		'supports'           => [ 'title', 'editor', 'thumbnail', 'excerpt', 'custom-fields', 'revisions' ],
+		'taxonomies'         => [ 'categorie_agenda' ],
+	] );
+}
+add_action( 'init', 'berre_register_cpt_agenda' );
+
+// ── 3c. SERVICES ────────────────────────────
+function berre_register_cpt_service() {
+	register_post_type( 'service', [
+		'labels' => [
+			'name'               => __( 'Services',             'theme1-aerien' ),
+			'singular_name'      => __( 'Service',              'theme1-aerien' ),
+			'add_new'            => __( 'Ajouter',              'theme1-aerien' ),
+			'add_new_item'       => __( 'Ajouter un service',   'theme1-aerien' ),
+			'edit_item'          => __( 'Modifier',             'theme1-aerien' ),
+			'view_item'          => __( 'Voir',                 'theme1-aerien' ),
+			'all_items'          => __( 'Tous les services',    'theme1-aerien' ),
+			'not_found'          => __( 'Aucun service',        'theme1-aerien' ),
+			'menu_name'          => __( 'Services',             'theme1-aerien' ),
+		],
+		'public'             => true,
+		'publicly_queryable' => true,
+		'show_ui'            => true,
+		'show_in_menu'       => true,
+		'show_in_rest'       => true,
+		'query_var'          => true,
+		'rewrite'            => [ 'slug' => 'services' ],
+		'capability_type'    => 'post',
+		'has_archive'        => true,
+		'hierarchical'       => false,
+		'menu_position'      => 7,
+		'menu_icon'          => 'dashicons-admin-tools',
+		'supports'           => [ 'title', 'editor', 'thumbnail', 'excerpt', 'custom-fields', 'page-attributes' ],
+		'taxonomies'         => [ 'categorie_service' ],
+	] );
+}
+add_action( 'init', 'berre_register_cpt_service' );
+
+
+/* ═══════════════════════════════════════════
+   4. TAXONOMIES PERSONNALISÉES
+═══════════════════════════════════════════ */
+function berre_register_taxonomies() {
+
+	// Catégories Actualités
+	register_taxonomy( 'categorie_actu', 'actualite', [
+		'labels' => [
+			'name'          => __( 'Catégories', 'theme1-aerien' ),
+			'singular_name' => __( 'Catégorie',  'theme1-aerien' ),
+			'all_items'     => __( 'Toutes les catégories', 'theme1-aerien' ),
+			'add_new_item'  => __( 'Ajouter une catégorie', 'theme1-aerien' ),
+		],
+		'hierarchical'      => true,
+		'public'            => true,
+		'show_ui'           => true,
+		'show_in_rest'      => true,
+		'show_admin_column' => true,
+		'rewrite'           => [ 'slug' => 'categorie-actu' ],
+	] );
+
+	// Catégories Agenda
+	register_taxonomy( 'categorie_agenda', 'agenda', [
+		'labels' => [
+			'name'          => __( 'Catégories', 'theme1-aerien' ),
+			'singular_name' => __( 'Catégorie',  'theme1-aerien' ),
+			'all_items'     => __( 'Toutes les catégories', 'theme1-aerien' ),
+			'add_new_item'  => __( 'Ajouter une catégorie', 'theme1-aerien' ),
+		],
+		'hierarchical'      => true,
+		'public'            => true,
+		'show_ui'           => true,
+		'show_in_rest'      => true,
+		'show_admin_column' => true,
+		'rewrite'           => [ 'slug' => 'categorie-agenda' ],
+	] );
+
+	// Catégories Services
+	register_taxonomy( 'categorie_service', 'service', [
+		'labels' => [
+			'name'          => __( 'Catégories', 'theme1-aerien' ),
+			'singular_name' => __( 'Catégorie',  'theme1-aerien' ),
+			'all_items'     => __( 'Toutes les catégories', 'theme1-aerien' ),
+			'add_new_item'  => __( 'Ajouter une catégorie', 'theme1-aerien' ),
+		],
+		'hierarchical'      => true,
+		'public'            => true,
+		'show_ui'           => true,
+		'show_in_rest'      => true,
+		'show_admin_column' => true,
+		'rewrite'           => [ 'slug' => 'categorie-service' ],
+	] );
+}
+add_action( 'init', 'berre_register_taxonomies' );
+
+
+/* ═══════════════════════════════════════════
+   5. MÉTADONNÉES PERSONNALISÉES (REST API)
+═══════════════════════════════════════════ */
+function berre_register_meta_fields() {
+
+	// Champs Agenda
+	$agenda_fields = [
+		'_berre_date_debut'  => 'Date de début (YYYY-MM-DD)',
+		'_berre_date_fin'    => 'Date de fin (YYYY-MM-DD)',
+		'_berre_heure_debut' => 'Heure de début (HH:MM)',
+		'_berre_heure_fin'   => 'Heure de fin (HH:MM)',
+		'_berre_lieu'        => 'Lieu',
+		'_berre_inscription' => 'Inscription requise (oui/non)',
+	];
+	foreach ( $agenda_fields as $key => $desc ) {
+		register_post_meta( 'agenda', $key, [
+			'show_in_rest'  => true,
+			'single'        => true,
+			'type'          => 'string',
+			'description'   => $desc,
+			'auth_callback' => fn() => current_user_can( 'edit_posts' ),
+		] );
+	}
+
+	// Champs Service
+	$service_fields = [
+		'_berre_lien_externe' => 'URL du service en ligne',
+		'_berre_telephone'    => 'Téléphone du service',
+		'_berre_email'        => 'Email du service',
+		'_berre_horaires'     => 'Horaires spécifiques',
+		'_berre_icone'        => "Nom de l'icone (SVG slug)",
+		'_berre_couleur'      => 'Couleur accent (bleu/vert/or)',
+	];
+	foreach ( $service_fields as $key => $desc ) {
+		register_post_meta( 'service', $key, [
+			'show_in_rest'  => true,
+			'single'        => true,
+			'type'          => 'string',
+			'description'   => $desc,
+			'auth_callback' => fn() => current_user_can( 'edit_posts' ),
+		] );
+	}
+
+	// Champs Actualité
+	register_post_meta( 'actualite', '_berre_accroche', [
+		'show_in_rest'  => true,
+		'single'        => true,
+		'type'          => 'string',
+		'description'   => "Phrase d'accroche courte",
+		'auth_callback' => fn() => current_user_can( 'edit_posts' ),
+	] );
+}
+add_action( 'init', 'berre_register_meta_fields' );
+
+
+/* ═══════════════════════════════════════════
+   6. COLONNES ADMIN PERSONNALISÉES
+═══════════════════════════════════════════ */
+
+// Agenda : ajouter la colonne date
+function berre_agenda_columns( $cols ) {
+	$new = [];
+	foreach ( $cols as $key => $val ) {
+		$new[ $key ] = $val;
+		if ( $key === 'title' ) {
+			$new['berre_date'] = __( 'Date', 'theme1-aerien' );
+			$new['berre_lieu'] = __( 'Lieu', 'theme1-aerien' );
+		}
+	}
+	return $new;
+}
+add_filter( 'manage_agenda_posts_columns', 'berre_agenda_columns' );
+
+function berre_agenda_column_content( $col, $post_id ) {
+	if ( $col === 'berre_date' ) {
+		$d = get_post_meta( $post_id, '_berre_date_debut', true );
+		echo $d ? esc_html( date_i18n( 'd/m/Y', strtotime( $d ) ) ) : '—';
+	}
+	if ( $col === 'berre_lieu' ) {
+		echo esc_html( get_post_meta( $post_id, '_berre_lieu', true ) ?: '—' );
+	}
+}
+add_action( 'manage_agenda_posts_custom_column', 'berre_agenda_column_content', 10, 2 );
+
+// Tri par date agenda
+add_filter( 'manage_edit-agenda_sortable_columns', function( $cols ) {
+	$cols['berre_date'] = 'berre_date';
+	return $cols;
+} );
+
+
+/* ═══════════════════════════════════════════
+   7. FLUSH REWRITE RULES
+═══════════════════════════════════════════ */
+function berre_flush_rewrite_rules() {
+	berre_register_cpt_actualite();
+	berre_register_cpt_agenda();
+	berre_register_cpt_service();
+	flush_rewrite_rules();
+}
+register_activation_hook( __FILE__, 'berre_flush_rewrite_rules' );
+
+
+/* ═══════════════════════════════════════════
+   8. DONNÉES D'EXEMPLE À L'ACTIVATION
+═══════════════════════════════════════════ */
+function berre_insert_sample_data() {
+	if ( get_option( 'berre_sample_data_inserted' ) ) return;
+
+	// Catégories actualités
+	$cats_actu = [ 'Travaux', 'Scolarité', 'Tourisme', 'Environnement', 'Services', 'Culture', 'Urbanisme' ];
+	foreach ( $cats_actu as $cat ) {
+		if ( ! term_exists( $cat, 'categorie_actu' ) ) {
+			wp_insert_term( $cat, 'categorie_actu' );
+		}
+	}
+
+	// Catégories agenda
+	$cats_agenda = [ 'Institutionnel', 'Culture', 'Tourisme', 'Commerce', 'Associations', 'Sport' ];
+	foreach ( $cats_agenda as $cat ) {
+		if ( ! term_exists( $cat, 'categorie_agenda' ) ) {
+			wp_insert_term( $cat, 'categorie_agenda' );
+		}
+	}
+
+	// Catégories services
+	$cats_svc = [ 'État Civil', 'Urbanisme', 'Scolarité', 'Sécurité', 'Démarches', 'Social', 'Pratique' ];
+	foreach ( $cats_svc as $cat ) {
+		if ( ! term_exists( $cat, 'categorie_service' ) ) {
+			wp_insert_term( $cat, 'categorie_service' );
+		}
+	}
+
+	// Actualités exemples
+	$actualites = [
+		[
+			'title'   => 'Réfection de l\'avenue Paul Granet : calendrier et déviations mis à jour',
+			'excerpt' => 'Les travaux de réfection de chaussée reprennent cet automne. Un plan de déviation complet est disponible en mairie.',
+			'cat'     => 'Travaux',
+		],
+		[
+			'title'   => 'Rentrée 2025 : nouvelles modalités d\'inscription à l\'école communale',
+			'excerpt' => 'Les inscriptions pour la rentrée scolaire 2025 sont ouvertes. Retrouvez les nouvelles modalités sur cette page.',
+			'cat'     => 'Scolarité',
+		],
+		[
+			'title'   => 'Saison de randonnée : les sentiers balisés sont prêts',
+			'excerpt' => 'Tous les sentiers balisés de la commune sont désormais ouverts et entretenus pour la saison estivale.',
+			'cat'     => 'Tourisme',
+		],
+	];
+	foreach ( $actualites as $a ) {
+		$term = get_term_by( 'name', $a['cat'], 'categorie_actu' );
+		$id   = wp_insert_post( [
+			'post_title'   => $a['title'],
+			'post_excerpt' => $a['excerpt'],
+			'post_content' => '<p>' . $a['excerpt'] . '</p>',
+			'post_status'  => 'publish',
+			'post_type'    => 'actualite',
+		] );
+		if ( $id && $term ) {
+			wp_set_post_terms( $id, [ $term->term_id ], 'categorie_actu' );
+		}
+	}
+
+	// Événements agenda exemples
+	$evenements = [
+		[
+			'title'  => 'Conseil Municipal – Séance publique',
+			'date'   => date( 'Y-m-d', strtotime( '+10 days' ) ),
+			'heure'  => '19:00',
+			'lieu'   => 'Salle des délibérations – Mairie',
+			'cat'    => 'Institutionnel',
+		],
+		[
+			'title'  => 'Fête de la Musique – Concert en plein air',
+			'date'   => date( 'Y-m-d', strtotime( '+21 days' ) ),
+			'heure'  => '18:00',
+			'lieu'   => 'Place du village',
+			'cat'    => 'Culture',
+		],
+		[
+			'title'  => 'Randonnée guidée – Col Saint-Roch',
+			'date'   => date( 'Y-m-d', strtotime( '+28 days' ) ),
+			'heure'  => '08:30',
+			'lieu'   => 'Départ Mairie',
+			'cat'    => 'Tourisme',
+		],
+	];
+	foreach ( $evenements as $e ) {
+		$term = get_term_by( 'name', $e['cat'], 'categorie_agenda' );
+		$id   = wp_insert_post( [
+			'post_title'   => $e['title'],
+			'post_content' => '<p>' . $e['title'] . '</p>',
+			'post_status'  => 'publish',
+			'post_type'    => 'agenda',
+		] );
+		if ( $id ) {
+			update_post_meta( $id, '_berre_date_debut', $e['date'] );
+			update_post_meta( $id, '_berre_heure_debut', $e['heure'] );
+			update_post_meta( $id, '_berre_lieu', $e['lieu'] );
+			if ( $term ) wp_set_post_terms( $id, [ $term->term_id ], 'categorie_agenda' );
+		}
+	}
+
+	// Services exemples
+	$services = [
+		[ 'title' => 'État Civil',        'cat' => 'État Civil',  'couleur' => 'bleu',  'lien' => 'https://mesdemarches06.fr' ],
+		[ 'title' => 'Urbanisme & PLU',   'cat' => 'Urbanisme',   'couleur' => 'bleu',  'lien' => '' ],
+		[ 'title' => 'Scolarité',         'cat' => 'Scolarité',   'couleur' => 'vert',  'lien' => '' ],
+		[ 'title' => 'Démarches en ligne','cat' => 'Démarches',   'couleur' => 'or',    'lien' => 'https://mesdemarches06.fr' ],
+		[ 'title' => 'Paiement en ligne', 'cat' => 'Démarches',   'couleur' => 'or',    'lien' => '' ],
+		[ 'title' => 'Sécurité & Risques','cat' => 'Sécurité',    'couleur' => 'bleu',  'lien' => '' ],
+	];
+	foreach ( $services as $s ) {
+		$term = get_term_by( 'name', $s['cat'], 'categorie_service' );
+		$id   = wp_insert_post( [
+			'post_title'   => $s['title'],
+			'post_content' => '<p>Service municipal : ' . $s['title'] . '</p>',
+			'post_status'  => 'publish',
+			'post_type'    => 'service',
+		] );
+		if ( $id ) {
+			update_post_meta( $id, '_berre_couleur', $s['couleur'] );
+			update_post_meta( $id, '_berre_lien_externe', $s['lien'] );
+			if ( $term ) wp_set_post_terms( $id, [ $term->term_id ], 'categorie_service' );
+		}
+	}
+
+	update_option( 'berre_sample_data_inserted', true );
+}
+add_action( 'after_switch_theme', 'berre_insert_sample_data' );
+
+
+/* ═══════════════════════════════════════════
+   9. SHORTCODES UTILITAIRES
+═══════════════════════════════════════════ */
+
+// [berre_actualites nombre="3"] — liste des dernières actualités
+function berre_sc_actualites( $atts ) {
+	$atts = shortcode_atts( [ 'nombre' => 3, 'categorie' => '' ], $atts );
+	$args = [
+		'post_type'      => 'actualite',
+		'posts_per_page' => intval( $atts['nombre'] ),
+		'post_status'    => 'publish',
+		'orderby'        => 'date',
+		'order'          => 'DESC',
+	];
+	if ( $atts['categorie'] ) {
+		$args['tax_query'] = [ [ 'taxonomy' => 'categorie_actu', 'field' => 'slug', 'terms' => $atts['categorie'] ] ];
+	}
+	$q = new WP_Query( $args );
+	if ( ! $q->have_posts() ) return '<p>' . __( 'Aucune actualité.', 'theme1-aerien' ) . '</p>';
+	ob_start();
+	echo '<div class="berre-actualites-grid">';
+	while ( $q->have_posts() ) {
+		$q->the_post();
+		$terms    = get_the_terms( get_the_ID(), 'categorie_actu' );
+		$cat_name = $terms ? esc_html( $terms[0]->name ) : '';
+		echo '<article class="berre-actu-card">';
+		if ( has_post_thumbnail() ) {
+			echo '<div class="berre-actu-img">' . get_the_post_thumbnail( null, 'medium_large' ) . '</div>';
+		}
+		echo '<div class="berre-actu-body">';
+		if ( $cat_name ) echo '<span class="berre-cat berre-cat--' . sanitize_html_class( strtolower( $cat_name ) ) . '">' . $cat_name . '</span>';
+		echo '<h3 class="berre-actu-title"><a href="' . get_permalink() . '">' . get_the_title() . '</a></h3>';
+		echo '<p class="berre-actu-excerpt">' . wp_trim_words( get_the_excerpt(), 20 ) . '</p>';
+		echo '<time class="berre-actu-date" datetime="' . get_the_date( 'c' ) . '">' . get_the_date( 'd M Y' ) . '</time>';
+		echo '</div></article>';
+	}
+	echo '</div>';
+	wp_reset_postdata();
+	return ob_get_clean();
+}
+add_shortcode( 'berre_actualites', 'berre_sc_actualites' );
+
+// [berre_agenda nombre="5"] — prochains événements
+function berre_sc_agenda( $atts ) {
+	$atts = shortcode_atts( [ 'nombre' => 5 ], $atts );
+	$args = [
+		'post_type'      => 'agenda',
+		'posts_per_page' => intval( $atts['nombre'] ),
+		'post_status'    => 'publish',
+		'meta_key'       => '_berre_date_debut',
+		'orderby'        => 'meta_value',
+		'order'          => 'ASC',
+		'meta_query'     => [ [ 'key' => '_berre_date_debut', 'value' => date( 'Y-m-d' ), 'compare' => '>=', 'type' => 'DATE' ] ],
+	];
+	$q = new WP_Query( $args );
+	if ( ! $q->have_posts() ) return '<p>' . __( 'Aucun événement à venir.', 'theme1-aerien' ) . '</p>';
+	ob_start();
+	echo '<div class="berre-agenda-list">';
+	while ( $q->have_posts() ) {
+		$q->the_post();
+		$date  = get_post_meta( get_the_ID(), '_berre_date_debut', true );
+		$heure = get_post_meta( get_the_ID(), '_berre_heure_debut', true );
+		$lieu  = get_post_meta( get_the_ID(), '_berre_lieu', true );
+		$terms = get_the_terms( get_the_ID(), 'categorie_agenda' );
+		$cat   = $terms ? esc_html( $terms[0]->name ) : '';
+		$ts    = $date ? strtotime( $date ) : 0;
+		echo '<div class="berre-agenda-item">';
+		echo '<div class="berre-agenda-date">';
+		if ( $ts ) {
+			echo '<strong>' . date_i18n( 'd', $ts ) . '</strong>';
+			echo '<span>' . date_i18n( 'M', $ts ) . '</span>';
+		}
+		echo '</div>';
+		echo '<div class="berre-agenda-info">';
+		echo '<h3><a href="' . get_permalink() . '">' . get_the_title() . '</a></h3>';
+		$meta = array_filter( [ $lieu, $heure ] );
+		if ( $meta ) echo '<p>' . esc_html( implode( ' · ', $meta ) ) . '</p>';
+		if ( $cat ) echo '<span class="berre-cat">' . $cat . '</span>';
+		echo '</div></div>';
+	}
+	echo '</div>';
+	wp_reset_postdata();
+	return ob_get_clean();
+}
+add_shortcode( 'berre_agenda', 'berre_sc_agenda' );
+
+// [berre_services nombre="8"] — grille services
+function berre_sc_services( $atts ) {
+	$atts = shortcode_atts( [ 'nombre' => 8, 'categorie' => '' ], $atts );
+	$args = [
+		'post_type'      => 'service',
+		'posts_per_page' => intval( $atts['nombre'] ),
+		'post_status'    => 'publish',
+		'orderby'        => 'menu_order',
+		'order'          => 'ASC',
+	];
+	$q = new WP_Query( $args );
+	if ( ! $q->have_posts() ) return '';
+	ob_start();
+	echo '<div class="berre-services-grid">';
+	while ( $q->have_posts() ) {
+		$q->the_post();
+		$lien    = get_post_meta( get_the_ID(), '_berre_lien_externe', true ) ?: get_permalink();
+		$couleur = get_post_meta( get_the_ID(), '_berre_couleur', true ) ?: 'bleu';
+		$terms   = get_the_terms( get_the_ID(), 'categorie_service' );
+		$cat     = $terms ? esc_html( $terms[0]->name ) : '';
+		echo '<a href="' . esc_url( $lien ) . '" class="berre-service-card berre-service-card--' . sanitize_html_class( $couleur ) . '">';
+		if ( has_post_thumbnail() ) {
+			echo '<div class="berre-service-icon">' . get_the_post_thumbnail( null, 'thumbnail' ) . '</div>';
+		}
+		echo '<h3>' . get_the_title() . '</h3>';
+		echo '<p>' . wp_trim_words( get_the_excerpt(), 12 ) . '</p>';
+		echo '<span class="berre-service-link">Accéder →</span>';
+		echo '</a>';
+	}
+	echo '</div>';
+	wp_reset_postdata();
+	return ob_get_clean();
+}
+add_shortcode( 'berre_services', 'berre_sc_services' );
+
+
+/* ═══════════════════════════════════════════
+   10. WIDGET BLOCS GUTENBERG (REST)
+═══════════════════════════════════════════ */
+function berre_register_blocks() {
+	// Bloc dynamique : liste actualités
+	register_block_type( 'berre/actualites', [
+		'render_callback' => function( $attrs ) {
+			return berre_sc_actualites( $attrs );
+		},
+		'attributes' => [
+			'nombre'    => [ 'type' => 'number', 'default' => 3 ],
+			'categorie' => [ 'type' => 'string', 'default' => '' ],
+		],
+	] );
+
+	// Bloc dynamique : agenda
+	register_block_type( 'berre/agenda', [
+		'render_callback' => function( $attrs ) {
+			return berre_sc_agenda( $attrs );
+		},
+		'attributes' => [
+			'nombre' => [ 'type' => 'number', 'default' => 5 ],
+		],
+	] );
+}
+add_action( 'init', 'berre_register_blocks' );
+
+
+/* ═══════════════════════════════════════════
+   11. SÉCURITÉ & NETTOYAGE
+═══════════════════════════════════════════ */
+remove_action( 'wp_head', 'wp_generator' );
+remove_action( 'wp_head', 'wlwmanifest_link' );
+remove_action( 'wp_head', 'rsd_link' );
+add_filter( 'the_generator', '__return_empty_string' );
+
+// Désactiver XML-RPC si non nécessaire
+add_filter( 'xmlrpc_enabled', '__return_false' );
+
+
+
+
+/* ============================================================
+   ACCÈS RAPIDES — Page d'administration (v2)
+   Structure : { primary: [...], secondary: [...] }
+   Option WP : berre_acces_rapides
+   ============================================================ */
+
+function berre_icons_list() {
+    return [
+        "document"   => ["label" => "Document / État Civil",    "svg" => '<path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>'],
+        "calendar"   => ["label" => "Calendrier / Rendez-vous", "svg" => '<rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>'],
+        "computer"   => ["label" => "Ordinateur / Démarches",   "svg" => '<rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>'],
+        "coin"       => ["label" => "Paiement / Finances",      "svg" => '<line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/>'],
+        "hike"       => ["label" => "Randonnées / Sport",       "svg" => '<path d="M3 17l4-8 4 4 4-7 4 8"/>'],
+        "people"     => ["label" => "Personnes / Élus",         "svg" => '<path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/>'],
+        "building"   => ["label" => "Urbanisme / Bâtiment",     "svg" => '<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 9h6M9 12h6M9 15h4"/>'],
+        "heart"      => ["label" => "Social / Santé",           "svg" => '<path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/>'],
+        "flag"       => ["label" => "Magazine / Communication", "svg" => '<path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/>'],
+        "school"     => ["label" => "Scolarité / Éducation",   "svg" => '<path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/>'],
+        "info"       => ["label" => "Informations pratiques",   "svg" => '<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>'],
+        "phone"      => ["label" => "Contact / Téléphone",      "svg" => '<path d="M22 16.92v3a2 2 0 01-2.18 2A19.79 19.79 0 0112 18.85a19.5 19.5 0 01-6-6A19.79 19.79 0 012.12 4.18 2 2 0 014.11 2h3a2 2 0 012 1.72c.13.96.36 1.9.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0122 16.92z"/>'],
+        "home"       => ["label" => "Mairie / Accueil",         "svg" => '<path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>'],
+        "leaf"       => ["label" => "Environnement / Nature",   "svg" => '<path d="M17 8C8 10 5.9 16.17 3.82 19.5M9 19.5c.9-1.32 4.5-4.5 11.5-6.5"/>'],
+        "star"       => ["label" => "Événement / Agenda",       "svg" => '<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>'],
+        "truck"      => ["label" => "Transport / Déchets",      "svg" => '<rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8h4l3 5v4h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/>'],
+        "shield"     => ["label" => "Sécurité / Protection",    "svg" => '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>'],
+        "map"        => ["label" => "Carte / Plan",             "svg" => '<polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/>'],
+    ];
+}
+
+/* ── Données par défaut ── */
+function berre_acces_rapides_defaults() {
+    return [
+        "primary" => [
+            ["label" => "État Civil",       "url" => "/etat-civil",              "icon" => "document", "color" => "bleu", "target" => "_self"],
+            ["label" => "Rendez-vous",      "url" => "#",                        "icon" => "calendar", "color" => "bleu", "target" => "_self"],
+            ["label" => "Mes Démarches 06", "url" => "https://mesdemarches06.fr","icon" => "computer", "color" => "bleu", "target" => "_blank"],
+            ["label" => "Paiement en ligne","url" => "#",                        "icon" => "coin",     "color" => "bleu", "target" => "_blank"],
+            ["label" => "Randonnées",       "url" => "/randonnees",              "icon" => "hike",     "color" => "vert", "target" => "_self"],
+            ["label" => "Magazine",         "url" => "#",                        "icon" => "flag",     "color" => "or",   "target" => "_self"],
+        ],
+        "secondary" => [
+            ["label" => "Urbanisme",        "url" => "/urbanisme",               "icon" => "building", "color" => "bleu", "target" => "_self"],
+            ["label" => "Scolarité",        "url" => "/scolarite",               "icon" => "school",   "color" => "bleu", "target" => "_self"],
+            ["label" => "Action sociale",   "url" => "/social",                  "icon" => "heart",    "color" => "vert", "target" => "_self"],
+            ["label" => "Les élus",         "url" => "/les-elus",                "icon" => "people",   "color" => "bleu", "target" => "_self"],
+            ["label" => "Environnement",    "url" => "/environnement",           "icon" => "leaf",     "color" => "vert", "target" => "_self"],
+            ["label" => "Infos pratiques",  "url" => "/infos",                   "icon" => "info",     "color" => "or",   "target" => "_self"],
+        ],
+    ];
+}
+
+/* ── Lire les données (avec migration depuis v1) ── */
+function berre_get_acces_rapides() {
+    $saved = get_option( "berre_acces_rapides" );
+    if ( empty( $saved ) ) return berre_acces_rapides_defaults();
+    // Migration v1 → v2 : l'ancien format était un tableau plat
+    if ( isset( $saved[0] ) && is_array( $saved[0] ) ) {
+        return [ "primary" => $saved, "secondary" => [] ];
+    }
+    if ( ! isset( $saved["primary"] ) ) return berre_acces_rapides_defaults();
+    return $saved;
+}
+
+/* ── Menu admin ── */
+function berre_admin_menu() {
+    add_menu_page(
+        "Accès Rapides",
+        "Accès Rapides",
+        "manage_options",
+        "berre-acces-rapides",
+        "berre_admin_page",
+        "dashicons-grid-view",
+        60
+    );
+}
+add_action( "admin_menu", "berre_admin_menu" );
+
+/* ── Sauvegarde ── */
+function berre_save_acces_rapides() {
+    if ( ! isset( $_POST["berre_acces_rapides_nonce"] ) ) return;
+    if ( ! wp_verify_nonce( $_POST["berre_acces_rapides_nonce"], "berre_save_acces_rapides" ) ) {
+        wp_die( "Sécurité : nonce invalide." );
+    }
+    if ( ! current_user_can( "manage_options" ) ) {
+        wp_die( "Permission refusée." );
+    }
+
+    $data = [ "primary" => [], "secondary" => [] ];
+
+    foreach ( ["primary", "secondary"] as $group ) {
+        $labels  = (array)( $_POST["ar_{$group}_label"]  ?? [] );
+        $urls    = (array)( $_POST["ar_{$group}_url"]    ?? [] );
+        $icons   = (array)( $_POST["ar_{$group}_icon"]   ?? [] );
+        $colors  = (array)( $_POST["ar_{$group}_color"]  ?? [] );
+        $targets = (array)( $_POST["ar_{$group}_target"] ?? [] );
+
+        foreach ( $labels as $i => $label ) {
+            $label = sanitize_text_field( $label );
+            if ( empty( $label ) ) continue;
+            $data[$group][] = [
+                "label"  => $label,
+                "url"    => esc_url_raw( $urls[$i] ?? "#" ),
+                "icon"   => sanitize_key( $icons[$i] ?? "document" ),
+                "color"  => in_array( $colors[$i] ?? "", ["bleu","vert","or"] ) ? $colors[$i] : "bleu",
+                "target" => ( isset( $targets[$i] ) && $targets[$i] === "_blank" ) ? "_blank" : "_self",
+            ];
+        }
+    }
+
+    update_option( "berre_acces_rapides", $data );
+
+    add_action( "admin_notices", function() {
+        echo '<div class="notice notice-success is-dismissible"><p>✅ Accès rapides sauvegardés avec succès.</p></div>';
+    });
+}
+add_action( "admin_init", function() {
+    if ( isset( $_POST["berre_save_ar"] ) ) berre_save_acces_rapides();
+});
+
+/* ── Page d'administration ── */
+function berre_admin_page() {
+    $data   = berre_get_acces_rapides();
+    $icons  = berre_icons_list();
+    $colors = ["bleu" => "Bleu #2D6AB0", "vert" => "Vert #587526", "or" => "Or #DEA128"];
+    $groups = [
+        "primary"   => ["title" => "🔵 Icônes principales",     "desc" => "Affichées immédiatement sous la photo d'accueil."],
+        "secondary" => ["title" => "➕ Icônes supplémentaires", "desc" => "Révélées au clic sur \"Voir plus d'accès rapides\"."],
+    ];
+    ?>
+    <style>
+    .berre-ar-section { background:#fff; border:1px solid #ddd; border-radius:6px; margin-bottom:28px; overflow:hidden; }
+    .berre-ar-section-head { background:#f6f7f7; border-bottom:1px solid #ddd; padding:14px 18px; display:flex; align-items:center; justify-content:space-between; }
+    .berre-ar-section-head h2 { margin:0; font-size:15px; }
+    .berre-ar-section-head p { margin:4px 0 0; color:#666; font-size:12px; }
+    .berre-ar-table { width:100%; border-collapse:collapse; }
+    .berre-ar-table th { background:#f9f9f9; padding:8px 10px; text-align:left; font-size:12px; color:#555; border-bottom:1px solid #eee; }
+    .berre-ar-table td { padding:7px 10px; border-bottom:1px solid #f0f0f0; vertical-align:middle; }
+    .berre-ar-table tr:last-child td { border-bottom:none; }
+    .berre-ar-table tr:hover td { background:#fafcff; }
+    .berre-drag { cursor:grab; color:#bbb; font-size:20px; user-select:none; }
+    .berre-drag:active { cursor:grabbing; }
+    .berre-icon-preview { width:34px; height:34px; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+    .berre-icon-preview svg { width:16px; height:16px; fill:none; stroke:white; stroke-width:1.8; }
+    .berre-table-wrap { padding:0 18px 14px; }
+    .berre-add-btn { margin:8px 18px 16px; }
+    .berre-icon-grid { display:flex; flex-wrap:wrap; gap:12px; padding:16px 18px; background:#f9f9f9; border-top:1px solid #eee; }
+    .berre-icon-chip { text-align:center; cursor:pointer; padding:8px; border-radius:6px; border:1.5px solid transparent; transition:all .15s; }
+    .berre-icon-chip:hover { border-color:#2D6AB0; background:#e8f1fb; }
+    .berre-icon-chip span { display:block; font-size:10px; color:#555; margin-top:5px; max-width:70px; line-height:1.2; }
+    </style>
+
+    <div class="wrap" style="max-width:960px">
+        <h1 style="margin-bottom:6px">🔗 Accès Rapides — Berre-les-Alpes</h1>
+        <p style="color:#666;margin-bottom:24px">Gérez les icônes affichées sur la page d'accueil. Glissez ⠿ pour réordonner.</p>
+
+        <form method="post" id="berre-ar-form">
+            <?php wp_nonce_field( "berre_save_acces_rapides", "berre_acces_rapides_nonce" ); ?>
+
+            <?php foreach ( $groups as $group => $meta ) : ?>
+            <div class="berre-ar-section" id="section-<?php echo $group; ?>">
+                <div class="berre-ar-section-head">
+                    <div>
+                        <h2><?php echo $meta["title"]; ?></h2>
+                        <p><?php echo $meta["desc"]; ?></p>
+                    </div>
+                    <button type="button" class="button button-secondary berre-toggle-icons" data-group="<?php echo $group; ?>">
+                        Choisir une icône ▾
+                    </button>
+                </div>
+
+                <div class="berre-table-wrap">
+                    <table class="berre-ar-table">
+                        <thead>
+                            <tr>
+                                <th style="width:30px"></th>
+                                <th style="width:36px">Icône</th>
+                                <th style="width:160px">Libellé</th>
+                                <th>URL</th>
+                                <th style="width:140px">Couleur</th>
+                                <th style="width:110px">Ouverture</th>
+                                <th style="width:50px"></th>
+                            </tr>
+                        </thead>
+                        <tbody class="berre-ar-rows" data-group="<?php echo $group; ?>">
+                        <?php foreach ( $data[$group] as $link ) : ?>
+                        <?php echo berre_admin_row( $link, $group, $icons, $colors ); ?>
+                        <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="berre-add-btn">
+                    <button type="button" class="button berre-add-row" data-group="<?php echo $group; ?>">
+                        ➕ Ajouter un lien
+                    </button>
+                </div>
+
+                <!-- Grille icônes (cachée par défaut) -->
+                <div class="berre-icon-grid" id="icons-<?php echo $group; ?>" style="display:none">
+                    <?php foreach ( $icons as $key => $ic ) : ?>
+                    <div class="berre-icon-chip" onclick="addRowWithIcon('<?php echo esc_js($group); ?>','<?php echo esc_js($key); ?>')">
+                        <div class="berre-icon-preview" style="background:#2D6AB0;margin:auto">
+                            <svg viewBox="0 0 24 24"><?php echo $ic["svg"]; ?></svg>
+                        </div>
+                        <span><?php echo esc_html( $ic["label"] ); ?></span>
+                    </div>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+            <?php endforeach; ?>
+
+            <div style="display:flex;gap:12px;align-items:center;margin-top:4px">
+                <input type="submit" name="berre_save_ar" class="button button-primary button-large" value="💾 Enregistrer tout">
+                <span style="color:#666;font-size:12px">Les modifications s'appliquent immédiatement sur le site.</span>
+            </div>
+        </form>
+    </div>
+
+    <script>
+    const ICONS = <?php echo json_encode(array_map(fn($k,$v) => ['value'=>$k,'label'=>$v['label'],'svg'=>$v['svg']], array_keys($icons), $icons)); ?>;
+    const COLORS = <?php echo json_encode(array_map(fn($k,$v) => ['value'=>$k,'label'=>$v], array_keys($colors), $colors)); ?>;
+
+    function buildRow(group, iconPreset='document', label='', url='') {
+        const selIcon  = ICONS.map(o  => `<option value="${o.value}"${o.value===iconPreset?' selected':''}>${o.label}</option>`).join('');
+        const selColor = COLORS.map(o => `<option value="${o.value}">${o.label}</option>`).join('');
+        const preview  = ICONS.find(o=>o.value===iconPreset)?.svg || '';
+        return `<tr class="berre-ar-row" draggable="true">
+            <td><span class="berre-drag">⠿</span></td>
+            <td><div class="berre-icon-preview berre-icon-preview-cell" style="background:#2D6AB0"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8">${preview}</svg></div></td>
+            <td><input type="text" name="ar_${group}_label[]" value="${label}" class="regular-text" style="width:100%" placeholder="Libellé" required></td>
+            <td><input type="text" name="ar_${group}_url[]"   value="${url}"   class="regular-text" style="width:100%" placeholder="/mon-lien"></td>
+            <td><select name="ar_${group}_color[]" style="width:100%">${selColor}</select></td>
+            <td><select name="ar_${group}_target[]" style="width:100%"><option value="_self">Même page</option><option value="_blank">Nouvel onglet ↗</option></select></td>
+            <td><button type="button" class="button berre-del-row" style="color:#c00;padding:2px 8px">✕</button></td>
+            <td style="display:none"><select name="ar_${group}_icon[]">${selIcon}</select></td>
+        </tr>`;
+    }
+
+    function addRowWithIcon(group, icon) {
+        const tbody = document.querySelector(`.berre-ar-rows[data-group="${group}"]`);
+        tbody.insertAdjacentHTML('beforeend', buildRow(group, icon));
+        initRow(tbody.lastElementChild);
+        // Mettre à jour la couleur de l'icône preview selon la couleur sélectionnée
+        updatePreviewColor(tbody.lastElementChild);
+    }
+
+    function initRow(row) {
+        // Supprimer
+        row.querySelector('.berre-del-row')?.addEventListener('click', function() {
+            if (confirm('Supprimer ce lien ?')) row.remove();
+        });
+        // Sync icône sélectionnée → preview
+        const iconSel = row.querySelector('select[name*="_icon"]');
+        const preview = row.querySelector('.berre-icon-preview svg');
+        if (iconSel && preview) {
+            iconSel.addEventListener('change', function() {
+                const ic = ICONS.find(o=>o.value===this.value);
+                if (ic) preview.innerHTML = ic.svg;
+            });
+        }
+        // Couleur → preview bg
+        const colorSel = row.querySelector('select[name*="_color"]');
+        const previewDiv = row.querySelector('.berre-icon-preview-cell');
+        const colorMap = {bleu:'#2D6AB0',vert:'#587526',or:'#DEA128'};
+        if (colorSel && previewDiv) {
+            colorSel.addEventListener('change', function() {
+                previewDiv.style.background = colorMap[this.value] || '#2D6AB0';
+            });
+        }
+    }
+
+    function updatePreviewColor(row) {
+        const sel = row.querySelector('select[name*="_color"]');
+        const div = row.querySelector('.berre-icon-preview-cell');
+        const colorMap = {bleu:'#2D6AB0',vert:'#587526',or:'#DEA128'};
+        if (sel && div) div.style.background = colorMap[sel.value] || '#2D6AB0';
+    }
+
+    // Bouton ajouter
+    document.querySelectorAll('.berre-add-row').forEach(btn => {
+        btn.addEventListener('click', function() {
+            addRowWithIcon(this.dataset.group, 'document');
+        });
+    });
+
+    // Toggle grille icônes
+    document.querySelectorAll('.berre-toggle-icons').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const grid = document.getElementById('icons-' + this.dataset.group);
+            const open = grid.style.display !== 'none';
+            grid.style.display = open ? 'none' : 'flex';
+            this.textContent = open ? 'Choisir une icône ▾' : 'Masquer les icônes ▴';
+        });
+    });
+
+    // Init rows existants
+    document.querySelectorAll('.berre-ar-row').forEach(row => {
+        initRow(row);
+        // Sync preview bg depuis la couleur existante
+        const sel = row.querySelector('select[name*="_color"]');
+        const div = row.querySelector('.berre-icon-preview-cell');
+        const colorMap = {bleu:'#2D6AB0',vert:'#587526',or:'#DEA128'};
+        if (sel && div) div.style.background = colorMap[sel.value] || '#2D6AB0';
+    });
+
+    // Drag & drop par tableau séparé
+    document.querySelectorAll('.berre-ar-rows').forEach(tbody => {
+        let dragging = null;
+        tbody.addEventListener('dragstart', e => {
+            dragging = e.target.closest('tr');
+            if (dragging) { setTimeout(()=>dragging.style.opacity='.4',0); }
+        });
+        tbody.addEventListener('dragend', e => {
+            if (dragging) dragging.style.opacity = '';
+            dragging = null;
+        });
+        tbody.addEventListener('dragover', e => {
+            e.preventDefault();
+            const row = e.target.closest('tr');
+            if (row && row !== dragging && tbody.contains(row)) {
+                const rect = row.getBoundingClientRect();
+                if (e.clientY < rect.top + rect.height/2) tbody.insertBefore(dragging, row);
+                else tbody.insertBefore(dragging, row.nextSibling);
+            }
+        });
+    });
+    </script>
+    <?php
+    do_action( 'berre_after_acces_rapides_form' );
+}
+
+/* ── Génère une ligne de tableau (réutilisable) ── */
+function berre_admin_row( $link, $group, $icons, $colors ) {
+    $icon_key = $link['icon'] ?? 'document';
+    $color    = $link['color'] ?? 'bleu';
+    $color_hex = ['bleu'=>'#2D6AB0','vert'=>'#587526','or'=>'#DEA128'][$color] ?? '#2D6AB0';
+    $svg      = $icons[$icon_key]['svg'] ?? '';
+    ob_start(); ?>
+    <tr class="berre-ar-row" draggable="true">
+        <td><span class="berre-drag">⠿</span></td>
+        <td>
+            <div class="berre-icon-preview berre-icon-preview-cell" style="background:<?php echo esc_attr($color_hex); ?>">
+                <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8"><?php echo $svg; ?></svg>
+            </div>
+        </td>
+        <td><input type="text" name="ar_<?php echo $group; ?>_label[]" value="<?php echo esc_attr($link['label']); ?>" class="regular-text" style="width:100%" required></td>
+        <td><input type="text" name="ar_<?php echo $group; ?>_url[]"   value="<?php echo esc_attr($link['url']); ?>"   class="regular-text" style="width:100%"></td>
+        <td>
+            <select name="ar_<?php echo $group; ?>_color[]" style="width:100%">
+                <?php foreach ($colors as $val => $lbl) : ?>
+                <option value="<?php echo esc_attr($val); ?>" <?php selected($color,$val); ?>><?php echo esc_html($lbl); ?></option>
+                <?php endforeach; ?>
+            </select>
+        </td>
+        <td>
+            <select name="ar_<?php echo $group; ?>_target[]" style="width:100%">
+                <option value="_self" <?php selected(($link['target']??'_self'),'_self'); ?>>Même page</option>
+                <option value="_blank" <?php selected(($link['target']??'_self'),'_blank'); ?>>Nouvel onglet ↗</option>
+            </select>
+        </td>
+        <td><button type="button" class="button berre-del-row" style="color:#c00;padding:2px 8px">✕</button></td>
+        <!-- Icône (champ caché — synchro JS) -->
+        <td style="display:none">
+            <select name="ar_<?php echo $group; ?>_icon[]">
+                <?php foreach ($icons as $k => $ic) : ?>
+                <option value="<?php echo esc_attr($k); ?>" <?php selected($icon_key,$k); ?>><?php echo esc_html($ic['label']); ?></option>
+                <?php endforeach; ?>
+            </select>
+        </td>
+    </tr>
+    <?php return ob_get_clean();
+}
+
+/* ── Shortcode [berre_acces_rapides] — rendu HTML ── */
+function berre_render_acces_rapides( $atts = [] ) {
+    $data  = berre_get_acces_rapides();
+    $icons = berre_icons_list();
+
+    // data-berre-ts permet au JS d'identifier le rendu le plus récent
+    $ts   = time();
+    $html = '<div class="berre-icons-block" data-berre-ts="' . $ts . '">';
+    $html .= berre_icons_html( $data['primary'] ?? [], $icons, 'berre-icons-row berre-icons-primary' );
+    if ( ! empty( $data['secondary'] ) ) {
+        $html .= berre_icons_html( $data['secondary'], $icons, 'berre-icons-row berre-icons-secondary' );
+    }
+    $html .= '</div>';
+    return $html;
+}
+add_shortcode( "berre_acces_rapides", "berre_render_acces_rapides" );
+
+function berre_icons_html( $links, $icons, $class = 'berre-icons-row' ) {
+    if ( empty( $links ) ) return '';
+    // Masquer les icônes secondaires inline (display:none, non contournable par CSS externe)
+    $is_secondary = strpos( $class, 'berre-icons-secondary' ) !== false;
+    $style = $is_secondary ? ' style="display:none"' : '';
+    $html = '<div class="' . esc_attr($class) . '"' . $style . ' role="navigation">';
+    foreach ( $links as $link ) {
+        $icon_key = $link['icon'] ?? 'document';
+        $color    = $link['color'] ?? 'bleu';
+        $target   = ( ($link['target'] ?? '_self') === '_blank' ) ? ' target="_blank" rel="noopener noreferrer"' : '';
+        $svg      = $icons[$icon_key]['svg'] ?? $icons['document']['svg'];
+        $html .= sprintf(
+            '<a href="%s"%s class="berre-icon-btn">'
+            . '<div class="berre-icon-circle berre-icon-circle--%s"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="white" stroke-width="1.7">%s</svg></div>'
+            . '<span class="berre-icon-lbl">%s</span></a>',
+            esc_url($link['url'] ?? '#'), $target,
+            esc_attr($color), $svg, esc_html($link['label'] ?? '')
+        );
+    }
+    $html .= '</div>';
+    return $html;
+}
+
+
+/* ============================================================
+   RÉINITIALISATION DES TEMPLATES FSE
+   - Automatique : à chaque changement de version
+   - Manuel : bouton dans l'admin
+   ============================================================ */
+
+function berre_delete_fse_templates() {
+    global $wpdb;
+
+    // Supprimer TOUS les templates/template-parts FSE via SQL direct
+    $ids = $wpdb->get_col(
+        "SELECT ID FROM {$wpdb->posts}
+         WHERE post_type IN ('wp_template','wp_template_part')
+         AND post_status != 'trash'"
+    );
+
+    $count = 0;
+    foreach ( (array)$ids as $id ) {
+        if ( wp_delete_post( intval($id), true ) ) $count++;
+    }
+
+    // Vider tous les caches
+    wp_cache_flush();
+    if ( function_exists( 'opcache_reset' ) ) opcache_reset();
+
+    return $count;
+}
+
+// Auto-reset à chaque changement de version
+function berre_reset_templates_on_version_change() {
+    $theme_version  = wp_get_theme()->get( "Version" );
+    $stored_version = get_option( "berre_fse_template_version", "" );
+    if ( $stored_version === $theme_version ) return;
+    berre_delete_fse_templates();
+    update_option( "berre_fse_template_version", $theme_version );
+}
+add_action( "init", "berre_reset_templates_on_version_change", 1 );
+
+// Traitement du reset (GET ou POST)
+add_action( "admin_init", function() {
+    if ( ! isset( $_REQUEST["berre_reset_templates"] ) ) return;
+    if ( ! current_user_can( "manage_options" ) ) return;
+    if ( ! wp_verify_nonce( $_REQUEST["berre_reset_nonce"] ?? "", "berre_reset_templates" ) ) {
+        wp_die( "Sécurité invalide." );
+    }
+    $n = berre_delete_fse_templates();
+    delete_option( "berre_fse_template_version" );
+    set_transient( "berre_reset_ok", $n, 30 );
+    wp_redirect( admin_url( "admin.php?page=berre-outils" ) );
+    exit;
+} );
+
+// Notification après reset
+add_action( "admin_notices", function() {
+    $n = get_transient( "berre_reset_ok" );
+    if ( $n === false ) return;
+    delete_transient( "berre_reset_ok" );
+    echo "<div class='notice notice-success is-dismissible'><p>✅ <strong>" . intval($n) . " modèle(s) FSE supprimé(s).</strong> WordPress utilise maintenant les fichiers du thème à jour.</p></div>";
+} );
+
+// Page Outils dans le menu admin
+add_action( "admin_menu", function() {
+    add_menu_page(
+        "Outils Thème",
+        "Outils Thème",
+        "manage_options",
+        "berre-outils",
+        "berre_outils_page",
+        "dashicons-admin-tools",
+        58
+    );
+} );
+
+function berre_outils_page() {
+    $reset_url = wp_nonce_url(
+        admin_url( "admin.php?page=berre-outils&berre_reset_templates=1" ),
+        "berre_reset_templates",
+        "berre_reset_nonce"
+    );
+    $version = wp_get_theme()->get( "Version" );
+    $stored  = get_option( "berre_fse_template_version", "inconnue" );
+    ?>
+    <div class="wrap">
+        <h1>🛠 Outils — Thème Berre-les-Alpes</h1>
+
+        <div style="background:#fff;border:1px solid #ddd;border-radius:6px;padding:24px;max-width:700px;margin-top:20px">
+            <h2 style="margin:0 0 8px;font-size:16px">🔄 Réinitialiser les modèles FSE</h2>
+            <p style="color:#555;margin:0 0 16px">Si le site n'affiche pas les dernières modifications après une mise à jour du thème, cliquez ici pour forcer WordPress à utiliser les fichiers du thème plutôt que la version en base de données.</p>
+
+            <table style="margin-bottom:16px;font-size:13px">
+                <tr><td style="color:#888;padding-right:16px">Version thème installée :</td><td><strong><?php echo esc_html($version); ?></strong></td></tr>
+                <tr><td style="color:#888;padding-right:16px">Version cache FSE :</td><td><strong><?php echo esc_html($stored); ?></strong></td></tr>
+                <tr><td style="color:#888;padding-right:16px">Statut :</td><td><?php echo $stored === $version ? '<span style="color:#46b450">✓ À jour</span>' : '<span style="color:#dc3232">⚠ Cache obsolète — réinitialisation recommandée</span>'; ?></td></tr>
+            </table>
+
+            <a href="<?php echo esc_url($reset_url); ?>"
+               class="button button-primary button-large"
+               onclick="return confirm('Supprimer les modèles en cache et forcer l'utilisation des fichiers du thème ?')">
+                🔄 Réinitialiser les modèles maintenant
+            </a>
+            <p style="color:#888;font-size:11px;margin-top:8px">Cette opération est sûre et ne supprime aucun contenu. Les modèles sont recréés automatiquement depuis les fichiers du thème.</p>
+        </div>
+
+        <div style="background:#fff;border:1px solid #ddd;border-radius:6px;padding:24px;max-width:700px;margin-top:16px">
+            <h2 style="margin:0 0 8px;font-size:16px">📋 Informations système</h2>
+            <table style="font-size:13px;width:100%">
+                <tr><td style="color:#888;padding:4px 16px 4px 0;width:220px">Thème</td><td><?php echo esc_html(wp_get_theme()->get("Name")); ?> v<?php echo esc_html($version); ?></td></tr>
+                <tr><td style="color:#888;padding:4px 16px 4px 0">WordPress</td><td><?php global $wp_version; echo esc_html($wp_version); ?></td></tr>
+                <tr><td style="color:#888;padding:4px 16px 4px 0">PHP</td><td><?php echo PHP_VERSION; ?></td></tr>
+                <tr><td style="color:#888;padding:4px 16px 4px 0">Dossier thème</td><td><code><?php echo esc_html(get_template_directory()); ?></code></td></tr>
+            </table>
+        </div>
+    </div>
+    <?php
+}
+
+
+/* ============================================================
+   EXPORT / IMPORT — Accès Rapides
+   ============================================================ */
+
+/* ── Export JSON ── */
+function berre_export_acces_rapides() {
+    if ( ! isset( $_GET['berre_export_ar'] ) ) return;
+    if ( ! current_user_can( 'manage_options' ) ) wp_die( 'Permission refusée.' );
+    if ( ! wp_verify_nonce( $_GET['berre_export_nonce'] ?? '', 'berre_export_ar' ) ) wp_die( 'Nonce invalide.' );
+
+    $data = berre_get_acces_rapides();
+    $json = json_encode( $data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE );
+    $filename = 'berre-acces-rapides-' . date( 'Y-m-d' ) . '.json';
+
+    header( 'Content-Type: application/json; charset=utf-8' );
+    header( 'Content-Disposition: attachment; filename="' . $filename . '"' );
+    header( 'Content-Length: ' . strlen( $json ) );
+    header( 'Cache-Control: no-cache' );
+    echo $json;
+    exit;
+}
+add_action( 'admin_init', 'berre_export_acces_rapides' );
+
+/* ── Import JSON ── */
+function berre_import_acces_rapides() {
+    if ( ! isset( $_POST['berre_import_ar'] ) ) return;
+    if ( ! wp_verify_nonce( $_POST['berre_import_nonce'] ?? '', 'berre_import_ar' ) ) {
+        wp_die( 'Nonce invalide.' );
+    }
+    if ( ! current_user_can( 'manage_options' ) ) wp_die( 'Permission refusée.' );
+
+    $file = $_FILES['berre_import_file'] ?? null;
+    if ( ! $file || $file['error'] !== UPLOAD_ERR_OK ) {
+        set_transient( 'berre_import_error', 'Erreur lors de l\'upload du fichier.', 30 );
+        return;
+    }
+
+    $content = file_get_contents( $file['tmp_name'] );
+    $data    = json_decode( $content, true );
+
+    if ( json_last_error() !== JSON_ERROR_NONE ) {
+        set_transient( 'berre_import_error', 'Fichier JSON invalide : ' . json_last_error_msg(), 30 );
+        return;
+    }
+
+    // Accepter l'ancien format (tableau plat) ou le nouveau (primary/secondary)
+    if ( isset( $data[0] ) ) {
+        $data = [ 'primary' => $data, 'secondary' => [] ];
+    }
+
+    if ( ! isset( $data['primary'] ) ) {
+        set_transient( 'berre_import_error', 'Format non reconnu. Le fichier doit contenir les clés "primary" et "secondary".', 30 );
+        return;
+    }
+
+    // Nettoyer chaque lien
+    foreach ( [ 'primary', 'secondary' ] as $group ) {
+        $data[$group] = array_map( function( $link ) {
+            return [
+                'label'  => sanitize_text_field( $link['label']  ?? '' ),
+                'url'    => esc_url_raw( $link['url']    ?? '#' ),
+                'icon'   => sanitize_key( $link['icon']   ?? 'document' ),
+                'color'  => in_array( $link['color'] ?? '', ['bleu','vert','or'] ) ? $link['color'] : 'bleu',
+                'target' => ( ($link['target'] ?? '_self') === '_blank' ) ? '_blank' : '_self',
+            ];
+        }, $data[$group] ?? [] );
+    }
+
+    update_option( 'berre_acces_rapides', $data );
+    set_transient( 'berre_import_success', count( $data['primary'] ) + count( $data['secondary'] ) . ' lien(s) importé(s) avec succès.', 30 );
+}
+add_action( 'admin_init', 'berre_import_acces_rapides' );
+
+/* ── Section Export/Import dans la page admin ──
+   On ajoute un filtre pour afficher la section dans berre_admin_page()
+   en utilisant un hook personnalisé */
+add_action( 'berre_after_acces_rapides_form', function() {
+    $export_url = wp_nonce_url(
+        add_query_arg( 'berre_export_ar', '1', admin_url( 'admin.php?page=berre-acces-rapides' ) ),
+        'berre_export_ar',
+        'berre_export_nonce'
+    );
+    $import_err     = get_transient( 'berre_import_error' );
+    $import_success = get_transient( 'berre_import_success' );
+    if ( $import_err )     delete_transient( 'berre_import_error' );
+    if ( $import_success ) delete_transient( 'berre_import_success' );
+    ?>
+    <div style="margin-top:32px;padding:20px 24px;background:#fff;border:1px solid #ddd;border-radius:6px;max-width:960px">
+        <h2 style="margin:0 0 6px;font-size:15px">📦 Export / Import</h2>
+        <p style="color:#666;font-size:12px;margin:0 0 18px">Sauvegardez vos liens dans un fichier JSON pour les migrer ou les archiver.</p>
+
+        <?php if ( $import_err ) : ?>
+        <div class="notice notice-error inline" style="margin:0 0 14px"><p>❌ <?php echo esc_html( $import_err ); ?></p></div>
+        <?php endif; ?>
+        <?php if ( $import_success ) : ?>
+        <div class="notice notice-success inline" style="margin:0 0 14px"><p>✅ <?php echo esc_html( $import_success ); ?></p></div>
+        <?php endif; ?>
+
+        <div style="display:flex;gap:32px;flex-wrap:wrap;align-items:flex-start">
+
+            <!-- Export -->
+            <div style="flex:1;min-width:200px">
+                <h3 style="font-size:13px;margin:0 0 8px">⬇ Exporter</h3>
+                <p style="font-size:12px;color:#666;margin:0 0 10px">Télécharge un fichier <code>.json</code> contenant tous vos liens principaux et supplémentaires.</p>
+                <a href="<?php echo esc_url( $export_url ); ?>" class="button button-secondary">
+                    ⬇ Télécharger acces-rapides.json
+                </a>
+            </div>
+
+            <!-- Import -->
+            <div style="flex:1;min-width:200px">
+                <h3 style="font-size:13px;margin:0 0 8px">⬆ Importer</h3>
+                <p style="font-size:12px;color:#666;margin:0 0 10px">Importe un fichier <code>.json</code> exporté depuis ce thème. <strong>Remplace les liens actuels.</strong></p>
+                <form method="post" enctype="multipart/form-data" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+                    <?php wp_nonce_field( 'berre_import_ar', 'berre_import_nonce' ); ?>
+                    <input type="file" name="berre_import_file" accept=".json,application/json"
+                           style="font-size:12px;border:1px solid #ddd;padding:5px 8px;border-radius:4px;background:#fafafa">
+                    <button type="submit" name="berre_import_ar" value="1" class="button button-primary"
+                            onclick="return confirm('Remplacer tous les liens actuels par ceux du fichier ?')">
+                        ⬆ Importer
+                    </button>
+                </form>
+            </div>
+
+        </div>
+    </div>
+    <?php
+} );
+
+
+/* ============================================================
+   ÉDITEUR DE PAGE — Contenu dynamique de l'accueil
+   Option : berre_page_content
+   Admin  : Tableau de bord → Éditeur de page
+   ============================================================ */
+
+function berre_page_content_defaults() {
+    return [
+        'hero' => [
+            'image_url' => '',
+            'image_id'  => 0,
+            'btn1_text' => 'Vos démarches en ligne',
+            'btn1_url'  => 'https://mesdemarches06.fr',
+            'btn2_text' => 'Découvrir la commune',
+            'btn2_url'  => '/decouvrir',
+        ],
+        'commune' => [
+            'eyebrow'     => 'Découvrir la commune',
+            'title'       => 'Un village d\'exception entre mer et montagne',
+            'description' => 'Perché à 682 m à 25 km de Nice, Berre-les-Alpes offre un panorama unique sur la Méditerranée et les Alpes-Maritimes. Village médiéval, sentiers balisés et art de vivre provençal.',
+            'stat1_val'   => '1 234',  'stat1_lbl' => 'Habitants',
+            'stat2_val'   => '682 m',  'stat2_lbl' => 'Altitude',
+            'stat3_val'   => '25 km',  'stat3_lbl' => 'De Nice',
+            'stat4_val'   => '9,58 km²', 'stat4_lbl' => 'Superficie',
+            'btn_text'    => 'Explorer nos sentiers →',
+            'btn_url'     => '/decouvrir',
+        ],
+        'services' => [
+            ['title'=>'État Civil',       'desc'=>'Actes, naissances, mariages, décès.', 'url'=>'/etat-civil',  'icon'=>'document', 'color'=>'bleu'],
+            ['title'=>'Urbanisme',        'desc'=>'Permis de construire, PLU.',          'url'=>'/urbanisme',   'icon'=>'building', 'color'=>'bleu'],
+            ['title'=>'Scolarité',        'desc'=>'Inscriptions, cantine, garderie.',    'url'=>'/scolarite',   'icon'=>'school',   'color'=>'vert'],
+            ['title'=>'Démarches en ligne','desc'=>'Mes Démarches 06 — 24h/24.',        'url'=>'https://mesdemarches06.fr','icon'=>'computer','color'=>'or'],
+            ['title'=>'Sécurité & Risques','desc'=>'Gendarmerie, plan communal.',       'url'=>'/securite',    'icon'=>'shield',   'color'=>'bleu'],
+            ['title'=>'Qualité de vie',   'desc'=>'Environnement, tri sélectif.',        'url'=>'/qualite-vie', 'icon'=>'leaf',     'color'=>'vert'],
+            ['title'=>'Finances publiques','desc'=>'Budget, marchés publics.',           'url'=>'/finances',    'icon'=>'coin',     'color'=>'or'],
+            ['title'=>'Infos pratiques',  'desc'=>'ANAH, SPANC, juridique.',             'url'=>'/infos',       'icon'=>'info',     'color'=>'bleu'],
+        ],
+        'contact' => [
+            'address'       => 'Place de la Mairie',
+            'city'          => '06390 Berre-les-Alpes',
+            'dept'          => 'Alpes-Maritimes (06)',
+            'phone'         => '04 93 91 80 07',
+            'fax'           => '04 93 91 85 44',
+            'email'         => 'mairie@berrelesalpes.fr',
+            'telealerte_url'=> 'https://www.acces-gedicom.com/Subscriptions/index.jsp?CustId=582',
+            'hours'         => [
+                ['day'=>'Lundi',           'h'=>'9h–12h / 14h–17h30', 'off'=>false],
+                ['day'=>'Mardi',           'h'=>'9h–12h / 14h–17h30', 'off'=>false],
+                ['day'=>'Mercredi',        'h'=>'Fermé',               'off'=>true],
+                ['day'=>'Jeudi',           'h'=>'9h–12h / 14h–17h30', 'off'=>false],
+                ['day'=>'Vendredi',        'h'=>'9h–12h / 14h–17h30', 'off'=>false],
+                ['day'=>'Sam – Dim',       'h'=>'Fermé',               'off'=>true],
+            ],
+        ],
+        'newsletter' => [
+            'title' => 'La newsletter de Berre-les-Alpes',
+            'desc'  => 'Chaque semaine, toute l\'actualité communale dans votre boîte mail.',
+        ],
+        'footer' => [
+            'description'   => 'La commune de Berre-les-Alpes, village perché à 682 m d\'altitude en Alpes-Maritimes.',
+            'facebook_url'  => 'https://www.facebook.com',
+            'youtube_url'   => 'https://www.youtube.com',
+        ],
+    ];
+}
+
+function berre_get_page_content() {
+    $saved = get_option( 'berre_page_content' );
+    $defaults = berre_page_content_defaults();
+    if ( empty( $saved ) ) return $defaults;
+    // Fusion récursive pour ne pas perdre les nouvelles clés
+    return array_replace_recursive( $defaults, $saved );
+}
+
+/* ── Menu admin ── */
+add_action( 'admin_menu', function() {
+    add_menu_page(
+        'Éditeur de page',
+        'Éditeur de page',
+        'manage_options',
+        'berre-page-editor',
+        'berre_page_editor_page',
+        'dashicons-edit-page',
+        59
+    );
+});
+
+/* ── Sauvegarde ── */
+add_action( 'admin_init', function() {
+    if ( ! isset( $_POST['berre_save_page_content'] ) ) return;
+    if ( ! wp_verify_nonce( $_POST['berre_page_nonce'] ?? '', 'berre_save_page_content' ) ) wp_die('Nonce invalide.');
+    if ( ! current_user_can( 'manage_options' ) ) wp_die('Permission refusée.');
+
+    $d = berre_page_content_defaults();
+
+    // Hero
+    $d['hero']['image_url']  = esc_url_raw( $_POST['hero_image_url'] ?? '' );
+    $d['hero']['image_id']   = intval( $_POST['hero_image_id'] ?? 0 );
+    $d['hero']['btn1_text']  = sanitize_text_field( $_POST['hero_btn1_text'] ?? '' );
+    $d['hero']['btn1_url']   = esc_url_raw( $_POST['hero_btn1_url'] ?? '' );
+    $d['hero']['btn2_text']  = sanitize_text_field( $_POST['hero_btn2_text'] ?? '' );
+    $d['hero']['btn2_url']   = esc_url_raw( $_POST['hero_btn2_url'] ?? '' );
+
+    // Commune
+    foreach (['eyebrow','title','description','stat1_val','stat1_lbl','stat2_val','stat2_lbl','stat3_val','stat3_lbl','stat4_val','stat4_lbl','btn_text','btn_url'] as $k) {
+        $d['commune'][$k] = sanitize_text_field( $_POST['commune_'.$k] ?? '' );
+    }
+    $d['commune']['description'] = sanitize_textarea_field( $_POST['commune_description'] ?? '' );
+
+    // Services
+    $d['services'] = [];
+    $s_titles  = (array)($_POST['svc_title']  ?? []);
+    $s_descs   = (array)($_POST['svc_desc']   ?? []);
+    $s_urls    = (array)($_POST['svc_url']    ?? []);
+    $s_icons   = (array)($_POST['svc_icon']   ?? []);
+    $s_colors  = (array)($_POST['svc_color']  ?? []);
+    foreach ($s_titles as $i => $t) {
+        if (empty(trim($t))) continue;
+        $d['services'][] = [
+            'title' => sanitize_text_field($t),
+            'desc'  => sanitize_text_field($s_descs[$i] ?? ''),
+            'url'   => esc_url_raw($s_urls[$i] ?? '#'),
+            'icon'  => sanitize_key($s_icons[$i] ?? 'document'),
+            'color' => in_array($s_colors[$i]??'',['bleu','vert','or']) ? $s_colors[$i] : 'bleu',
+        ];
+    }
+
+    // Contact
+    foreach (['address','city','dept','phone','fax','email','telealerte_url'] as $k) {
+        $fn = ($k === 'telealerte_url') ? 'esc_url_raw' : 'sanitize_text_field';
+        $d['contact'][$k] = $fn($_POST['contact_'.$k] ?? '');
+    }
+    $d['contact']['hours'] = [];
+    $h_days = (array)($_POST['hour_day'] ?? []);
+    $h_hrs  = (array)($_POST['hour_h']   ?? []);
+    $h_offs = (array)($_POST['hour_off'] ?? []);
+    foreach ($h_days as $i => $day) {
+        if (empty(trim($day))) continue;
+        $d['contact']['hours'][] = [
+            'day' => sanitize_text_field($day),
+            'h'   => sanitize_text_field($h_hrs[$i] ?? ''),
+            'off' => isset($h_offs[$i]),
+        ];
+    }
+
+    // Newsletter
+    $d['newsletter']['title'] = sanitize_text_field($_POST['nl_title'] ?? '');
+    $d['newsletter']['desc']  = sanitize_textarea_field($_POST['nl_desc'] ?? '');
+
+    // Footer
+    $d['footer']['description'] = sanitize_textarea_field($_POST['footer_description'] ?? '');
+    $d['footer']['facebook_url']= esc_url_raw($_POST['footer_facebook_url'] ?? '');
+    $d['footer']['youtube_url'] = esc_url_raw($_POST['footer_youtube_url'] ?? '');
+
+    update_option('berre_page_content', $d);
+    set_transient('berre_page_saved', true, 10);
+});
+
+/* ── Page admin ── */
+function berre_page_editor_page() {
+    $c    = berre_get_page_content();
+    $ic   = berre_icons_list();
+    $saved = get_transient('berre_page_saved');
+    if ($saved) delete_transient('berre_page_saved');
+    $colors_map = ['bleu'=>'#2D6AB0','vert'=>'#587526','or'=>'#DEA128'];
+    ?>
+    <!DOCTYPE html>
+    <style>
+    #berre-editor-wrap { display:flex; height:calc(100vh - 32px); overflow:hidden; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
+    #berre-editor-left { width:420px; min-width:320px; flex-shrink:0; overflow-y:auto; background:#fff; border-right:1px solid #ddd; display:flex; flex-direction:column; }
+    #berre-editor-right { flex:1; overflow:hidden; background:#f0f2f5; position:relative; }
+    #berre-preview-frame { width:100%; height:100%; border:none; }
+    /* Tabs */
+    .berre-tabs { display:flex; overflow-x:auto; border-bottom:2px solid #e0e6ef; background:#f9f9f9; flex-shrink:0; }
+    .berre-tab { padding:12px 16px; font-size:12px; font-weight:600; cursor:pointer; white-space:nowrap; border-bottom:2px solid transparent; margin-bottom:-2px; color:#666; transition:all .15s; }
+    .berre-tab.active { border-bottom-color:#2D6AB0; color:#2D6AB0; background:#fff; }
+    .berre-tab:hover { color:#2D6AB0; }
+    /* Header editor */
+    .berre-editor-header { padding:14px 18px; border-bottom:1px solid #eee; display:flex; justify-content:space-between; align-items:center; flex-shrink:0; background:#fff; }
+    .berre-editor-header h1 { margin:0; font-size:15px; }
+    /* Panels */
+    .berre-panel { display:none; padding:18px; }
+    .berre-panel.active { display:block; }
+    /* Fields */
+    .berre-field { margin-bottom:16px; }
+    .berre-field label { display:block; font-size:12px; font-weight:600; color:#333; margin-bottom:5px; }
+    .berre-field input[type=text], .berre-field input[type=url], .berre-field textarea, .berre-field select { width:100%; padding:7px 10px; border:1px solid #ddd; border-radius:4px; font-size:13px; font-family:inherit; }
+    .berre-field textarea { resize:vertical; min-height:80px; }
+    .berre-field input:focus, .berre-field textarea:focus, .berre-field select:focus { border-color:#2D6AB0; outline:none; box-shadow:0 0 0 2px rgba(45,106,176,.15); }
+    .berre-field .hint { font-size:11px; color:#888; margin-top:3px; }
+    .berre-section-title { font-size:11px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:#999; margin:20px 0 10px; padding-bottom:6px; border-bottom:1px solid #f0f0f0; }
+    .berre-row { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    /* Stats */
+    .berre-stat-row { display:grid; grid-template-columns:1fr 1fr; gap:8px; background:#f9f9f9; border:1px solid #eee; border-radius:5px; padding:10px; margin-bottom:8px; }
+    /* Services */
+    .berre-svc-row { background:#f9f9f9; border:1px solid #e8e8e8; border-radius:5px; padding:10px; margin-bottom:8px; position:relative; }
+    .berre-svc-row .berre-del { position:absolute; top:8px; right:8px; background:none; border:none; color:#cc0000; cursor:pointer; font-size:16px; }
+    /* Hours */
+    .berre-hour-row { display:grid; grid-template-columns:100px 1fr auto; gap:8px; align-items:center; margin-bottom:6px; }
+    .berre-hour-row input[type=text] { padding:5px 8px; }
+    /* Preview */
+    #berre-editor-right .preview-label { position:absolute; top:10px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,.6); color:#fff; font-size:11px; padding:4px 12px; border-radius:10px; pointer-events:none; z-index:10; }
+    /* Image picker */
+    .berre-img-preview { width:100%; max-height:120px; object-fit:cover; border-radius:5px; margin-bottom:8px; display:none; }
+    .berre-img-preview.has-img { display:block; }
+    </style>
+
+    <div id="berre-editor-wrap">
+
+    <!-- COLONNE GAUCHE : Formulaire -->
+    <div id="berre-editor-left">
+        <div class="berre-editor-header">
+            <h1>✏️ Éditeur de page</h1>
+            <?php if ($saved): ?>
+            <span style="color:#46b450;font-size:12px;font-weight:600">✓ Sauvegardé</span>
+            <?php endif; ?>
+        </div>
+
+        <div class="berre-tabs">
+            <div class="berre-tab active" data-panel="hero">🖼 Hero</div>
+            <div class="berre-tab" data-panel="commune">🏘 Commune</div>
+            <div class="berre-tab" data-panel="services">⚙️ Services</div>
+            <div class="berre-tab" data-panel="contact">📍 Contact</div>
+            <div class="berre-tab" data-panel="newsletter">📧 Newsletter</div>
+            <div class="berre-tab" data-panel="footer">🔗 Footer</div>
+        </div>
+
+        <form method="post" id="berre-page-form" style="flex:1;overflow-y:auto">
+            <?php wp_nonce_field('berre_save_page_content','berre_page_nonce'); ?>
+
+            <!-- ══ HERO ══ -->
+            <div class="berre-panel active" id="panel-hero">
+                <p class="berre-section-title">Photo de fond</p>
+                <div class="berre-field">
+                    <label>Image</label>
+                    <?php if (!empty($c['hero']['image_url'])): ?>
+                    <img src="<?php echo esc_url($c['hero']['image_url']); ?>" class="berre-img-preview has-img" id="hero-img-preview">
+                    <?php else: ?>
+                    <img src="" class="berre-img-preview" id="hero-img-preview">
+                    <?php endif; ?>
+                    <input type="hidden" name="hero_image_id"  id="hero_image_id"  value="<?php echo intval($c['hero']['image_id']); ?>">
+                    <input type="hidden" name="hero_image_url" id="hero_image_url" value="<?php echo esc_attr($c['hero']['image_url']); ?>">
+                    <button type="button" id="berre-pick-hero-img" class="button button-secondary" style="width:100%">
+                        📷 Choisir une photo depuis la médiathèque
+                    </button>
+                    <?php if (!empty($c['hero']['image_url'])): ?>
+                    <button type="button" id="berre-clear-hero-img" class="button" style="width:100%;margin-top:4px;color:#c00">✕ Supprimer la photo</button>
+                    <?php endif; ?>
+                    <p class="hint">Format recommandé : 1600×900px minimum, paysage.</p>
+                </div>
+                <p class="berre-section-title">Boutons d'appel à l'action</p>
+                <div class="berre-field"><label>Bouton principal — texte</label><input type="text" name="hero_btn1_text" value="<?php echo esc_attr($c['hero']['btn1_text']); ?>" data-preview="hero-btn1-text"></div>
+                <div class="berre-field"><label>Bouton principal — URL</label><input type="url" name="hero_btn1_url" value="<?php echo esc_attr($c['hero']['btn1_url']); ?>"></div>
+                <div class="berre-field"><label>Bouton secondaire — texte</label><input type="text" name="hero_btn2_text" value="<?php echo esc_attr($c['hero']['btn2_text']); ?>" data-preview="hero-btn2-text"></div>
+                <div class="berre-field"><label>Bouton secondaire — URL</label><input type="url" name="hero_btn2_url" value="<?php echo esc_attr($c['hero']['btn2_url']); ?>"></div>
+            </div>
+
+            <!-- ══ COMMUNE ══ -->
+            <div class="berre-panel" id="panel-commune">
+                <div class="berre-field"><label>Surtitre</label><input type="text" name="commune_eyebrow" value="<?php echo esc_attr($c['commune']['eyebrow']); ?>" data-preview="commune-eyebrow"></div>
+                <div class="berre-field"><label>Titre principal</label><input type="text" name="commune_title" value="<?php echo esc_attr($c['commune']['title']); ?>" data-preview="commune-title"></div>
+                <div class="berre-field"><label>Description</label><textarea name="commune_description" data-preview="commune-desc"><?php echo esc_textarea($c['commune']['description']); ?></textarea></div>
+                <p class="berre-section-title">Chiffres clés</p>
+                <?php foreach ([1,2,3,4] as $n): ?>
+                <div class="berre-stat-row">
+                    <div class="berre-field" style="margin:0"><label>Valeur <?php echo $n; ?></label><input type="text" name="commune_stat<?php echo $n; ?>_val" value="<?php echo esc_attr($c['commune']["stat{$n}_val"]); ?>" data-preview="stat<?php echo $n; ?>-val"></div>
+                    <div class="berre-field" style="margin:0"><label>Libellé <?php echo $n; ?></label><input type="text" name="commune_stat<?php echo $n; ?>_lbl" value="<?php echo esc_attr($c['commune']["stat{$n}_lbl"]); ?>" data-preview="stat<?php echo $n; ?>-lbl"></div>
+                </div>
+                <?php endforeach; ?>
+                <p class="berre-section-title">Bouton</p>
+                <div class="berre-row">
+                    <div class="berre-field"><label>Texte</label><input type="text" name="commune_btn_text" value="<?php echo esc_attr($c['commune']['btn_text']); ?>" data-preview="commune-btn"></div>
+                    <div class="berre-field"><label>URL</label><input type="url" name="commune_btn_url" value="<?php echo esc_attr($c['commune']['btn_url']); ?>"></div>
+                </div>
+            </div>
+
+            <!-- ══ SERVICES ══ -->
+            <div class="berre-panel" id="panel-services">
+                <p style="font-size:12px;color:#666;margin-bottom:12px">Glissez ⠿ pour réordonner. Maximum 8 services affichés.</p>
+                <div id="berre-services-list">
+                <?php foreach ($c['services'] as $i => $svc): $ch = $colors_map[$svc['color']] ?? '#2D6AB0'; ?>
+                <div class="berre-svc-row" draggable="true">
+                    <button type="button" class="berre-del" onclick="this.closest('.berre-svc-row').remove()">✕</button>
+                    <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
+                        <span style="cursor:grab;color:#bbb;font-size:18px">⠿</span>
+                        <div style="width:32px;height:32px;border-radius:50%;background:<?php echo $ch; ?>;flex-shrink:0;display:flex;align-items:center;justify-content:center">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8" width="15" height="15"><?php echo $ic[$svc['icon']]['svg'] ?? ''; ?></svg>
+                        </div>
+                        <strong style="font-size:13px"><?php echo esc_html($svc['title']); ?></strong>
+                    </div>
+                    <div class="berre-row">
+                        <div class="berre-field" style="margin:0"><label>Titre</label><input type="text" name="svc_title[]" value="<?php echo esc_attr($svc['title']); ?>"></div>
+                        <div class="berre-field" style="margin:0"><label>Couleur</label>
+                            <select name="svc_color[]">
+                                <option value="bleu" <?php selected($svc['color'],'bleu'); ?>>Bleu</option>
+                                <option value="vert" <?php selected($svc['color'],'vert'); ?>>Vert</option>
+                                <option value="or"   <?php selected($svc['color'],'or'); ?>>Or</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="berre-field" style="margin:4px 0"><label>Description courte</label><input type="text" name="svc_desc[]" value="<?php echo esc_attr($svc['desc']); ?>"></div>
+                    <div class="berre-row">
+                        <div class="berre-field" style="margin:0"><label>URL</label><input type="url" name="svc_url[]" value="<?php echo esc_attr($svc['url']); ?>"></div>
+                        <div class="berre-field" style="margin:0"><label>Icône</label>
+                            <select name="svc_icon[]">
+                                <?php foreach ($ic as $k=>$v): ?>
+                                <option value="<?php echo $k; ?>" <?php selected($svc['icon'],$k); ?>><?php echo esc_html($v['label']); ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <?php endforeach; ?>
+                </div>
+                <button type="button" id="berre-add-svc" class="button" style="width:100%;margin-top:6px">➕ Ajouter un service</button>
+            </div>
+
+            <!-- ══ CONTACT ══ -->
+            <div class="berre-panel" id="panel-contact">
+                <p class="berre-section-title">Coordonnées</p>
+                <div class="berre-field"><label>Adresse</label><input type="text" name="contact_address" value="<?php echo esc_attr($c['contact']['address']); ?>" data-preview="contact-address"></div>
+                <div class="berre-row">
+                    <div class="berre-field"><label>Code postal + Ville</label><input type="text" name="contact_city" value="<?php echo esc_attr($c['contact']['city']); ?>" data-preview="contact-city"></div>
+                    <div class="berre-field"><label>Département</label><input type="text" name="contact_dept" value="<?php echo esc_attr($c['contact']['dept']); ?>"></div>
+                </div>
+                <div class="berre-row">
+                    <div class="berre-field"><label>Téléphone</label><input type="text" name="contact_phone" value="<?php echo esc_attr($c['contact']['phone']); ?>" data-preview="contact-phone"></div>
+                    <div class="berre-field"><label>Fax</label><input type="text" name="contact_fax" value="<?php echo esc_attr($c['contact']['fax']); ?>"></div>
+                </div>
+                <div class="berre-field"><label>Email</label><input type="text" name="contact_email" value="<?php echo esc_attr($c['contact']['email']); ?>" data-preview="contact-email"></div>
+                <div class="berre-field"><label>URL TéléAlerte SMIAGE</label><input type="url" name="contact_telealerte_url" value="<?php echo esc_attr($c['contact']['telealerte_url']); ?>"></div>
+                <p class="berre-section-title">Horaires d'ouverture</p>
+                <div id="berre-hours-list">
+                <?php foreach ($c['contact']['hours'] as $h): ?>
+                <div class="berre-hour-row">
+                    <input type="text" name="hour_day[]" value="<?php echo esc_attr($h['day']); ?>" placeholder="Jour">
+                    <input type="text" name="hour_h[]"   value="<?php echo esc_attr($h['h']); ?>"   placeholder="Horaires">
+                    <label style="white-space:nowrap;font-size:12px"><input type="checkbox" name="hour_off[]" value="1" <?php checked($h['off'],true); ?>> Fermé</label>
+                </div>
+                <?php endforeach; ?>
+                </div>
+                <button type="button" id="berre-add-hour" class="button" style="margin-top:4px">➕ Ajouter un jour</button>
+            </div>
+
+            <!-- ══ NEWSLETTER ══ -->
+            <div class="berre-panel" id="panel-newsletter">
+                <div class="berre-field"><label>Titre</label><input type="text" name="nl_title" value="<?php echo esc_attr($c['newsletter']['title']); ?>" data-preview="nl-title"></div>
+                <div class="berre-field"><label>Description</label><textarea name="nl_desc" data-preview="nl-desc"><?php echo esc_textarea($c['newsletter']['desc']); ?></textarea></div>
+                <div style="background:#587526;border-radius:8px;padding:16px;color:#fff;margin-top:12px">
+                    <div id="nl-preview-title" style="font-size:15px;font-weight:800;margin-bottom:4px"><?php echo esc_html($c['newsletter']['title']); ?></div>
+                    <div id="nl-preview-desc" style="font-size:12px;opacity:.7"><?php echo esc_html($c['newsletter']['desc']); ?></div>
+                </div>
+            </div>
+
+            <!-- ══ FOOTER ══ -->
+            <div class="berre-panel" id="panel-footer">
+                <div class="berre-field"><label>Description</label><textarea name="footer_description" data-preview="footer-desc"><?php echo esc_textarea($c['footer']['description']); ?></textarea></div>
+                <p class="berre-section-title">Réseaux sociaux</p>
+                <div class="berre-field"><label>Facebook — URL</label><input type="url" name="footer_facebook_url" value="<?php echo esc_attr($c['footer']['facebook_url']); ?>" placeholder="https://www.facebook.com/..."></div>
+                <div class="berre-field"><label>YouTube — URL</label><input type="url" name="footer_youtube_url" value="<?php echo esc_attr($c['footer']['youtube_url']); ?>" placeholder="https://www.youtube.com/..."></div>
+            </div>
+
+            <!-- Bouton save fixe en bas -->
+            <div style="position:sticky;bottom:0;background:#fff;border-top:1px solid #ddd;padding:12px 18px;display:flex;gap:8px;align-items:center">
+                <input type="submit" name="berre_save_page_content" class="button button-primary button-large" value="💾 Enregistrer">
+                <span style="font-size:11px;color:#888">Les modifications s'appliquent immédiatement sur le site.</span>
+            </div>
+        </form>
+    </div>
+
+    <!-- COLONNE DROITE : Aperçu -->
+    <div id="berre-editor-right">
+        <div class="preview-label">Aperçu en direct</div>
+        <iframe id="berre-preview-frame"
+            src="<?php echo home_url('/?berre_editor_preview=1'); ?>"
+            title="Aperçu de la page d'accueil">
+        </iframe>
+    </div>
+
+    </div><!-- #berre-editor-wrap -->
+
+    <script>
+    (function($) {
+        // Tabs
+        document.querySelectorAll('.berre-tab').forEach(function(tab) {
+            tab.addEventListener('click', function() {
+                document.querySelectorAll('.berre-tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.berre-panel').forEach(p => p.classList.remove('active'));
+                this.classList.add('active');
+                document.getElementById('panel-' + this.dataset.panel).classList.add('active');
+            });
+        });
+
+        // Preview live — mise à jour de l'iframe via postMessage
+        var previewFrame = document.getElementById('berre-preview-frame');
+        function sendToPreview(key, value) {
+            if (previewFrame && previewFrame.contentWindow) {
+                previewFrame.contentWindow.postMessage({ type:'berre_preview_update', key:key, value:value }, '*');
+            }
+        }
+
+        // Écouter tous les champs avec data-preview
+        document.querySelectorAll('[data-preview]').forEach(function(el) {
+            ['input','keyup','change'].forEach(function(evt) {
+                el.addEventListener(evt, function() {
+                    sendToPreview(this.dataset.preview, this.value);
+                    // Mini aperçu newsletter en inline
+                    if (this.dataset.preview === 'nl-title') document.getElementById('nl-preview-title').textContent = this.value;
+                    if (this.dataset.preview === 'nl-desc')  document.getElementById('nl-preview-desc').textContent  = this.value;
+                });
+            });
+        });
+
+        // Recharger l'aperçu lors de la sauvegarde
+        document.getElementById('berre-page-form').addEventListener('submit', function() {
+            setTimeout(function() {
+                previewFrame.src = previewFrame.src;
+            }, 800);
+        });
+
+        // Media picker — Hero image
+        document.getElementById('berre-pick-hero-img')?.addEventListener('click', function() {
+            if (typeof wp === 'undefined' || !wp.media) {
+                alert('Le module médias WordPress n\'est pas disponible.');
+                return;
+            }
+            var frame = wp.media({ title:'Choisir la photo hero', button:{ text:'Utiliser cette photo' }, multiple:false });
+            frame.on('select', function() {
+                var att = frame.state().get('selection').first().toJSON();
+                document.getElementById('hero_image_id').value  = att.id;
+                document.getElementById('hero_image_url').value = att.url;
+                var prev = document.getElementById('hero-img-preview');
+                prev.src = att.url;
+                prev.classList.add('has-img');
+                sendToPreview('hero-image', att.url);
+            });
+            frame.open();
+        });
+
+        document.getElementById('berre-clear-hero-img')?.addEventListener('click', function() {
+            document.getElementById('hero_image_id').value  = '';
+            document.getElementById('hero_image_url').value = '';
+            var prev = document.getElementById('hero-img-preview');
+            prev.src = '';
+            prev.classList.remove('has-img');
+            sendToPreview('hero-image', '');
+        });
+
+        // Drag & drop services
+        (function() {
+            var list = document.getElementById('berre-services-list');
+            if (!list) return;
+            var dragging = null;
+            list.addEventListener('dragstart', function(e) {
+                dragging = e.target.closest('.berre-svc-row');
+                if (dragging) setTimeout(() => dragging.style.opacity = '.4', 0);
+            });
+            list.addEventListener('dragend', function() {
+                if (dragging) dragging.style.opacity = '';
+                dragging = null;
+            });
+            list.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                var row = e.target.closest('.berre-svc-row');
+                if (row && row !== dragging) {
+                    var r = row.getBoundingClientRect();
+                    list.insertBefore(dragging, e.clientY < r.top + r.height/2 ? row : row.nextSibling);
+                }
+            });
+        })();
+
+        // Ajouter un service
+        document.getElementById('berre-add-svc')?.addEventListener('click', function() {
+            var html = `<div class="berre-svc-row" draggable="true">
+                <button type="button" class="berre-del" onclick="this.closest('.berre-svc-row').remove()">✕</button>
+                <div class="berre-row">
+                    <div class="berre-field" style="margin:0"><label>Titre</label><input type="text" name="svc_title[]" placeholder="Titre du service"></div>
+                    <div class="berre-field" style="margin:0"><label>Couleur</label><select name="svc_color[]"><option value="bleu">Bleu</option><option value="vert">Vert</option><option value="or">Or</option></select></div>
+                </div>
+                <div class="berre-field" style="margin:4px 0"><label>Description</label><input type="text" name="svc_desc[]" placeholder="Courte description"></div>
+                <div class="berre-row">
+                    <div class="berre-field" style="margin:0"><label>URL</label><input type="url" name="svc_url[]" placeholder="/mon-service"></div>
+                    <div class="berre-field" style="margin:0"><label>Icône</label><select name="svc_icon[]"><?php foreach($ic as $k=>$v): echo '<option value="'.esc_attr($k).'">'.esc_html($v['label']).'</option>'; endforeach; ?></select></div>
+                </div>
+            </div>`;
+            document.getElementById('berre-services-list').insertAdjacentHTML('beforeend', html);
+        });
+
+        // Ajouter un horaire
+        document.getElementById('berre-add-hour')?.addEventListener('click', function() {
+            document.getElementById('berre-hours-list').insertAdjacentHTML('beforeend',
+                `<div class="berre-hour-row">
+                    <input type="text" name="hour_day[]" placeholder="Jour">
+                    <input type="text" name="hour_h[]"   placeholder="Horaires">
+                    <label style="white-space:nowrap;font-size:12px"><input type="checkbox" name="hour_off[]" value="1"> Fermé</label>
+                </div>`
+            );
+        });
+
+    })(jQuery);
+    </script>
+    <?php
+    // Charger le script media de WP pour le sélecteur d'images
+    wp_enqueue_media();
+}
+
+/* ── Mode aperçu ── */
+add_action( 'template_redirect', function() {
+    if ( ! isset( $_GET['berre_editor_preview'] ) ) return;
+    if ( ! current_user_can( 'manage_options' ) ) return;
+    // Afficher la page normalement avec un bandeau et un listener postMessage
+    add_action( 'wp_footer', function() {
+        ?>
+        <script>
+        window.addEventListener('message', function(e) {
+            var d = e.data;
+            if (!d || d.type !== 'berre_preview_update') return;
+            var k = d.key, v = d.value;
+            var el;
+            if (k === 'hero-image') {
+                var cover = document.querySelector('.berre-hero');
+                if (cover) cover.style.backgroundImage = v ? 'url('+v+')' : '';
+            }
+            // Textes dynamiques
+            var map = {
+                'hero-btn1-text':   '.berre-hero .berre-hb1',
+                'hero-btn2-text':   '.berre-hero .berre-hb2',
+                'commune-eyebrow':  '.berre-commune-eyebrow',
+                'commune-title':    '.berre-section--commune h2',
+                'commune-desc':     '.berre-commune-desc',
+                'commune-btn':      '.berre-commune-btn .wp-block-button__link, .berre-commune-btn a',
+                'stat1-val':        '.berre-cf:nth-child(1) strong',
+                'stat1-lbl':        '.berre-cf:nth-child(1) span',
+                'stat2-val':        '.berre-cf:nth-child(2) strong',
+                'stat2-lbl':        '.berre-cf:nth-child(2) span',
+                'stat3-val':        '.berre-cf:nth-child(3) strong',
+                'stat3-lbl':        '.berre-cf:nth-child(3) span',
+                'stat4-val':        '.berre-cf:nth-child(4) strong',
+                'stat4-lbl':        '.berre-cf:nth-child(4) span',
+                'contact-address':  '.berre-adresse',
+                'contact-city':     '.berre-adresse',
+                'contact-phone':    'a[href^="tel:"]',
+                'contact-email':    'a[href^="mailto:"]',
+                'nl-title':         '.berre-nl-title',
+                'nl-desc':          '.berre-nl-desc',
+                'footer-desc':      '.berre-footer__desc',
+            };
+            if (map[k]) {
+                document.querySelectorAll(map[k]).forEach(function(el) {
+                    el.textContent = v;
+                });
+            }
+        });
+        </script>
+        <?php
+    });
+});
+
+
+/* ── Shortcodes frontend ── */
+
+// [berre_hero_buttons] — boutons du hero
+add_shortcode('berre_hero_buttons', function() {
+    $c = berre_get_page_content();
+    $h = $c['hero'];
+    $out = '<div class="berre-hero-btns">';
+    if (!empty($h['btn1_text'])) $out .= '<a href="'.esc_url($h['btn1_url']).'" class="berre-hb1">'.esc_html($h['btn1_text']).'</a>';
+    if (!empty($h['btn2_text'])) $out .= '<a href="'.esc_url($h['btn2_url']).'" class="berre-hb2">'.esc_html($h['btn2_text']).'</a>';
+    $out .= '</div>';
+    return $out;
+});
+
+// [berre_commune_content] — section commune complète
+add_shortcode('berre_commune_content', function() {
+    $c = berre_get_page_content()['commune'];
+    ob_start(); ?>
+    <p class="berre-commune-eyebrow"><?php echo esc_html($c['eyebrow']); ?></p>
+    <h2><?php echo esc_html($c['title']); ?></h2>
+    <p class="berre-commune-desc"><?php echo nl2br(esc_html($c['description'])); ?></p>
+    <div class="berre-commune-facts">
+        <?php foreach ([1,2,3,4] as $n): ?>
+        <div class="berre-cf"><strong><?php echo esc_html($c["stat{$n}_val"]); ?></strong><span><?php echo esc_html($c["stat{$n}_lbl"]); ?></span></div>
+        <?php endforeach; ?>
+    </div>
+    <div class="wp-block-buttons"><div class="wp-block-button berre-commune-btn"><a class="wp-block-button__link wp-element-button" href="<?php echo esc_url($c['btn_url']); ?>"><?php echo esc_html($c['btn_text']); ?></a></div></div>
+    <?php return ob_get_clean();
+});
+
+// [berre_services_grid] — grille services
+add_shortcode('berre_services_grid', function() {
+    $svcs = berre_get_page_content()['services'];
+    $ic   = berre_icons_list();
+    ob_start();
+    echo '<div class="berre-services-grid">';
+    foreach (array_slice($svcs, 0, 8) as $s) {
+        $svg = $ic[$s['icon']]['svg'] ?? $ic['document']['svg'];
+        printf('<div class="berre-service-card berre-service-card--%s"><div class="berre-service-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8">%s</svg></div><h3>%s</h3><p>%s</p><a href="%s" class="berre-service-link">Accéder →</a></div>',
+            esc_attr($s['color']), $svg, esc_html($s['title']), esc_html($s['desc']), esc_url($s['url']));
+    }
+    echo '</div>';
+    return ob_get_clean();
+});
+
+// [berre_contact_content] — section contact
+add_shortcode('berre_contact_content', function() {
+    $ct = berre_get_page_content()['contact'];
+    ob_start(); ?>
+    <div class="berre-contact-banner">
+        <h2 class="berre-contact-banner__title">La Mairie à votre service</h2>
+        <div class="berre-contact-banner__info">
+            <a href="tel:<?php echo esc_attr(preg_replace('/\s/','',$ct['phone'])); ?>" class="berre-contact-banner__item"><?php echo esc_html($ct['phone']); ?></a>
+            <span class="berre-contact-banner__sep"></span>
+            <a href="mailto:<?php echo esc_attr($ct['email']); ?>" class="berre-contact-banner__item"><?php echo esc_html($ct['email']); ?></a>
+            <span class="berre-contact-banner__sep"></span>
+            <a href="/contact" class="berre-contact-banner__btn">Nous écrire →</a>
+        </div>
+    </div>
+    <div class="berre-contact-grid wp-block-columns">
+        <div class="wp-block-column">
+            <p class="berre-contact-sublbl">Horaires d'ouverture</p>
+            <div class="berre-horaires-table">
+                <?php foreach ($ct['hours'] as $h): ?>
+                <div class="berre-hor-row<?php echo $h['off'] ? ' berre-hor-row--off' : ''; ?>">
+                    <span><?php echo esc_html($h['day']); ?></span>
+                    <span><?php echo esc_html($h['h']); ?></span>
+                </div>
+                <?php endforeach; ?>
+            </div>
+        </div>
+        <div class="wp-block-column">
+            <p class="berre-contact-sublbl">Adresse</p>
+            <p class="berre-adresse"><?php echo esc_html($ct['address']); ?><br><?php echo esc_html($ct['city']); ?><br><?php echo esc_html($ct['dept']); ?><?php if (!empty($ct['fax'])): ?><br><br>Fax : <?php echo esc_html($ct['fax']); endif; ?></p>
+            <?php if (!empty($ct['telealerte_url'])): ?>
+            <p class="berre-telealerte"><a href="<?php echo esc_url($ct['telealerte_url']); ?>" target="_blank" rel="noopener">🔔 S'inscrire au TéléAlerte SMIAGE →</a></p>
+            <?php endif; ?>
+        </div>
+        <div class="wp-block-column">
+            <p class="berre-contact-sublbl">Démarches rapides</p>
+            <div class="berre-quick-links">
+                <a href="https://mesdemarches06.fr" target="_blank" rel="noopener" class="berre-quick-link"><div class="berre-ql-icon berre-ql-icon--bleu"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#2D6AB0" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/></svg></div><div><strong>Mes Démarches 06</strong><span>En ligne 24h/24</span></div><span class="berre-ql-arr">›</span></a>
+                <a href="#" class="berre-quick-link"><div class="berre-ql-icon berre-ql-icon--or"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#DEA128" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></div><div><strong>Paiement en ligne</strong><span>Cantine, garderie, loyer</span></div><span class="berre-ql-arr">›</span></a>
+                <a href="#" class="berre-quick-link"><div class="berre-ql-icon berre-ql-icon--vert"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#587526" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div><div><strong>Les élus</strong><span>Conseil municipal</span></div><span class="berre-ql-arr">›</span></a>
+            </div>
+        </div>
+    </div>
+    <?php return ob_get_clean();
+});
+
+// [berre_newsletter_content] — section newsletter
+add_shortcode('berre_newsletter_content', function() {
+    $nl = berre_get_page_content()['newsletter'];
+    ob_start(); ?>
+    <div class="wp-block-columns are-vertically-aligned-center berre-nl-cols">
+        <div class="wp-block-column">
+            <h3 class="wp-block-heading berre-nl-title"><?php echo esc_html($nl['title']); ?></h3>
+            <p class="berre-nl-desc"><?php echo esc_html($nl['desc']); ?></p>
+        </div>
+        <div class="wp-block-column">
+            <form class="berre-nl-form" onsubmit="return false">
+                <input type="email" placeholder="Votre adresse e-mail" class="berre-nl-input" required aria-label="Adresse e-mail">
+                <button type="submit" class="berre-nl-btn">S'inscrire</button>
+            </form>
+        </div>
+    </div>
+    <?php return ob_get_clean();
+});

@@ -1,0 +1,847 @@
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Inter:wght@300;400;500;600&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --b:#2D6AB0;--bd:#1a3e72;--bdd:#102142;
+  --g:#587526;--gd:#3f5518;
+  --or:#DEA128;--ord:#b8851f;
+  --blt:#e8f1fb;--glt:#eef3e4;--olt:#fdf4e3;
+  --t:#1a1a2e;--tm:#3d4f63;--ts:#7a8c9e;
+  --bdr:#e0e6ef;--bg:#f5f7fa;--w:#fff;
+  --serif:'Syne',sans-serif;--sans:'Inter',system-ui,sans-serif;
+  --r:5px;--rl:10px;
+}
+body{font-family:var(--sans);color:var(--t);background:var(--bg);-webkit-font-smoothing:antialiased}
+img{display:block;max-width:100%}
+a{text-decoration:none;color:inherit}
+
+/* ══ HEADER — 3 colonnes flex ══
+   Col 1 (gauche) : hamburger menu
+   Col 2 (centre): blason + nom commune
+   Col 3 (droite) : recherche
+   ═══════════════════════════════ */
+.berre-header {
+  background: var(--w) !important;
+  border-bottom: 1px solid rgba(0,0,0,.08) !important;
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 100 !important;
+  padding: 0 !important;
+}
+/* Le groupe interne flex */
+.berre-header.wp-block-group {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  height: 60px !important;
+  padding: 0 20px !important;
+  gap: 12px !important;
+}
+
+/* ── Col 1 : Navigation (hamburger) ── */
+.berre-nav-wp {
+  flex-shrink: 0 !important;
+  order: 1 !important;
+}
+/* Cacher le nav non-overlay (items listés en horizontal) */
+.berre-nav-wp .wp-block-navigation__container {
+  display: none !important;
+}
+/* Bouton hamburger → style "≡ Menu" bleu marseille.fr */
+.berre-nav-wp .wp-block-navigation__responsive-container-open {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  background: var(--b) !important;
+  color: #fff !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  font-family: var(--sans) !important;
+  padding: 8px 16px !important;
+  border-radius: 4px !important;
+  border: none !important;
+  cursor: pointer !important;
+  letter-spacing: .02em !important;
+  transition: background .2s !important;
+  white-space: nowrap !important;
+}
+.berre-nav-wp .wp-block-navigation__responsive-container-open:hover {
+  background: var(--bd) !important;
+}
+.berre-nav-wp .wp-block-navigation__responsive-container-open svg,
+.berre-nav-wp .wp-block-navigation__responsive-container-open .wp-block-navigation__responsive-container-open-icon {
+  width: 18px !important;
+  height: 18px !important;
+  stroke: #fff !important;
+  fill: none !important;
+  flex-shrink: 0 !important;
+}
+
+/* ── Col 2 : Logo centré ── */
+.berre-logo-center {
+  flex: 1 !important;
+  order: 2 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 10px !important;
+  text-decoration: none !important;
+}
+/* Blason : logo uploadé, arrondi avec bordure or */
+.berre-logo-center .wp-block-site-logo {
+  flex-shrink: 0 !important;
+}
+.berre-logo-center .wp-block-site-logo img,
+.berre-logo-center .wp-block-site-logo a img {
+  width: 44px !important;
+  height: 44px !important;
+  border-radius: 50% !important;
+  border: 2.5px solid var(--or) !important;
+  object-fit: cover !important;
+  display: block !important;
+}
+/* Nom commune */
+.berre-logo-center .wp-block-site-title,
+.berre-logo-center .wp-block-site-title a {
+  font-family: var(--serif) !important;
+  font-size: 15px !important;
+  font-weight: 800 !important;
+  color: var(--bdd) !important;
+  letter-spacing: -.02em !important;
+  line-height: 1.1 !important;
+  text-decoration: none !important;
+  white-space: nowrap !important;
+}
+
+/* ── Col 3 : Recherche ── */
+.berre-hdr-search {
+  flex-shrink: 0 !important;
+  order: 3 !important;
+}
+.berre-hdr-search .wp-block-search__inside-wrapper {
+  display: flex !important;
+  align-items: center !important;
+  border: 1.5px solid var(--bdr) !important;
+  border-radius: 22px !important;
+  overflow: hidden !important;
+  transition: border-color .15s !important;
+  background: var(--bg) !important;
+}
+.berre-hdr-search .wp-block-search__inside-wrapper:focus-within {
+  border-color: var(--b) !important;
+  background: var(--blt) !important;
+}
+.berre-hdr-search .wp-block-search__input {
+  font-size: 12px !important;
+  padding: 7px 14px !important;
+  border: none !important;
+  outline: none !important;
+  background: transparent !important;
+  color: var(--t) !important;
+  font-family: var(--sans) !important;
+  width: 150px !important;
+}
+.berre-hdr-search .wp-block-search__button {
+  background: var(--b) !important;
+  border: none !important;
+  padding: 7px 12px !important;
+  cursor: pointer !important;
+  color: #fff !important;
+  display: flex !important;
+  align-items: center !important;
+}
+.berre-hdr-search .wp-block-search__button svg {
+  fill: #fff !important;
+  width: 14px !important;
+  height: 14px !important;
+}
+
+/* ══ DRAWER MENU — overlay latéral ══ */
+/* Overlay sombre (fond) */
+.berre-nav-wp .wp-block-navigation__responsive-container {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 9999 !important;
+  background: rgba(0,0,0,.5) !important;
+  display: none !important;
+  align-items: flex-start !important;
+}
+.berre-nav-wp .wp-block-navigation__responsive-container.is-menu-open {
+  display: flex !important;
+}
+/* Panneau blanc */
+.berre-nav-wp .wp-block-navigation__responsive-dialog {
+  width: 320px !important;
+  min-height: 100vh !important;
+  background: var(--w) !important;
+  box-shadow: 4px 0 28px rgba(0,0,0,.15) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow-y: auto !important;
+  position: relative !important;
+}
+/* Bouton fermer */
+.berre-nav-wp .wp-block-navigation__responsive-container-close {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: 14px 20px !important;
+  background: var(--b) !important;
+  color: #fff !important;
+  border: none !important;
+  cursor: pointer !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  font-family: var(--sans) !important;
+  width: 100% !important;
+  flex-shrink: 0 !important;
+}
+.berre-nav-wp .wp-block-navigation__responsive-container-close::before {
+  content: 'Menu' !important;
+  font-family: var(--serif) !important;
+  font-size: 15px !important;
+  font-weight: 800 !important;
+}
+.berre-nav-wp .wp-block-navigation__responsive-container-close svg {
+  stroke: #fff !important;
+  width: 18px !important;
+  height: 18px !important;
+  fill: none !important;
+}
+/* Items du menu dans le drawer */
+.berre-nav-wp .wp-block-navigation__responsive-container .wp-block-navigation__container {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 0 !important;
+  padding: 12px 0 !important;
+}
+.berre-nav-wp .wp-block-navigation__responsive-container .wp-block-navigation-item {
+  width: 100% !important;
+}
+.berre-nav-wp .wp-block-navigation__responsive-container .wp-block-navigation-item__content {
+  display: block !important;
+  font-size: 15px !important;
+  font-weight: 500 !important;
+  color: var(--t) !important;
+  padding: 12px 24px !important;
+  text-decoration: none !important;
+  border-left: 3px solid transparent !important;
+  transition: all .15s !important;
+}
+.berre-nav-wp .wp-block-navigation__responsive-container .wp-block-navigation-item__content:hover {
+  background: var(--blt) !important;
+  color: var(--b) !important;
+  border-left-color: var(--b) !important;
+}
+.berre-nav-wp .wp-block-navigation__responsive-container .current-menu-item .wp-block-navigation-item__content {
+  color: var(--b) !important;
+  font-weight: 700 !important;
+  border-left-color: var(--b) !important;
+  background: var(--blt) !important;
+}
+/* Sous-menus dans le drawer */
+.berre-nav-wp .wp-block-navigation__responsive-container .wp-block-navigation__submenu-container {
+  position: static !important;
+  box-shadow: none !important;
+  border: none !important;
+  background: var(--bg) !important;
+  padding: 0 !important;
+  min-width: 0 !important;
+  width: 100% !important;
+}
+.berre-nav-wp .wp-block-navigation__responsive-container .wp-block-navigation__submenu-container .wp-block-navigation-item__content {
+  font-size: 13px !important;
+  color: var(--ts) !important;
+  font-weight: 400 !important;
+  padding: 8px 24px 8px 36px !important;
+  border-left: none !important;
+}
+/* Footer sous-menus */
+.berre-footer .wp-block-navigation__submenu-container,
+footer .wp-block-navigation__submenu-container {
+  background: #fff !important;
+  border: 1px solid var(--bdr) !important;
+  border-radius: var(--r) !important;
+  box-shadow: 0 8px 24px rgba(0,0,0,.12) !important;
+  padding: 6px !important;
+  min-width: 200px !important;
+  position: absolute !important;
+}
+.berre-footer .wp-block-navigation__submenu-container .wp-block-navigation-item__content,
+footer .wp-block-navigation__submenu-container .wp-block-navigation-item__content {
+  color: var(--t) !important;
+  font-size: 13px !important;
+  padding: 8px 12px !important;
+  border-radius: 4px !important;
+}
+.berre-footer .wp-block-navigation__submenu-container .wp-block-navigation-item__content:hover,
+footer .wp-block-navigation__submenu-container .wp-block-navigation-item__content:hover {
+  background: var(--blt) !important;
+  color: var(--b) !important;
+}
+/* Admin bar */
+.admin-bar .berre-header { top: 32px !important; }
+@media screen and (max-width:782px) { .admin-bar .berre-header { top: 46px !important; } }
+
+
+/* ══════════════════════════════════════════════════════
+   ACCÈS RAPIDES — Règles CSS unifiées (version finale)
+   Chaque icône = 1 seul <a> = 1 seule zone interactive
+   ═══════════════════════════════════════════════════ */
+
+/* Grille des icônes */
+.berre-icons-row {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+/* Chaque icône : UNE SEULE zone cliquable */
+.berre-icon-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  text-align: center;
+  width: 100%;
+  padding: 14px 8px 12px;
+  border-radius: 10px;
+  border: 2px solid transparent;
+  background: transparent;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background .18s ease, border-color .18s ease, transform .15s ease;
+  /* Assure que le survol couvre toute la cellule */
+  box-sizing: border-box;
+}
+.berre-icon-btn:hover,
+.berre-icon-btn:focus-visible {
+  background: var(--blt);
+  border-color: var(--b);
+  transform: translateY(-2px);
+  outline: none;
+}
+
+/* Cercle coloré */
+.berre-icon-circle {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-bottom: 8px;
+  transition: transform .18s ease, box-shadow .18s ease;
+}
+.berre-icon-circle--bleu { background: var(--b); }
+.berre-icon-circle--vert { background: var(--g); }
+.berre-icon-circle--or   { background: var(--or); }
+.berre-icon-btn:hover .berre-icon-circle {
+  transform: scale(1.08);
+  box-shadow: 0 6px 16px rgba(0,0,0,.15);
+}
+
+/* Libellé texte */
+.berre-icon-lbl {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--b);
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  line-height: 1.3;
+  max-width: 90px;
+}
+.berre-icon-circle--vert ~ .berre-icon-lbl,
+.berre-icon-circle--vert + .berre-icon-lbl { color: var(--g); }
+.berre-icon-circle--or ~ .berre-icon-lbl,
+.berre-icon-circle--or + .berre-icon-lbl   { color: #8a5a00; }
+
+/* Icônes secondaires — cachées par défaut */
+.berre-icons-secondary {
+  display: none;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 6px;
+  margin-top: 12px;
+  padding-top: 14px;
+  border-top: 1px solid var(--bdr);
+  margin-bottom: 16px;
+}
+.berre-icons-secondary.is-open {
+  display: grid;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  .berre-icons-row,
+  .berre-icons-secondary { grid-template-columns: repeat(3, 1fr); }
+}
+
+
+/* ── HERO PHOTO ── */
+.berre-hero{width:100%;min-height:420px!important;position:relative;background:var(--bdd)}
+.berre-hero .wp-block-cover__background{display:none}
+.berre-hero .wp-block-cover__image-background,.berre-hero img{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;object-fit:cover!important;object-position:center 35%!important}
+.berre-hero .wp-block-cover__inner-container{display:none}
+
+/* ── PANNEAU BLANC ── */
+.berre-white-panel{background:var(--w)!important;border-radius:14px 14px 0 0!important;margin:-60px auto 0!important;position:relative;z-index:5;padding:28px 32px 0!important;box-shadow:0 -6px 32px rgba(0,0,0,.12);max-width:860px!important}
+/* Barre de recherche */
+
+.berre-search-bar:focus-within{border-color:var(--b)}
+
+
+.berre-search-btn{width:34px;height:34px;background:var(--b);border-radius:4px;display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer;border:none;transition:background .15s}
+.berre-search-btn:hover{background:var(--bd)}
+/* Icônes rondes */
+.berre-see-more{text-align:center;border-top:1px solid var(--bdr);margin:0 -32px}
+.berre-see-more__link{display:inline-flex;align-items:center;gap:10px;padding:14px 24px;font-size:13px;font-weight:600;color:var(--b);cursor:pointer;transition:color .15s}
+.berre-see-more__link:hover{color:var(--bd)}
+.berre-see-more__dot{width:20px;height:20px;border-radius:50%;background:var(--b);color:#fff;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;line-height:1;transition:background .15s;flex-shrink:0}
+.berre-see-more__link:hover .berre-see-more__dot{background:var(--bd)}
+
+/* ── SECTIONS COMMUNES ── */
+.berre-section{padding:40px 5vw}
+.berre-section--bg{background:var(--bg)}
+.berre-sec-head{margin-bottom:22px!important;align-items:baseline!important}
+.berre-sec-title{font-family:var(--serif)!important;font-size:1.4rem!important;font-weight:800!important;color:var(--t)!important;letter-spacing:-.03em!important;margin:0!important;padding-bottom:8px!important;border-bottom:2px solid var(--blt)!important}
+.berre-more-link{font-size:12px!important;color:var(--b)!important;font-weight:500!important;transition:color .15s!important}
+.berre-more-link:hover{color:var(--bd)!important}
+
+/* ── ACTUALITÉS ── */
+.berre-actualites-grid{display:grid;grid-template-columns:2fr 1fr 1fr;gap:4px}
+.berre-actu-card{background:var(--w);border-radius:var(--rl);overflow:hidden;cursor:pointer;transition:transform .22s,box-shadow .22s;display:flex;flex-direction:column;border:1px solid var(--bdr)}
+.berre-actu-card:hover{transform:translateY(-4px);box-shadow:0 12px 32px rgba(0,0,0,.08)}
+.berre-actu-card:first-child{grid-row:span 2}
+.berre-actu-img img{width:100%;aspect-ratio:16/9;object-fit:cover;transition:transform .4s}
+.berre-actu-card:first-child .berre-actu-img img{aspect-ratio:4/3}
+.berre-actu-card:hover .berre-actu-img img{transform:scale(1.04)}
+.berre-actu-card:first-child .berre-actu-img{flex:1;overflow:hidden}
+.berre-actu-body{padding:16px 18px;flex-shrink:0}
+.berre-cat{font-size:9.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;padding:2px 8px;border-radius:3px;display:inline-block;margin-bottom:7px;background:var(--blt);color:var(--bd)}
+.berre-actu-title{font-family:var(--serif)!important;font-size:1rem!important;font-weight:700!important;color:var(--t)!important;line-height:1.3!important;margin-bottom:6px!important}
+.berre-actu-card:first-child .berre-actu-title{font-size:1.2rem!important}
+.berre-actu-title a{color:inherit!important}
+.berre-actu-title a:hover{color:var(--b)!important}
+.berre-actu-excerpt{font-size:13px!important;color:var(--ts)!important;font-weight:300!important;line-height:1.6!important;margin-bottom:8px!important}
+.berre-actu-date{font-size:11px!important;color:var(--ts)!important;margin:0!important}
+
+/* ── AGENDA ── */
+.berre-split-cols{gap:32px!important}
+.berre-agenda-list{display:flex;flex-direction:column;gap:4px}
+.berre-agenda-item{background:var(--w);border:1px solid var(--bdr);border-radius:var(--r);padding:12px 14px;display:flex;gap:12px;cursor:pointer;transition:all .15s;border-left:3px solid var(--b)}
+.berre-agenda-item:hover{border-color:var(--b);background:var(--blt)}
+.berre-agenda-date{flex-shrink:0;text-align:center;width:40px;padding-right:12px;border-right:1px solid var(--bdr)}
+.berre-agenda-date strong{font-family:var(--serif);font-size:1.6rem;font-weight:800;color:var(--b);display:block;line-height:1;letter-spacing:-.04em}
+.berre-agenda-date span{font-size:8px;text-transform:uppercase;letter-spacing:.1em;color:var(--ts);font-weight:500}
+.berre-agenda-info h3{font-family:var(--serif)!important;font-size:12.5px!important;font-weight:700!important;color:var(--t)!important;margin:0 0 2px!important;line-height:1.3!important}
+.berre-agenda-info p{font-size:11px!important;color:var(--ts)!important;font-weight:300!important;margin:0!important}
+.berre-yt-embed iframe{border-radius:var(--rl);aspect-ratio:16/9;width:100%;height:auto}
+
+/* ── COMMUNE ── */
+.berre-section--commune{background:var(--b);padding:40px 5vw}
+.berre-section--commune h2{color:#fff!important;font-family:var(--serif)!important;font-size:1.6rem!important;font-weight:800!important;letter-spacing:-.03em!important;margin-bottom:10px!important}
+.berre-commune-eyebrow{font-size:9px!important;font-weight:600!important;letter-spacing:.18em!important;text-transform:uppercase!important;color:rgba(255,255,255,.45)!important;margin-bottom:8px!important}
+.berre-commune-desc{font-size:13px!important;color:rgba(255,255,255,.65)!important;font-weight:300!important;line-height:1.75!important;margin-bottom:14px!important}
+.berre-commune-facts{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px}
+.berre-cf{background:rgba(255,255,255,.1);border-radius:5px;padding:10px 12px;text-align:center}
+.berre-cf strong{font-family:var(--serif);font-size:1.3rem;font-weight:800;color:#fff;display:block;line-height:1;letter-spacing:-.03em}
+.berre-cf span{font-size:8.5px;color:rgba(255,255,255,.45);text-transform:uppercase;letter-spacing:.1em;margin-top:2px;display:block}
+.berre-commune-btn .wp-block-button__link{background:var(--or)!important;color:var(--bdd)!important;font-size:11px!important;font-weight:700!important;border-radius:20px!important;padding:11px 22px!important;transition:background .15s!important}
+.berre-commune-btn .wp-block-button__link:hover{background:var(--ord)!important}
+.berre-commune-cols{gap:28px!important;align-items:center!important}
+.berre-commune-gallery{margin:0!important}
+.berre-commune-gallery .wp-block-image img{border-radius:var(--r);object-fit:cover}
+.berre-commune-img--wide img{grid-column:span 2;aspect-ratio:16/7}
+.berre-commune-gallery .wp-block-image:not(.berre-commune-img--wide) img{aspect-ratio:4/3}
+
+/* ── SERVICES ── */
+.berre-services-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.berre-service-card{background:var(--w);border:1px solid var(--bdr);border-radius:var(--rl);padding:16px;cursor:pointer;transition:all .18s;display:flex;flex-direction:column;position:relative;overflow:hidden}
+.berre-service-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;transform:scaleY(0);transition:transform .18s}
+.berre-service-card--bleu::before{background:var(--b)}
+.berre-service-card--vert::before{background:var(--g)}
+.berre-service-card--or::before{background:var(--or)}
+.berre-service-card:hover{background:var(--w);box-shadow:0 4px 18px rgba(0,0,0,.08);transform:translateY(-2px)}.berre-service-card:hover::before{transform:scaleY(1)}
+.berre-service-icon{width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;margin-bottom:11px}
+.berre-service-card--bleu .berre-service-icon{background:var(--blt)}
+.berre-service-card--vert .berre-service-icon{background:var(--glt)}
+.berre-service-card--or .berre-service-icon{background:var(--olt)}
+.berre-service-icon img,.berre-service-icon svg{width:17px;height:17px;fill:none;stroke-width:1.8}
+.berre-service-card--bleu .berre-service-icon svg{stroke:var(--b)}
+.berre-service-card--vert .berre-service-icon svg{stroke:var(--g)}
+.berre-service-card--or .berre-service-icon svg{stroke:var(--or)}
+.berre-service-card h3{font-family:var(--serif)!important;font-size:11.5px!important;font-weight:700!important;color:var(--t)!important;margin:0 0 4px!important;line-height:1.3!important}
+.berre-service-card p{font-size:10px!important;color:var(--ts)!important;line-height:1.5!important;font-weight:300!important;flex:1!important;margin:0!important}
+.berre-service-link{font-size:10px;font-weight:600;margin-top:9px;display:block}
+.berre-service-card--bleu .berre-service-link{color:var(--b)}
+.berre-service-card--vert .berre-service-link{color:var(--g)}
+.berre-service-card--or .berre-service-link{color:#8a5a00}
+
+/* ── CONTACT C ── */
+.berre-contact-section{background:var(--w);padding:0 5vw!important}
+.berre-contact-banner{display:flex;align-items:center;justify-content:space-between;padding:22px 0;border-bottom:1px solid var(--bdr);flex-wrap:wrap;gap:14px}
+.berre-contact-banner__title{font-family:var(--serif)!important;font-size:1.2rem!important;font-weight:800!important;color:var(--t)!important;letter-spacing:-.03em!important;margin:0!important}
+.berre-contact-banner__info{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.berre-contact-banner__item{font-size:13px;color:var(--tm);display:flex;align-items:center;gap:6px;font-weight:400;transition:color .15s}
+.berre-contact-banner__item svg{stroke:var(--b);flex-shrink:0}
+.berre-contact-banner__item:hover{color:var(--b)}
+.berre-contact-banner__sep{width:1px;height:18px;background:var(--bdr);display:block}
+.berre-contact-banner__btn{background:var(--b);color:#fff;font-size:12px;font-weight:600;padding:8px 16px;border-radius:4px;transition:background .15s}
+.berre-contact-banner__btn:hover{background:var(--bd)}
+.berre-contact-grid{gap:24px!important;padding:24px 0!important;align-items:start!important}
+.berre-contact-sublbl{font-size:9px!important;font-weight:700!important;letter-spacing:.16em!important;text-transform:uppercase!important;color:var(--ts)!important;margin-bottom:12px!important}
+.berre-horaires-table{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--bdr);border-radius:7px;overflow:hidden}
+.berre-hor-row{display:flex;flex-direction:column;padding:9px 12px;border-right:1px solid var(--bdr);border-bottom:1px solid var(--bdr)}
+.berre-hor-row:nth-child(2n){border-right:none}
+.berre-hor-row:nth-last-child(-n+2){border-bottom:none}
+.berre-hor-row span:first-child{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--ts);margin-bottom:2px}
+.berre-hor-row span:last-child{font-size:11.5px;font-weight:600;color:var(--t)}
+.berre-hor-row--off span:last-child{color:var(--ts);font-weight:300;font-style:italic}
+.berre-adresse{font-size:12.5px!important;color:var(--tm)!important;font-weight:300!important;line-height:1.8!important;margin-bottom:10px!important}
+.berre-telealerte{font-size:12px!important;color:var(--b)!important;margin-top:8px!important}
+.berre-quick-links{display:flex;flex-direction:column;gap:7px}
+.berre-quick-link{display:flex;align-items:center;gap:11px;padding:11px 13px;border-radius:6px;border:1px solid var(--bdr);background:var(--bg);text-decoration:none;transition:all .15s}
+.berre-quick-link:hover{border-color:var(--b);background:var(--blt);transform:translateX(3px)}
+.berre-ql-icon{width:30px;height:30px;border-radius:5px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.berre-ql-icon--bleu{background:var(--blt)}
+.berre-ql-icon--vert{background:var(--glt)}
+.berre-ql-icon--or{background:var(--olt)}
+.berre-quick-link strong{font-size:12px;font-weight:600;color:var(--t);display:block}
+.berre-quick-link span{font-size:10px;color:var(--ts)}
+.berre-ql-arr{margin-left:auto;font-size:16px;color:var(--ts);flex-shrink:0}
+
+/* ── NEWSLETTER VERT ── */
+.berre-newsletter{background:var(--g)!important;padding:22px 5vw!important}
+.berre-nl-cols{align-items:center!important}
+.berre-nl-title{font-family:var(--serif)!important;font-size:1.2rem!important;font-weight:800!important;color:#fff!important;margin-bottom:4px!important;letter-spacing:-.02em!important}
+.berre-nl-desc{font-size:11px!important;color:rgba(255,255,255,.55)!important;font-weight:300!important;margin:0!important}
+.berre-nl-form{display:flex;gap:8px}
+.berre-nl-input{padding:10px 16px;border-radius:20px;border:1.5px solid rgba(255,255,255,.25);background:rgba(255,255,255,.1);color:#fff;font-size:12px;font-family:var(--sans);flex:1;outline:none;transition:all .2s}
+.berre-nl-input::placeholder{color:rgba(255,255,255,.4)}
+.berre-nl-input:focus{border-color:rgba(255,255,255,.5);background:rgba(255,255,255,.15)}
+.berre-nl-btn{padding:10px 22px;border-radius:20px;background:#fff;color:var(--g);font-size:12px;font-weight:700;border:none;cursor:pointer;font-family:var(--sans);transition:background .15s;white-space:nowrap}
+.berre-nl-btn:hover{background:rgba(255,255,255,.9)}
+
+/* ── PARTENAIRES ── */
+.berre-partners-band{background:var(--b);border-top:1px solid rgba(255,255,255,.1);padding:12px 5vw;display:flex;align-items:center;gap:20px;flex-wrap:wrap}
+.berre-partners-lbl{font-size:8.5px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:rgba(255,255,255,.5);flex-shrink:0;padding-right:16px;border-right:1px solid rgba(255,255,255,.15)}
+.berre-partners-list{display:flex;gap:7px;flex-wrap:wrap}
+.berre-partner{font-size:10.5px;color:rgba(255,255,255,.45);padding:3px 11px;border:1px solid rgba(255,255,255,.14);border-radius:3px;transition:all .2s}
+.berre-partner:hover{color:rgba(255,255,255,.82);border-color:rgba(255,255,255,.32)}
+
+/* ── FOOTER ── */
+.berre-footer{background:var(--b)!important;padding:24px 5vw 16px!important}
+.berre-footer__top{max-width:1200px;margin:0 auto;padding-bottom:18px;border-bottom:1px solid rgba(255,255,255,.12)}
+.berre-footer__brand p,.berre-footer__desc{font-size:10px!important;color:rgba(255,255,255,.42)!important;line-height:1.65!important;font-weight:300!important;margin-top:9px!important;max-width:260px!important}
+.berre-footer__logo img{height:28px!important;width:auto!important}
+.berre-footer__site-title,.berre-footer__site-title a{font-family:var(--serif)!important;font-size:14px!important;font-weight:800!important;color:#fff!important;letter-spacing:-.02em!important}
+.berre-footer__col h4{font-size:8.5px!important;font-weight:700!important;letter-spacing:.14em!important;text-transform:uppercase!important;color:rgba(255,255,255,.45)!important;margin-bottom:9px!important}
+.berre-footer__nav .wp-block-navigation__container{flex-direction:column!important;gap:2px!important}
+.berre-footer__nav .wp-block-navigation-item__content{color:rgba(255,255,255,.38)!important;font-size:10.5px!important;font-weight:300!important;padding:4px 0!important;transition:color .15s!important}
+.berre-footer__nav .wp-block-navigation-item__content:hover{color:rgba(255,255,255,.88)!important}
+.berre-footer__bottom{max-width:1200px;margin:0 auto;display:flex;justify-content:space-between;padding-top:14px;font-size:9.5px;color:rgba(255,255,255,.25);flex-wrap:wrap;gap:8px}
+.berre-footer__legal .wp-block-navigation-item__content{color:rgba(255,255,255,.28)!important;font-size:9.5px!important}
+
+/* ── TEMPLATES communs ── */
+.berre-breadcrumb{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--ts);flex-wrap:wrap;padding:16px 5vw 0}
+.berre-breadcrumb a{color:var(--ts);transition:color .15s}.berre-breadcrumb a:hover{color:var(--b)}
+.berre-breadcrumb__sep{color:var(--bdr);font-size:14px}
+.berre-breadcrumb__current{color:var(--t);font-weight:500}
+/* ... (templates CSS partagés) */
+
+/* ── RESPONSIVE ── */
+@media(max-width:900px){.berre-services-grid{grid-template-columns:1fr 1fr}.berre-actualites-grid{grid-template-columns:1fr 1fr}.berre-actu-card:first-child{grid-row:span 1;grid-column:span 2}.berre-split-cols{flex-direction:column!important}.berre-commune-cols{flex-direction:column!important}.berre-contact-grid{flex-direction:column!important}}
+@media(max-width:600px){.berre-section{padding:32px 4vw}.berre-white-panel{margin:-40px 12px 0!important;padding:20px 20px 0!important}.berre-actualites-grid{grid-template-columns:1fr!important}.berre-actu-card:first-child{grid-column:span 1!important}.berre-services-grid{grid-template-columns:1fr}.berre-commune-facts{grid-template-columns:1fr 1fr}.berre-nl-form{flex-direction:column}.berre-contact-banner{flex-direction:column;align-items:flex-start}.berre-contact-banner__info{flex-wrap:wrap}}
+.admin-bar .berre-header{top:32px}
+@media screen and (max-width:782px){.admin-bar .berre-header{top:46px}}
+
+/* ══════════════════════════════════════════════
+   MENU HAMBURGER — wp:navigation overlayMenu:"always"
+   Stylise le hamburger natif WP pour ressembler
+   au bouton "Menu" de marseille.fr
+   ══════════════════════════════════════════════ */
+
+/* Positionner le bloc navigation à gauche dans le header */
+
+
+/* Bouton hamburger WP → style marseille.fr "Menu" bleu */
+.berre-nav-wp .wp-block-navigation__responsive-container-open {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  background: var(--b) !important;
+  color: #fff !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  font-family: var(--sans) !important;
+  padding: 8px 18px !important;
+  border-radius: 4px !important;
+  border: none !important;
+  cursor: pointer !important;
+  letter-spacing: .02em !important;
+  transition: background .2s !important;
+}
+.berre-nav-wp .wp-block-navigation__responsive-container-open:hover {
+  background: var(--bd) !important;
+}
+/* Icône hamburger dans le bouton WP */
+.berre-nav-wp .wp-block-navigation__responsive-container-open .wp-block-navigation__responsive-container-open-icon {
+  width: 18px !important;
+  height: 18px !important;
+}
+/* Texte "Menu" affiché à côté de l'icône */
+.berre-nav-wp .wp-block-navigation__responsive-container-open::after {
+  content: 'Menu' !important;
+}
+
+/* Panneau overlay — drawer latéral gauche */
+.berre-nav-wp .wp-block-navigation__responsive-container {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 320px !important;
+  height: 100vh !important;
+  background: var(--w) !important;
+  border-right: 1px solid var(--bdr) !important;
+  box-shadow: 4px 0 28px rgba(0,0,0,.12) !important;
+  transform: translateX(-100%) !important;
+  transition: transform .28s ease !important;
+  padding: 0 !important;
+  z-index: 9999 !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+.berre-nav-wp .wp-block-navigation__responsive-container.is-menu-open {
+  transform: translateX(0) !important;
+}
+
+/* Bouton fermeture (×) */
+.berre-nav-wp .wp-block-navigation__responsive-container-close {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  padding: 16px 20px !important;
+  border-bottom: 1px solid var(--bdr) !important;
+  background: var(--bg) !important;
+  border: none !important;
+  cursor: pointer !important;
+  width: 100% !important;
+  color: var(--ts) !important;
+  font-size: 13px !important;
+  font-family: var(--sans) !important;
+}
+.berre-nav-wp .wp-block-navigation__responsive-container-close:hover {
+  color: var(--b) !important;
+}
+
+/* Conteneur des items du menu */
+.berre-nav-wp .wp-block-navigation__responsive-container-content {
+  flex: 1 !important;
+  overflow-y: auto !important;
+  padding: 20px 0 !important;
+}
+
+/* Items de navigation */
+.berre-nav-wp .wp-block-navigation__responsive-container .wp-block-navigation__container {
+  flex-direction: column !important;
+  gap: 0 !important;
+  padding: 0 !important;
+}
+.berre-nav-wp .wp-block-navigation__responsive-container .wp-block-navigation-item__content {
+  display: block !important;
+  font-size: 15px !important;
+  font-weight: 500 !important;
+  color: var(--t) !important;
+  padding: 12px 24px !important;
+  border-radius: 0 !important;
+  transition: all .15s !important;
+  border-left: 3px solid transparent !important;
+}
+.berre-nav-wp .wp-block-navigation__responsive-container .wp-block-navigation-item__content:hover {
+  background: var(--blt) !important;
+  color: var(--b) !important;
+  border-left-color: var(--b) !important;
+}
+.berre-nav-wp .wp-block-navigation__responsive-container .current-menu-item .wp-block-navigation-item__content {
+  color: var(--b) !important;
+  font-weight: 600 !important;
+  border-left-color: var(--b) !important;
+  background: var(--blt) !important;
+}
+
+/* Sous-menus dans le drawer */
+.berre-nav-wp .wp-block-navigation__responsive-container .wp-block-navigation__submenu-container {
+  background: var(--bg) !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 0 8px 24px !important;
+  position: static !important;
+  width: 100% !important;
+}
+.berre-nav-wp .wp-block-navigation__responsive-container .wp-block-navigation__submenu-container .wp-block-navigation-item__content {
+  font-size: 13px !important;
+  font-weight: 400 !important;
+  padding: 8px 24px !important;
+  color: var(--ts) !important;
+  border-left: none !important;
+}
+.berre-nav-wp .wp-block-navigation__responsive-container .wp-block-navigation__submenu-container .wp-block-navigation-item__content:hover {
+  color: var(--b) !important;
+  background: transparent !important;
+  border-left: none !important;
+}
+
+/* Overlay sombre derrière le drawer */
+.berre-nav-wp .wp-block-navigation__responsive-container::before {
+  content: '' !important;
+  position: fixed !important;
+  inset: 0 !important;
+  background: rgba(0,0,0,.4) !important;
+  opacity: 0 !important;
+  transition: opacity .28s !important;
+  pointer-events: none !important;
+  z-index: -1 !important;
+}
+.berre-nav-wp .wp-block-navigation__responsive-container.is-menu-open::before {
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+
+/* ══════════════════════════════════════════════
+   VIDÉO BACKGROUND — section commune
+   ══════════════════════════════════════════════ */
+.berre-section-commune {
+  position: relative !important;
+  overflow: hidden !important;
+}
+/* La vidéo en arrière-plan */
+.berre-section-commune .wp-block-cover__video-background {
+  position: absolute !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  min-width: 100% !important;
+  min-height: 100% !important;
+  width: auto !important;
+  height: auto !important;
+  object-fit: cover !important;
+  z-index: 0 !important;
+}
+/* Superposition semi-transparente par-dessus la vidéo */
+.berre-section-commune .wp-block-cover__background {
+  z-index: 1 !important;
+}
+/* Le contenu par-dessus la vidéo */
+.berre-section-commune .wp-block-cover__inner-container {
+  position: relative !important;
+  z-index: 2 !important;
+  width: 100% !important;
+  max-width: 1200px !important;
+  margin: 0 auto !important;
+  padding: 40px 5vw !important;
+}
+/* Si pas encore de vidéo uploadée : fallback fond bleu */
+.berre-section-commune:not(:has(video[src])) {
+  background: var(--b) !important;
+}
+/* Les stats restent lisibles sur la vidéo */
+.berre-section-commune .berre-commune-facts {
+  backdrop-filter: blur(4px) !important;
+}
+
+
+/* Bouton "Voir plus" — état actif */
+.berre-see-more__dot {
+  transition: transform .25s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.berre-see-more{
+  text-align:center;border-top:1px solid var(--bdr);
+  margin:0 -32px
+}
+/* Le bouton "Voir plus" — styalisé comme un lien, sans comportement natif bouton */
+.berre-see-more__btn{
+  display:inline-flex;align-items:center;gap:10px;
+  padding:14px 24px;font-size:13px;font-weight:600;color:var(--b);
+  cursor:pointer;transition:color .15s;
+  background:transparent;border:none;font-family:var(--sans);
+  border-radius:0;outline:none
+}
+.berre-see-more__btn:hover{color:var(--bd)}
+.berre-see-more__btn:focus-visible{outline:2px solid var(--b);outline-offset:2px;border-radius:4px}
+.berre-see-more__dot{
+  width:20px;height:20px;border-radius:50%;
+  background:var(--b);color:#fff;
+  display:inline-flex;align-items:center;justify-content:center;
+  font-size:16px;font-weight:700;line-height:1;
+  transition:background .15s, transform .25s;flex-shrink:0
+}
+.berre-see-more__btn:hover .berre-see-more__dot{background:var(--bd)}
+.berre-see-more__btn[aria-expanded="true"] .berre-see-more__dot{
+  transform:rotate(45deg)
+}
+/* ══ CORRECTIFS ACCÈS RAPIDES ══ */
+
+/* 1. Bouton submit du bloc search (panneau blanc) — cacher le bouton
+      La recherche se valide via "Entrée", pas besoin d'un bouton visible */
+
+
+
+
+
+
+/* ══ BARRE DE RECHERCHE — panneau blanc ══ */
+.berre-search-form {
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  border: 1.5px solid var(--bdr) !important;
+  border-radius: 6px !important;
+  padding: 0 14px !important;
+  height: 50px !important;
+  background: #fff !important;
+  margin-bottom: 24px !important;
+  transition: border-color .15s !important;
+}
+.berre-search-form:focus-within {
+  border-color: var(--b) !important;
+  box-shadow: 0 0 0 3px rgba(45,106,176,.1) !important;
+}
+.berre-search-form input[type="search"] {
+  flex: 1 !important;
+  border: none !important;
+  outline: none !important;
+  font-size: 14px !important;
+  font-family: var(--sans) !important;
+  color: var(--t) !important;
+  background: transparent !important;
+  padding: 0 !important;
+  height: 100% !important;
+  -webkit-appearance: none !important;
+}
+.berre-search-form input[type="search"]::placeholder {
+  color: var(--ts) !important;
+}
+.berre-search-form input[type="search"]::-webkit-search-cancel-button {
+  display: none !important;
+}
+.berre-search-form button[type="submit"] {
+  width: 34px !important;
+  height: 34px !important;
+  border-radius: 5px !important;
+  background: var(--b) !important;
+  border: none !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  flex-shrink: 0 !important;
+  transition: background .15s !important;
+}
+.berre-search-form button[type="submit"]:hover {
+  background: var(--bd) !important;
+}

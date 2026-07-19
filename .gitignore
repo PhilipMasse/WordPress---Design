@@ -1,0 +1,15 @@
+# Fichiers système
+.DS_Store
+Thumbs.db
+*.log
+
+# Éditeurs
+.vscode/
+.idea/
+*.swp
+
+# Node / npm (si utilisé)
+node_modules/
+
+# Fichiers de déploiement
+*.zip

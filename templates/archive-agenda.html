@@ -1,0 +1,76 @@
+<!-- wp:template-part {"slug":"header","tagName":"header"} /-->
+
+<!-- wp:group {"tagName":"main","className":"berre-main berre-main--agenda-archive","layout":{"type":"default"}} -->
+<main class="wp-block-group berre-main berre-main--agenda-archive">
+
+  <!-- BANNER -->
+  <!-- wp:group {"className":"berre-archive-banner","layout":{"type":"constrained","contentSize":"1200px"}} -->
+  <div class="wp-block-group berre-archive-banner">
+    <!-- wp:html -->
+    <nav class="berre-breadcrumb" aria-label="Fil d'Ariane">
+      <a href="/">Accueil</a>
+      <span class="berre-breadcrumb__sep">›</span>
+      <span class="berre-breadcrumb__current">Agenda</span>
+    </nav>
+    <!-- /wp:html -->
+    <!-- wp:heading {"level":1,"className":"berre-archive-title"} -->
+    <h1 class="wp-block-heading berre-archive-title">Agenda municipal</h1>
+    <!-- /wp:heading -->
+    <!-- wp:paragraph {"className":"berre-archive-desc"} -->
+    <p class="berre-archive-desc">Tous les événements, manifestations et réunions de la commune de Berre-les-Alpes.</p>
+    <!-- /wp:paragraph -->
+    <!-- wp:html -->
+    <div class="berre-archive-filters">
+      <a href="/agenda" class="berre-filter berre-filter--active">Tous</a>
+      <a href="/categorie-agenda/institutionnel" class="berre-filter">Institutionnel</a>
+      <a href="/categorie-agenda/culture" class="berre-filter">Culture</a>
+      <a href="/categorie-agenda/tourisme" class="berre-filter">Tourisme &amp; Sport</a>
+      <a href="/categorie-agenda/associations" class="berre-filter">Associations</a>
+      <a href="/categorie-agenda/commerce" class="berre-filter">Commerce</a>
+    </div>
+    <!-- /wp:html -->
+  </div>
+  <!-- /wp:group -->
+
+  <!-- LISTE ÉVÉNEMENTS -->
+  <!-- wp:group {"className":"berre-agenda-list-wrap","layout":{"type":"constrained","contentSize":"1200px"}} -->
+  <div class="wp-block-group berre-agenda-list-wrap">
+    <!-- wp:query {"queryId":2,"query":{"perPage":12,"pages":0,"offset":0,"postType":"agenda","order":"asc","orderBy":"date","author":"","search":"","exclude":[],"sticky":"","inherit":false},"className":"berre-agenda-query"} -->
+    <div class="wp-block-query berre-agenda-query">
+      <!-- wp:post-template {"className":"berre-agenda-event-list"} -->
+        <!-- wp:html -->
+        <article class="berre-agenda-event-card">
+          <div class="berre-agenda-event-card__date-col">
+            <!-- Date gérée par CSS via custom fields -->
+          </div>
+          <div class="berre-agenda-event-card__img-col">
+            <!-- wp:post-featured-image {"isLink":true,"className":"berre-agenda-event-card__img"} /-->
+          </div>
+          <div class="berre-agenda-event-card__info">
+            <!-- wp:post-terms {"term":"categorie_agenda","className":"berre-agenda-event-card__cat"} /-->
+            <!-- wp:post-title {"isLink":true,"className":"berre-agenda-event-card__title","level":2} /-->
+            <!-- wp:post-excerpt {"numberOfWords":20,"className":"berre-agenda-event-card__excerpt"} /-->
+            <a href="<!-- wp:post-permalink /-->" class="berre-agenda-event-card__cta">Voir les détails →</a>
+          </div>
+        </article>
+        <!-- /wp:html -->
+      <!-- /wp:post-template -->
+
+      <!-- wp:query-pagination {"className":"berre-pagination","layout":{"type":"flex","justifyContent":"center"}} -->
+        <!-- wp:query-pagination-previous /-->
+        <!-- wp:query-pagination-numbers /-->
+        <!-- wp:query-pagination-next /-->
+      <!-- /wp:query-pagination -->
+
+      <!-- wp:query-no-results -->
+        <!-- wp:paragraph {"className":"berre-no-results"} --><p class="berre-no-results">Aucun événement à venir.</p><!-- /wp:paragraph -->
+      <!-- /wp:query-no-results -->
+    </div>
+    <!-- /wp:query -->
+  </div>
+  <!-- /wp:group -->
+
+</main>
+<!-- /wp:group -->
+
+<!-- wp:template-part {"slug":"footer","tagName":"footer"} /-->

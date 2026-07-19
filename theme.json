@@ -1,0 +1,68 @@
+{
+  "$schema": "https://schemas.wp.org/trunk/theme.json",
+  "version": 3,
+  "settings": {
+    "appearanceTools": true,
+    "useRootPaddingAwareAlignments": true,
+    "color": {
+      "palette": [
+        { "slug": "bleu",      "color": "#2D6AB0", "name": "Bleu"          },
+        { "slug": "bleu-dk",   "color": "#1a3e72", "name": "Bleu fonce"    },
+        { "slug": "bleu-ddk",  "color": "#102142", "name": "Bleu profond"  },
+        { "slug": "bleu-lt",   "color": "#e8f1fb", "name": "Bleu clair"    },
+        { "slug": "vert",      "color": "#587526", "name": "Vert"          },
+        { "slug": "vert-lt",   "color": "#eef3e4", "name": "Vert clair"    },
+        { "slug": "or",        "color": "#DEA128", "name": "Or"            },
+        { "slug": "or-lt",     "color": "#fdf4e3", "name": "Or clair"      },
+        { "slug": "texte",     "color": "#1a1a2e", "name": "Texte"         },
+        { "slug": "texte-m",   "color": "#3d4f63", "name": "Texte moyen"   },
+        { "slug": "texte-d",   "color": "#7a8c9e", "name": "Texte discret" },
+        { "slug": "bdr",       "color": "#e0e6ef", "name": "Bordure"       },
+        { "slug": "fond",      "color": "#f5f7fa", "name": "Fond"          },
+        { "slug": "blanc",     "color": "#ffffff",  "name": "Blanc"        }
+      ]
+    },
+    "typography": {
+      "fontFamilies": [
+        { "fontFamily": "'Syne', sans-serif",                            "slug": "syne",  "name": "Syne"  },
+        { "fontFamily": "'Inter', system-ui, -apple-system, sans-serif", "slug": "inter", "name": "Inter" }
+      ],
+      "fontSizes": [
+        { "slug": "xs",   "size": "0.75rem",  "name": "XS"   },
+        { "slug": "sm",   "size": "0.875rem", "name": "SM"   },
+        { "slug": "base", "size": "1rem",     "name": "Base" },
+        { "slug": "lg",   "size": "1.5rem",   "name": "LG"   },
+        { "slug": "xl",   "size": "2rem",     "name": "XL"   },
+        { "slug": "2xl",  "size": "3rem",     "name": "2XL"  }
+      ],
+      "defaultFontSizes": false
+    },
+    "layout": { "contentSize": "780px", "wideSize": "1200px" }
+  },
+  "styles": {
+    "color": { "background": "#f5f7fa", "text": "#1a1a2e" },
+    "typography": {
+      "fontFamily": "var(--wp--preset--font-family--inter)",
+      "fontSize":   "var(--wp--preset--font-size--base)",
+      "lineHeight": "1.65"
+    },
+    "elements": {
+      "link": { "color": { "text": "var(--wp--preset--color--bleu)" } },
+      "h1": { "typography": { "fontFamily": "var(--wp--preset--font-family--syne)", "fontSize": "var(--wp--preset--font-size--2xl)", "fontWeight": "800", "letterSpacing": "-0.04em" } },
+      "h2": { "typography": { "fontFamily": "var(--wp--preset--font-family--syne)", "fontSize": "var(--wp--preset--font-size--xl)",  "fontWeight": "800", "letterSpacing": "-0.03em" } },
+      "h3": { "typography": { "fontFamily": "var(--wp--preset--font-family--syne)", "fontSize": "var(--wp--preset--font-size--lg)",  "fontWeight": "700" } }
+    }
+  },
+  "templateParts": [
+    { "area": "header", "name": "header", "title": "En-tete" },
+    { "area": "footer", "name": "footer", "title": "Pied de page" }
+  ],
+  "customTemplates": [
+    { "name": "front-page",        "title": "Page accueil",       "postTypes": ["page"]      },
+    { "name": "page",              "title": "Page standard",      "postTypes": ["page"]      },
+    { "name": "single-actualite",  "title": "Actualite",          "postTypes": ["actualite"] },
+    { "name": "archive-actualite", "title": "Archive Actualites", "postTypes": ["actualite"] },
+    { "name": "single-agenda",     "title": "Evenement",          "postTypes": ["agenda"]    },
+    { "name": "archive-agenda",    "title": "Archive Agenda",     "postTypes": ["agenda"]    }
+  ]
+}

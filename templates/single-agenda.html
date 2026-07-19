@@ -1,0 +1,106 @@
+<!-- wp:template-part {"slug":"header","tagName":"header"} /-->
+
+<!-- wp:group {"tagName":"main","className":"berre-main berre-main--event","layout":{"type":"default"}} -->
+<main class="wp-block-group berre-main berre-main--event">
+
+  <!-- BANNER ÉVÉNEMENT -->
+  <!-- wp:group {"className":"berre-event-banner","layout":{"type":"constrained","contentSize":"1200px"}} -->
+  <div class="wp-block-group berre-event-banner">
+    <!-- wp:html -->
+    <nav class="berre-breadcrumb" aria-label="Fil d'Ariane">
+      <a href="/">Accueil</a>
+      <span class="berre-breadcrumb__sep">›</span>
+      <a href="/agenda">Agenda</a>
+      <span class="berre-breadcrumb__sep">›</span>
+      <span class="berre-breadcrumb__current">Événement</span>
+    </nav>
+    <!-- /wp:html -->
+    <!-- wp:post-terms {"term":"categorie_agenda","className":"berre-event-cats"} /-->
+    <!-- wp:post-title {"level":1,"className":"berre-event-title"} /-->
+  </div>
+  <!-- /wp:group -->
+
+  <!-- CORPS ÉVÉNEMENT -->
+  <!-- wp:group {"className":"berre-event-body-wrap","layout":{"type":"constrained","contentSize":"1200px"}} -->
+  <div class="wp-block-group berre-event-body-wrap">
+
+    <!-- wp:columns {"className":"berre-event-cols"} -->
+    <div class="wp-block-columns berre-event-cols">
+
+      <!-- CONTENU -->
+      <!-- wp:column {"width":"62%","className":"berre-event-content-col"} -->
+      <div class="wp-block-column berre-event-content-col" style="flex-basis:62%">
+        <!-- Image à la une -->
+        <!-- wp:post-featured-image {"isLink":false,"className":"berre-event-hero-img","style":{"border":{"radius":"8px"}}} /-->
+        <!-- Contenu -->
+        <!-- wp:post-content {"className":"berre-event-content","layout":{"type":"constrained","contentSize":"620px"}} /-->
+        <!-- Retour agenda -->
+        <!-- wp:html -->
+        <div class="berre-article-nav">
+          <a href="/agenda" class="berre-article-nav__back">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg>
+            Retour à l'agenda
+          </a>
+        </div>
+        <!-- /wp:html -->
+      </div>
+      <!-- /wp:column -->
+
+      <!-- INFOS PRATIQUES -->
+      <!-- wp:column {"width":"38%","className":"berre-event-info-col"} -->
+      <div class="wp-block-column berre-event-info-col" style="flex-basis:38%">
+
+        <!-- Fiche pratique -->
+        <!-- wp:html -->
+        <div class="berre-event-info-card">
+          <h3 class="berre-event-info-card__title">Informations pratiques</h3>
+          <div class="berre-event-info-rows" id="berre-event-meta-rows">
+            <!-- Rempli dynamiquement par JS depuis les custom fields -->
+          </div>
+          <a href="#" class="berre-event-cta-btn" id="berre-event-cta">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            Ajouter à mon agenda
+          </a>
+        </div>
+        <!-- /wp:html -->
+
+        <!-- Partager -->
+        <!-- wp:html -->
+        <div class="berre-sidebar-card" style="margin-top:12px">
+          <h3 class="berre-sidebar-card__title">Partager l'événement</h3>
+          <div class="berre-share-btns">
+            <a href="#" class="berre-share-btn berre-share-btn--fb" aria-label="Partager sur Facebook">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true"><path d="M18 2h-3a5 5 0 00-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 011-1h3z"/></svg>
+              Facebook
+            </a>
+            <a href="#" class="berre-share-btn berre-share-btn--ml" aria-label="Partager par e-mail">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+              E-mail
+            </a>
+          </div>
+        </div>
+        <!-- /wp:html -->
+
+        <!-- Agenda prochains -->
+        <!-- wp:html -->
+        <div class="berre-sidebar-card" style="margin-top:12px">
+          <h3 class="berre-sidebar-card__title">Prochains événements</h3>
+          <div class="berre-sidebar-links">
+            <a href="/agenda" class="berre-sidebar-link">Voir tout l'agenda →</a>
+          </div>
+        </div>
+        <!-- /wp:html -->
+
+      </div>
+      <!-- /wp:column -->
+
+    </div>
+    <!-- /wp:columns -->
+
+  </div>
+  <!-- /wp:group -->
+
+</main>
+<!-- /wp:group -->
+
+<!-- wp:template-part {"slug":"footer","tagName":"footer"} /-->
