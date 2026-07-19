@@ -1,75 +1,87 @@
-<!-- wp:template-part {"slug":"header","tagName":"header"} /-->
+<!-- wp:template-part {"slug":"header"} /-->
 
-<!-- wp:group {"tagName":"main","className":"berre-main berre-main--archive","layout":{"type":"default"}} -->
-<main class="wp-block-group berre-main berre-main--archive">
+<!-- ARCHIVE ACTUALITÉS -->
+<!-- wp:group {"className":"berre-archive-page","layout":{"type":"default"}} -->
+<div class="wp-block-group berre-archive-page">
 
-  <!-- BANNER -->
-  <!-- wp:group {"className":"berre-archive-banner","layout":{"type":"constrained","contentSize":"1200px"}} -->
-  <div class="wp-block-group berre-archive-banner">
-    <!-- wp:html -->
-    <nav class="berre-breadcrumb" aria-label="Fil d'Ariane">
-      <a href="/">Accueil</a>
-      <span class="berre-breadcrumb__sep">›</span>
-      <span class="berre-breadcrumb__current">Actualités</span>
-    </nav>
-    <!-- /wp:html -->
-    <!-- wp:heading {"level":1,"className":"berre-archive-title"} -->
-    <h1 class="wp-block-heading berre-archive-title">Actualités</h1>
-    <!-- /wp:heading -->
-    <!-- wp:paragraph {"className":"berre-archive-desc"} -->
-    <p class="berre-archive-desc">Restez informés de la vie de Berre-les-Alpes — décisions municipales, travaux, événements et services.</p>
-    <!-- /wp:paragraph -->
-    <!-- wp:html -->
-    <div class="berre-archive-filters">
-      <a href="/actualites" class="berre-filter berre-filter--active">Toutes</a>
-      <a href="/categorie-actu/travaux" class="berre-filter">Travaux</a>
-      <a href="/categorie-actu/scolarite" class="berre-filter">Scolarité</a>
-      <a href="/categorie-actu/culture" class="berre-filter">Culture</a>
-      <a href="/categorie-actu/environnement" class="berre-filter">Environnement</a>
-      <a href="/categorie-actu/services" class="berre-filter">Services</a>
-      <a href="/categorie-actu/urbanisme" class="berre-filter">Urbanisme</a>
-    </div>
-    <!-- /wp:html -->
-  </div>
-  <!-- /wp:group -->
+<!-- BANNIÈRE -->
+<!-- wp:group {"className":"berre-archive-banner","layout":{"type":"constrained","contentSize":"1140px"}} -->
+<div class="wp-block-group berre-archive-banner">
 
-  <!-- GRILLE ARTICLES -->
-  <!-- wp:group {"className":"berre-archive-grid-wrap","layout":{"type":"constrained","contentSize":"1200px"}} -->
-  <div class="wp-block-group berre-archive-grid-wrap">
-    <!-- wp:query {"queryId":1,"query":{"perPage":12,"pages":0,"offset":0,"postType":"actualite","order":"desc","orderBy":"date","author":"","search":"","exclude":[],"sticky":"","inherit":true},"className":"berre-archive-query"} -->
-    <div class="wp-block-query berre-archive-query">
-      <!-- wp:post-template {"className":"berre-archive-grid","layout":{"type":"grid","columnCount":3}} -->
-        <!-- wp:group {"className":"berre-archive-card","layout":{"type":"flex","orientation":"vertical"}} -->
-        <div class="wp-block-group berre-archive-card">
-          <!-- wp:post-featured-image {"isLink":true,"className":"berre-archive-card__img"} /-->
-          <!-- wp:group {"className":"berre-archive-card__body","layout":{"type":"flex","orientation":"vertical"}} -->
-          <div class="wp-block-group berre-archive-card__body">
-            <!-- wp:post-terms {"term":"categorie_actu","className":"berre-archive-card__cat"} /-->
-            <!-- wp:post-title {"isLink":true,"className":"berre-archive-card__title","level":2} /-->
-            <!-- wp:post-excerpt {"numberOfWords":20,"className":"berre-archive-card__excerpt"} /-->
-            <!-- wp:post-date {"className":"berre-archive-card__date"} /-->
-          </div>
-          <!-- /wp:group -->
-        </div>
-        <!-- /wp:group -->
-      <!-- /wp:post-template -->
+<!-- wp:html -->
+<nav class="berre-breadcrumb" aria-label="Fil d'Ariane">
+  <a href="/">Accueil</a>
+  <span>›</span>
+  <span class="berre-breadcrumb__cur">Actualités</span>
+</nav>
+<!-- /wp:html -->
 
-      <!-- PAGINATION -->
-      <!-- wp:query-pagination {"className":"berre-pagination","layout":{"type":"flex","justifyContent":"center"}} -->
-        <!-- wp:query-pagination-previous /-->
-        <!-- wp:query-pagination-numbers /-->
-        <!-- wp:query-pagination-next /-->
-      <!-- /wp:query-pagination -->
+<!-- wp:heading {"level":1,"className":"berre-archive-h1"} -->
+<h1 class="wp-block-heading berre-archive-h1">Actualités</h1>
+<!-- /wp:heading -->
 
-      <!-- wp:query-no-results -->
-        <!-- wp:paragraph {"className":"berre-no-results"} --><p class="berre-no-results">Aucune actualité pour le moment.</p><!-- /wp:paragraph -->
-      <!-- /wp:query-no-results -->
-    </div>
-    <!-- /wp:query -->
-  </div>
-  <!-- /wp:group -->
+<!-- wp:paragraph {"className":"berre-archive-intro"} -->
+<p class="berre-archive-intro">Décisions municipales, travaux, événements, services — restez informés de la vie de Berre-les-Alpes.</p>
+<!-- /wp:paragraph -->
 
-</main>
+<!-- Filtres catégories -->
+<!-- wp:html -->
+<div class="berre-archive-filters" role="navigation" aria-label="Filtrer par catégorie">
+  <a href="/actualites" class="berre-filter berre-filter--active">Toutes</a>
+  <a href="/categorie-actu/travaux" class="berre-filter">Travaux</a>
+  <a href="/categorie-actu/culture" class="berre-filter">Culture</a>
+  <a href="/categorie-actu/environnement" class="berre-filter">Environnement</a>
+  <a href="/categorie-actu/scolarite" class="berre-filter">Scolarité</a>
+  <a href="/categorie-actu/services" class="berre-filter">Services</a>
+  <a href="/categorie-actu/urbanisme" class="berre-filter">Urbanisme</a>
+</div>
+<!-- /wp:html -->
+
+</div>
 <!-- /wp:group -->
 
-<!-- wp:template-part {"slug":"footer","tagName":"footer"} /-->
+<!-- GRILLE -->
+<!-- wp:group {"className":"berre-archive-grid-wrap","layout":{"type":"constrained","contentSize":"1140px"}} -->
+<div class="wp-block-group berre-archive-grid-wrap">
+
+<!-- wp:query {"queryId":1,"query":{"perPage":12,"pages":0,"offset":0,"postType":"actualite","order":"desc","orderBy":"date","author":"","search":"","exclude":[],"sticky":"","inherit":true}} -->
+<div class="wp-block-query">
+
+<!-- wp:post-template {"className":"berre-actu-grid"} -->
+
+<!-- wp:group {"className":"berre-actu-card","layout":{"type":"default"}} -->
+<div class="wp-block-group berre-actu-card">
+<!-- wp:post-featured-image {"isLink":true,"className":"berre-actu-card__img","aspectRatio":"16/9"} /-->
+<!-- wp:group {"className":"berre-actu-card__body","layout":{"type":"flex","orientation":"vertical","flexWrap":"nowrap"}} -->
+<div class="wp-block-group berre-actu-card__body">
+<!-- wp:post-terms {"term":"categorie_actu","className":"berre-actu-card__cat"} /-->
+<!-- wp:post-title {"isLink":true,"level":2,"className":"berre-actu-card__title"} /-->
+<!-- wp:post-excerpt {"numberOfWords":20,"className":"berre-actu-card__excerpt","moreText":""} /-->
+<!-- wp:post-date {"className":"berre-actu-card__date","format":"j F Y"} /-->
+</div>
+<!-- /wp:group -->
+</div>
+<!-- /wp:group -->
+
+<!-- /wp:post-template -->
+
+<!-- wp:query-pagination {"className":"berre-pagination","layout":{"type":"flex","justifyContent":"center"}} -->
+<!-- wp:query-pagination-previous /-->
+<!-- wp:query-pagination-numbers /-->
+<!-- wp:query-pagination-next /-->
+<!-- /wp:query-pagination -->
+
+<!-- wp:query-no-results -->
+<!-- wp:paragraph --><p class="berre-no-results">Aucune actualité publiée pour le moment.</p><!-- /wp:paragraph -->
+<!-- /wp:query-no-results -->
+
+</div>
+<!-- /wp:query -->
+
+</div>
+<!-- /wp:group -->
+
+</div>
+<!-- /wp:group -->
+
+<!-- wp:template-part {"slug":"footer"} /-->
