@@ -284,48 +284,56 @@ footer .wp-block-navigation__submenu-container .wp-block-navigation-item__conten
 
 
 /* ══════════════════════════════════════════════════════
-   ACCÈS RAPIDES — Règles CSS unifiées (version finale)
-   Chaque icône = 1 seul <a> = 1 seule zone interactive
-   ═══════════════════════════════════════════════════ */
+   ACCÈS RAPIDES — berre-ar__* (classes définitives)
+   UN <a> par lien = UN seul bloc cliquable (cercle + label)
+   ═══════════════════════════════════════════════════════ */
 
-/* Grille des icônes */
-.berre-icons-row {
-  display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  gap: 6px;
-  margin-bottom: 16px;
+/* Conteneur principal */
+.berre-ar {
+  margin-bottom: 4px;
 }
 
-/* Chaque icône : UNE SEULE zone cliquable */
-.berre-icon-btn {
+/* Grille : 6 colonnes, chaque cellule = 1 lien complet */
+.berre-ar__grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+/* ───── UN SEUL BLOC PAR LIEN ─────
+   <a class="berre-ar__item"> contient :
+   - <span class="berre-ar__circle"> (cercle coloré)
+   - <span class="berre-ar__label"> (libellé texte)
+   ─────────────────────────────── */
+.berre-ar__item {
+  flex: 0 0 calc(16.666% - 6px);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
   text-align: center;
-  width: 100%;
-  padding: 14px 8px 12px;
+  padding: 12px 6px 10px;
   border-radius: 10px;
   border: 2px solid transparent;
   background: transparent;
   text-decoration: none;
   cursor: pointer;
   transition: background .18s ease, border-color .18s ease, transform .15s ease;
-  /* Assure que le survol couvre toute la cellule */
   box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
 }
-.berre-icon-btn:hover,
-.berre-icon-btn:focus-visible {
+.berre-ar__item:hover,
+.berre-ar__item:focus-visible {
   background: var(--blt);
   border-color: var(--b);
   transform: translateY(-2px);
   outline: none;
 }
 
-/* Cercle coloré */
-.berre-icon-circle {
-  width: 56px;
-  height: 56px;
+/* Cercle coloré (DANS le <a>) */
+.berre-ar__circle {
+  width: 54px;
+  height: 54px;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -334,49 +342,45 @@ footer .wp-block-navigation__submenu-container .wp-block-navigation-item__conten
   margin-bottom: 8px;
   transition: transform .18s ease, box-shadow .18s ease;
 }
-.berre-icon-circle--bleu { background: var(--b); }
-.berre-icon-circle--vert { background: var(--g); }
-.berre-icon-circle--or   { background: var(--or); }
-.berre-icon-btn:hover .berre-icon-circle {
+.berre-ar__circle--bleu { background: var(--b); }
+.berre-ar__circle--vert { background: var(--g); }
+.berre-ar__circle--or   { background: var(--or); }
+.berre-ar__item:hover .berre-ar__circle {
   transform: scale(1.08);
-  box-shadow: 0 6px 16px rgba(0,0,0,.15);
+  box-shadow: 0 5px 14px rgba(0,0,0,.18);
 }
 
-/* Libellé texte */
-.berre-icon-lbl {
+/* Libellé (DANS le <a>, sous le cercle) */
+.berre-ar__label {
   font-size: 10px;
   font-weight: 700;
-  color: var(--b);
-  letter-spacing: .05em;
   text-transform: uppercase;
+  letter-spacing: .05em;
   line-height: 1.3;
-  max-width: 90px;
+  color: var(--b);
+  max-width: 88px;
 }
-.berre-icon-circle--vert ~ .berre-icon-lbl,
-.berre-icon-circle--vert + .berre-icon-lbl { color: var(--g); }
-.berre-icon-circle--or ~ .berre-icon-lbl,
-.berre-icon-circle--or + .berre-icon-lbl   { color: #8a5a00; }
+.berre-ar__circle--vert + .berre-ar__label { color: var(--g); }
+.berre-ar__circle--or   + .berre-ar__label { color: #8a5a00; }
 
-/* Icônes secondaires — cachées par défaut */
-.berre-icons-secondary {
-  display: none;
-  grid-template-columns: repeat(6, 1fr);
-  gap: 6px;
-  margin-top: 12px;
+/* Secondaires — cachées par défaut (inline style en PHP + CSS) */
+.berre-ar__grid--secondary {
+  display: none !important;
   padding-top: 14px;
   border-top: 1px solid var(--bdr);
-  margin-bottom: 16px;
+  margin-top: 10px;
 }
-.berre-icons-secondary.is-open {
-  display: grid;
+.berre-ar__grid--secondary.open {
+  display: flex !important;
 }
 
 /* Responsive */
-@media (max-width: 600px) {
-  .berre-icons-row,
-  .berre-icons-secondary { grid-template-columns: repeat(3, 1fr); }
+@media (max-width: 700px) {
+  .berre-ar__item { flex: 0 0 calc(33.333% - 5px); }
 }
-
+@media (max-width: 400px) {
+  .berre-ar__item { flex: 0 0 calc(50% - 4px); }
+}
 
 /* ── HERO PHOTO ── */
 .berre-hero{width:100%;min-height:420px!important;position:relative;background:var(--bdd)}

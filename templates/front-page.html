@@ -23,18 +23,7 @@
 <!-- wp:shortcode -->[berre_acces_rapides]<!-- /wp:shortcode -->
 <!-- wp:html -->
 <div class="berre-see-more">
-  <button type="button" class="berre-see-more__btn" aria-expanded="false"
-    onclick="(function(btn){
-      var sec = document.querySelector('.berre-icons-secondary');
-      if (!sec) return;
-      var open = sec.style.display === 'flex';
-      sec.style.display = open ? 'none' : 'flex';
-      btn.setAttribute('aria-expanded', !open);
-      btn.querySelector('.berre-see-more__text').textContent = open
-        ? 'Voir plus d’accès rapides '
-        : 'Voir moins d’accès rapides ';
-      btn.querySelector('.berre-see-more__dot').textContent = open ? '+' : '−';
-    })(this)">
+  <button type="button" class="berre-see-more__btn" aria-expanded="false">
     <span class="berre-see-more__text">Voir plus d&#8217;accès rapides </span><span class="berre-see-more__dot">+</span>
   </button>
 </div>

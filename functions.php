@@ -1012,42 +1012,49 @@ function berre_admin_row( $link, $group, $icons, $colors ) {
     <?php return ob_get_clean();
 }
 
-/* ── Shortcode [berre_acces_rapides] — rendu HTML ── */
+/* ── Shortcode [berre_acces_rapides] ──────────────────────
+   Structure HTML avec classes NOUVELLES (berre-ar__*)
+   pour éviter tout conflit avec l'ancien cache WordPress.
+   Chaque lien = 1 seul <a> contenant cercle + libellé.
+   ───────────────────────────────────────────────────── */
 function berre_render_acces_rapides( $atts = [] ) {
     $data  = berre_get_acces_rapides();
     $icons = berre_icons_list();
-
-    // data-berre-ts permet au JS d'identifier le rendu le plus récent
-    $ts   = time();
-    $html = '<div class="berre-icons-block" data-berre-ts="' . $ts . '">';
-    $html .= berre_icons_html( $data['primary'] ?? [], $icons, 'berre-icons-row berre-icons-primary' );
+    $html  = '<div class="berre-ar" data-berre-ar="1">';
+    $html .= berre_ar_grid( $data['primary'] ?? [], $icons, false );
     if ( ! empty( $data['secondary'] ) ) {
-        $html .= berre_icons_html( $data['secondary'], $icons, 'berre-icons-row berre-icons-secondary' );
+        $html .= berre_ar_grid( $data['secondary'], $icons, true );
     }
     $html .= '</div>';
     return $html;
 }
 add_shortcode( "berre_acces_rapides", "berre_render_acces_rapides" );
 
-function berre_icons_html( $links, $icons, $class = 'berre-icons-row' ) {
+function berre_ar_grid( $links, $icons, $secondary = false ) {
     if ( empty( $links ) ) return '';
-    // Masquer les icônes secondaires inline (display:none, non contournable par CSS externe)
-    $is_secondary = strpos( $class, 'berre-icons-secondary' ) !== false;
-    $style = $is_secondary ? ' style="display:none"' : '';
-    $html = '<div class="' . esc_attr($class) . '"' . $style . ' role="navigation">';
+    $cls   = $secondary ? 'berre-ar__grid berre-ar__grid--secondary' : 'berre-ar__grid berre-ar__grid--primary';
+    $style = $secondary ? ' style="display:none"' : '';
+    $html  = '<div class="' . $cls . '"' . $style . '>';
     foreach ( $links as $link ) {
         $icon_key = $link['icon'] ?? 'document';
         $color    = $link['color'] ?? 'bleu';
         $target   = ( ($link['target'] ?? '_self') === '_blank' ) ? ' target="_blank" rel="noopener noreferrer"' : '';
         $svg      = $icons[$icon_key]['svg'] ?? $icons['document']['svg'];
-        $html .= sprintf(
-            '<a href="%s"%s class="berre-icon-btn">'
-            . '<div class="berre-icon-circle berre-icon-circle--%s"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="white" stroke-width="1.7">%s</svg></div>'
-            . '<span class="berre-icon-lbl">%s</span></a>',
-            esc_url($link['url'] ?? '#'), $target,
-            esc_attr($color), $svg, esc_html($link['label'] ?? '')
-        );
+        $html .= '<a href="' . esc_url( $link['url'] ?? '#' ) . '"' . $target . ' class="berre-ar__item">';
+        $html .= '<span class="berre-ar__circle berre-ar__circle--' . esc_attr( $color ) . '">';
+        $html .= '<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="white" stroke-width="1.7">' . $svg . '</svg>';
+        $html .= '</span>';
+        $html .= '<span class="berre-ar__label">' . esc_html( $link['label'] ?? '' ) . '</span>';
+        $html .= '</a>';
     }
+    $html .= '</div>';
+    return $html;
+}
+
+function berre_icons_html( $links, $icons, $class = '' ) {
+    return berre_ar_grid( $links, $icons, strpos( $class, 'secondary' ) !== false );
+}
+
     $html .= '</div>';
     return $html;
 }

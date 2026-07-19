@@ -1,137 +1,76 @@
-/* Berre-les-Alpes — main.js */
+/* Berre-les-Alpes — main.js v2.5 */
 (function () {
   'use strict';
 
   document.addEventListener('DOMContentLoaded', function () {
 
-    /* ══ NETTOYAGE ICÔNES ACCÈS RAPIDES ══
-       Supprime les anciens conteneurs sans classe primary/secondary
-       (laissés par le cache de template WordPress).
-       ═════════════════════════════════════ */
-    (function cleanupIcons() {
-
-      /* 1. Supprimer TOUS les conteneurs sans primary/secondary
-            (anciens wp:html hardcodés dans le cache) */
-      document.querySelectorAll(
-        '.berre-icons-row:not(.berre-icons-primary):not(.berre-icons-secondary)'
-      ).forEach(function(r) { r.remove(); });
-
-      /* 2. S'il reste plusieurs .berre-icons-primary (shortcode appelé 2x),
-            garder uniquement le DERNIER — supprimer les précédents */
-      var primaries = document.querySelectorAll('.berre-icons-primary');
-      if (primaries.length > 1) {
-        Array.from(primaries).slice(0, primaries.length - 1).forEach(function(r) {
-          r.remove();
+    /* ══ NETTOYAGE CACHE ══════════════════════════════════════════
+       Supprime TOUS les anciens éléments avec les vieilles classes
+       (.berre-icons-row, .berre-icons-block, .berre-icon-btn...)
+       et garde uniquement les nouveaux blocs .berre-ar
+       ══════════════════════════════════════════════════════════ */
+    (function cleanOldCache() {
+      // Supprimer tout ce qui utilise les ANCIENNES classes
+      [
+        '.berre-icons-row',
+        '.berre-icons-block',
+        '.berre-icon-btn'
+      ].forEach(function(sel) {
+        document.querySelectorAll(sel).forEach(function(el) {
+          // Ne supprimer QUE si l'élément N'EST PAS à l'intérieur d'un .berre-ar
+          if (!el.closest('.berre-ar')) el.remove();
         });
-      }
-
-      /* 3. Pareil pour les secondary en double */
-      var secondaries = document.querySelectorAll('.berre-icons-secondary');
-      if (secondaries.length > 1) {
-        Array.from(secondaries).slice(0, secondaries.length - 1).forEach(function(r) {
-          r.remove();
-        });
-      }
-
-      /* 4. Masquer les secondaires restants */
-      document.querySelectorAll('.berre-icons-secondary').forEach(function(sec) {
-        sec.style.cssText = 'display:none!important;visibility:hidden!important;';
-        sec.setAttribute('aria-hidden', 'true');
       });
 
-      /* 5. S'il y a plusieurs .berre-icons-block (shortcode appelé 2x depuis le cache),
-            garder uniquement celui avec le data-berre-ts le plus élevé */
-      var blocks = document.querySelectorAll('.berre-icons-block[data-berre-ts]');
-      if (blocks.length > 1) {
-        var maxTs = 0, bestBlock = null;
-        blocks.forEach(function(b) {
-          var ts = parseInt(b.getAttribute('data-berre-ts'), 10) || 0;
-          if (ts > maxTs) { maxTs = ts; bestBlock = b; }
+      // S'il y a plusieurs .berre-ar (shortcode appelé 2x), garder le dernier
+      var ars = document.querySelectorAll('[data-berre-ar="1"]');
+      if (ars.length > 1) {
+        Array.from(ars).slice(0, ars.length - 1).forEach(function(el) {
+          el.remove();
         });
-        blocks.forEach(function(b) { if (b !== bestBlock) b.remove(); });
       }
 
-      /* 6. Supprimer les berre-icon-btn orphelins (hors de toute .berre-icons-row) */
-      document.querySelectorAll('.berre-icon-btn').forEach(function(btn) {
-        if (!btn.closest('.berre-icons-row')) btn.remove();
+      // Forcer le masquage des grilles secondaires
+      document.querySelectorAll('.berre-ar__grid--secondary').forEach(function(el) {
+        if (!el.classList.contains('open')) {
+          el.style.setProperty('display', 'none', 'important');
+        }
       });
-
     })();
 
+    /* ══ BOUTON "VOIR PLUS" ═══════════════════════════════════════ */
+    var btn = document.querySelector('.berre-see-more__btn');
+    var sec = document.querySelector('.berre-ar__grid--secondary');
 
-    /* ── Recherche ── */
-    const searchBar = document.querySelector('.berre-search-bar input');
-    if (searchBar) {
-      document.querySelectorAll('#berre-search-toggle').forEach(function (btn) {
-        btn.addEventListener('click', function () {
-          searchBar.focus();
-          searchBar.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        });
-      });
-      const submitBtn = document.querySelector('.berre-search-btn');
-      function doSearch() {
-        const q = searchBar.value.trim();
-        if (q) window.location.href = '/?s=' + encodeURIComponent(q);
-      }
-      if (submitBtn) submitBtn.addEventListener('click', doSearch);
-      searchBar.addEventListener('keydown', function (e) {
-        if (e.key === 'Enter') doSearch();
+    if (btn && sec) {
+      btn.addEventListener('click', function () {
+        var open = sec.classList.toggle('open');
+        if (open) {
+          sec.style.removeProperty('display');
+        } else {
+          sec.style.setProperty('display', 'none', 'important');
+        }
+        btn.setAttribute('aria-expanded', open);
+        var txt = btn.querySelector('.berre-see-more__text');
+        var dot = btn.querySelector('.berre-see-more__dot');
+        if (txt) txt.textContent = open
+          ? 'Voir moins d\u2019acc\u00e8s rapides '
+          : 'Voir plus d\u2019acc\u00e8s rapides ';
+        if (dot) dot.textContent = open ? '\u2212' : '+';
       });
     }
 
-    /* ── Vidéo background commune ── */
-    const communeVideo = document.querySelector('.berre-section-commune video');
-    if (communeVideo && communeVideo.src) {
-      communeVideo.play().catch(function () {
-        communeVideo.style.display = 'none';
-      });
-    }
-
-    /* ── Accès rapides — Voir plus / Voir moins ── */
-    const seeMoreLink = document.querySelector('.berre-see-more__link');
-    const secondary   = document.querySelector('.berre-icons-secondary');
-
-    if (seeMoreLink && secondary) {
-      /* Empêcher la navigation dès le chargement */
-      seeMoreLink.setAttribute('href', '#');
-      seeMoreLink.setAttribute('role', 'button');
-
-      seeMoreLink.addEventListener('click', function (e) {
-        e.preventDefault();
-        e.stopPropagation();
-
-        const isOpen = secondary.classList.toggle('is-open');
-
-        /* Texte du bouton */
-        const dot = this.querySelector('.berre-see-more__dot');
-        const label = this.querySelector('.berre-see-more__text');
-        if (label) {
-          label.textContent = isOpen
-            ? "Voir moins d'accès rapides "
-            : "Voir plus d'accès rapides ";
-        }
-        if (dot) {
-          dot.textContent = isOpen ? '−' : '+';
-        }
-
-        /* Scroll doux vers les icônes secondaires si on ouvre */
-        if (isOpen) {
-          secondary.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    /* ══ RECHERCHE ════════════════════════════════════════════════ */
+    var searchInput = document.querySelector('.berre-search-form input[type="search"]');
+    if (searchInput) {
+      searchInput.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') {
+          var q = this.value.trim();
+          if (q) window.location.href = '/?s=' + encodeURIComponent(q);
         }
       });
     }
-
-    /* ── Agenda : couleur bordure selon catégorie ── */
-    document.querySelectorAll('.berre-agenda-item').forEach(function (item) {
-      const tag = item.querySelector('.berre-agenda-tag');
-      if (!tag) return;
-      const text = tag.textContent.toLowerCase();
-      if (text.includes('culture') || text.includes('concert') || text.includes('musique')) {
-        item.style.borderLeftColor = '#DEA128';
-      } else if (text.includes('sport') || text.includes('rando') || text.includes('tourisme')) {
-        item.style.borderLeftColor = '#587526';
-      }
-    });
 
   });
+
 })();
