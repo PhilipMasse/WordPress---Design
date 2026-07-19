@@ -88,28 +88,40 @@
   overlay.style.cssText = [
     'display:none',
     'position:fixed',
-    'inset:0',
+    'top:0','right:0','bottom:0','left:0',
     'z-index:99999',
-    'background:rgba(16,33,66,.9)',
-    'align-items:flex-start',
+    'background:rgba(16,33,66,.92)',
+    'align-items:center',
     'justify-content:center',
-    'padding:72px 20px 20px'
+    'box-sizing:border-box',
+    'overflow:hidden'
   ].join(';');
 
   overlay.innerHTML =
-    '<div style="width:100%;max-width:600px">' +
-      '<form id="bso-form" action="/" method="get" style="display:flex;background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,.3)">' +
+    '<div style="width:calc(100vw - 32px);max-width:580px;box-sizing:border-box">' +
+      '<p style="color:rgba(255,255,255,.5);font-size:11px;text-align:center;margin:0 0 10px;letter-spacing:.08em;text-transform:uppercase">Recherche</p>' +
+      '<form id="bso-form" action="/" method="get"' +
+           ' style="display:flex;background:#fff;border-radius:8px;overflow:hidden;' +
+                   'box-shadow:0 12px 40px rgba(0,0,0,.4);width:100%;box-sizing:border-box">' +
         '<input type="search" name="s" id="bso-input" autocomplete="off"' +
-          ' placeholder="Rechercher sur le site de Berre-les-Alpes…"' +
-          ' style="flex:1;border:none;outline:none;padding:16px 18px;font-size:16px;font-family:inherit;color:#111">' +
+               ' placeholder="Rechercher…"' +
+               ' style="flex:1;min-width:0;border:none;outline:none;' +
+                       'padding:15px 16px;font-size:16px;font-family:inherit;color:#111">' +
         '<button type="submit"' +
-          ' style="background:#2D6AB0;color:#fff;border:none;padding:0 22px;cursor:pointer;font-size:14px;font-weight:600;font-family:inherit;white-space:nowrap">' +
-          'Rechercher' +
+                ' style="flex-shrink:0;background:#2D6AB0;color:#fff;border:none;' +
+                        'padding:0 18px;cursor:pointer;display:flex;align-items:center;' +
+                        'justify-content:center;min-width:48px">' +
+          '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="white" stroke-width="2.5">' +
+            '<circle cx="11" cy="11" r="8"/>' +
+            '<line x1="21" y1="21" x2="16.65" y2="16.65"/>' +
+          '</svg>' +
         '</button>' +
       '</form>' +
       '<button id="bso-close"' +
-        ' style="margin-top:14px;background:none;border:none;color:rgba(255,255,255,.6);cursor:pointer;font-size:14px;display:block;font-family:inherit">' +
-        '✕ Fermer (Echap)' +
+              ' style="margin-top:14px;background:none;border:none;' +
+                      'color:rgba(255,255,255,.5);cursor:pointer;font-size:13px;' +
+                      'display:block;width:100%;text-align:center;font-family:inherit">' +
+        '✕ Fermer' +
       '</button>' +
     '</div>';
 
