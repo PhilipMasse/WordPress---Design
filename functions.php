@@ -2892,3 +2892,268 @@ add_shortcode( 'berre_calendrier_agenda', function() {
     <?php
     return ob_get_clean();
 });
+
+
+/* ============================================================
+   SERVICES MUNICIPAUX — Page d'administration dédiée
+   Option WP : berre_services
+   ============================================================ */
+
+function berre_services_defaults() {
+    return [
+        ['title'=>'État Civil',        'desc'=>'Actes, naissances, mariages, décès.',    'url'=>'/etat-civil',   'icon'=>'document', 'color'=>'bleu'],
+        ['title'=>'Urbanisme',         'desc'=>'Permis de construire, PLU.',             'url'=>'/urbanisme',    'icon'=>'building', 'color'=>'bleu'],
+        ['title'=>'Scolarité',         'desc'=>'Inscriptions, cantine, garderie.',       'url'=>'/scolarite',    'icon'=>'school',   'color'=>'vert'],
+        ['title'=>'Démarches en ligne','desc'=>'Mes Démarches 06 — 24h/24.',            'url'=>'https://mesdemarches06.fr','icon'=>'computer','color'=>'or'],
+        ['title'=>'Sécurité & Risques','desc'=>'Gendarmerie, plan communal.',           'url'=>'/securite',     'icon'=>'shield',   'color'=>'bleu'],
+        ['title'=>'Qualité de vie',    'desc'=>'Environnement, tri sélectif.',           'url'=>'/qualite-vie',  'icon'=>'leaf',     'color'=>'vert'],
+        ['title'=>'Finances publiques','desc'=>'Budget, marchés publics.',              'url'=>'/finances',     'icon'=>'coin',     'color'=>'or'],
+        ['title'=>'Infos pratiques',   'desc'=>'ANAH, SPANC, juridique.',               'url'=>'/infos',        'icon'=>'info',     'color'=>'bleu'],
+    ];
+}
+
+function berre_get_services() {
+    $saved = get_option( 'berre_services' );
+    if ( empty($saved) || ! is_array($saved) ) return berre_services_defaults();
+    return $saved;
+}
+
+/* ── Menu admin ── */
+add_action( 'admin_menu', function() {
+    add_menu_page(
+        'Services municipaux',
+        'Services municipaux',
+        'manage_options',
+        'berre-services',
+        'berre_services_admin_page',
+        'dashicons-networking',
+        61
+    );
+} );
+
+/* ── Sauvegarde ── */
+add_action( 'admin_init', function() {
+    if ( ! isset($_POST['berre_save_services']) ) return;
+    if ( ! wp_verify_nonce($_POST['berre_services_nonce'] ?? '', 'berre_save_services') ) wp_die('Sécurité invalide.');
+    if ( ! current_user_can('manage_options') ) wp_die('Permission refusée.');
+
+    $services = [];
+    $titles = (array)($_POST['svc_title']  ?? []);
+    $descs  = (array)($_POST['svc_desc']   ?? []);
+    $urls   = (array)($_POST['svc_url']    ?? []);
+    $icons  = (array)($_POST['svc_icon']   ?? []);
+    $colors = (array)($_POST['svc_color']  ?? []);
+
+    foreach ($titles as $i => $title) {
+        $title = sanitize_text_field($title);
+        if (empty($title)) continue;
+        $services[] = [
+            'title' => $title,
+            'desc'  => sanitize_text_field($descs[$i]  ?? ''),
+            'url'   => esc_url_raw($urls[$i]   ?? '#'),
+            'icon'  => sanitize_key($icons[$i]  ?? 'document'),
+            'color' => in_array($colors[$i] ?? '', ['bleu','vert','or']) ? $colors[$i] : 'bleu',
+        ];
+    }
+
+    update_option('berre_services', $services);
+    set_transient('berre_services_saved', true, 10);
+} );
+
+/* ── Page admin ── */
+function berre_services_admin_page() {
+    $services = berre_get_services();
+    $icons    = berre_icons_list();
+    $colors   = ['bleu' => '#2D6AB0', 'vert' => '#587526', 'or' => '#DEA128'];
+    $saved    = get_transient('berre_services_saved');
+    if ($saved) delete_transient('berre_services_saved');
+    ?>
+    <style>
+    .berre-svc-admin-wrap { max-width:860px;margin-top:20px; }
+    .berre-svc-row { background:#fff;border:1px solid #e0e0e0;border-radius:8px;padding:14px 16px;margin-bottom:10px;display:grid;grid-template-columns:28px 42px 1fr 1fr 1fr 130px 110px 44px;gap:10px;align-items:center; }
+    .berre-svc-row:hover { border-color:#bbb; }
+    .berre-drag-handle { cursor:grab;color:#ccc;font-size:20px;text-align:center;user-select:none; }
+    .berre-drag-handle:active { cursor:grabbing; }
+    .berre-svc-icon-preview { width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0; }
+    .berre-svc-icon-preview svg { fill:none;stroke:white;stroke-width:1.8; }
+    .berre-svc-row input[type=text],.berre-svc-row input[type=url] { width:100%;padding:6px 9px;border:1px solid #ddd;border-radius:4px;font-size:12.5px; }
+    .berre-svc-row select { width:100%;padding:5px 8px;border:1px solid #ddd;border-radius:4px;font-size:12px; }
+    .berre-svc-row label { font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#999;display:block;margin-bottom:3px; }
+    .berre-svc-add-btn { margin-top:14px; }
+    </style>
+
+    <div class="wrap berre-svc-admin-wrap">
+        <h1>⚙️ Services municipaux</h1>
+        <p style="color:#666;margin-bottom:16px">Gérez les services affichés sur la page d'accueil. Glissez ⠿ pour réordonner. Maximum recommandé : 8.</p>
+
+        <?php if ($saved): ?>
+        <div class="notice notice-success is-dismissible"><p>✅ Services sauvegardés avec succès.</p></div>
+        <?php endif; ?>
+
+        <form method="post" id="berre-svc-form">
+            <?php wp_nonce_field('berre_save_services','berre_services_nonce'); ?>
+
+            <!-- En-têtes -->
+            <div style="display:grid;grid-template-columns:28px 42px 1fr 1fr 1fr 130px 110px 44px;gap:10px;padding:0 16px;margin-bottom:4px">
+                <div></div><div></div>
+                <div style="font-size:10px;font-weight:700;text-transform:uppercase;color:#999;letter-spacing:.08em">Titre</div>
+                <div style="font-size:10px;font-weight:700;text-transform:uppercase;color:#999;letter-spacing:.08em">Description</div>
+                <div style="font-size:10px;font-weight:700;text-transform:uppercase;color:#999;letter-spacing:.08em">URL</div>
+                <div style="font-size:10px;font-weight:700;text-transform:uppercase;color:#999;letter-spacing:.08em">Icône</div>
+                <div style="font-size:10px;font-weight:700;text-transform:uppercase;color:#999;letter-spacing:.08em">Couleur</div>
+                <div></div>
+            </div>
+
+            <div id="berre-svc-list">
+            <?php foreach ($services as $svc) :
+                $hex = $colors[$svc['color']] ?? '#2D6AB0';
+                $svg = $icons[$svc['icon']]['svg'] ?? '';
+            ?>
+            <div class="berre-svc-row" draggable="true">
+                <span class="berre-drag-handle">⠿</span>
+                <div class="berre-svc-icon-preview" style="background:<?php echo esc_attr($hex); ?>">
+                    <svg viewBox="0 0 24 24" width="18" height="18"><?php echo $svg; ?></svg>
+                </div>
+                <input type="text"  name="svc_title[]"  value="<?php echo esc_attr($svc['title']); ?>" placeholder="Titre" required>
+                <input type="text"  name="svc_desc[]"   value="<?php echo esc_attr($svc['desc']); ?>"  placeholder="Description courte">
+                <input type="url"   name="svc_url[]"    value="<?php echo esc_attr($svc['url']); ?>"   placeholder="/mon-service">
+                <select name="svc_icon[]" class="berre-svc-icon-sel" onchange="updatePreview(this)">
+                    <?php foreach ($icons as $k => $v) : ?>
+                    <option value="<?php echo esc_attr($k); ?>" <?php selected($svc['icon'],$k); ?>>
+                        <?php echo esc_html($v['label']); ?>
+                    </option>
+                    <?php endforeach; ?>
+                </select>
+                <select name="svc_color[]" class="berre-svc-color-sel" onchange="updatePreview(this)">
+                    <option value="bleu" <?php selected($svc['color'],'bleu'); ?>>🔵 Bleu</option>
+                    <option value="vert" <?php selected($svc['color'],'vert'); ?>>🟢 Vert</option>
+                    <option value="or"   <?php selected($svc['color'],'or');   ?>>🟡 Or</option>
+                </select>
+                <button type="button" class="button berre-del-svc" onclick="if(confirm('Supprimer ?'))this.closest('.berre-svc-row').remove()" style="color:#c00">✕</button>
+            </div>
+            <?php endforeach; ?>
+            </div>
+
+            <div class="berre-svc-add-btn" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+                <button type="button" id="berre-add-svc" class="button button-secondary">➕ Ajouter un service</button>
+                <input type="submit" name="berre_save_services" class="button button-primary button-large" value="💾 Enregistrer">
+                <span style="color:#888;font-size:12px">Les modifications s'appliquent immédiatement sur le site.</span>
+            </div>
+        </form>
+
+        <!-- Aperçu des icônes -->
+        <div style="margin-top:28px;padding:20px;background:#fff;border:1px solid #eee;border-radius:8px">
+            <h2 style="font-size:14px;margin:0 0 12px">Aperçu des icônes disponibles</h2>
+            <div style="display:flex;flex-wrap:wrap;gap:12px">
+                <?php foreach ($icons as $key => $ic) : ?>
+                <div style="text-align:center;cursor:pointer;padding:6px;border-radius:6px;border:1px solid transparent;width:80px" title="<?php echo esc_attr($ic['label']); ?>">
+                    <div style="width:40px;height:40px;background:#2D6AB0;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 5px">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="white" stroke-width="1.8"><?php echo $ic['svg']; ?></svg>
+                    </div>
+                    <div style="font-size:9.5px;color:#666;line-height:1.2"><?php echo esc_html($ic['label']); ?></div>
+                </div>
+                <?php endforeach; ?>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    var ICONS_SVG = <?php echo json_encode(array_map(fn($k,$v)=>['key'=>$k,'svg'=>$v['svg']], array_keys($icons), $icons)); ?>;
+    var COLORS    = {bleu:'#2D6AB0',vert:'#587526',or:'#DEA128'};
+
+    function updatePreview(el) {
+        var row     = el.closest('.berre-svc-row');
+        var iconSel = row.querySelector('.berre-svc-icon-sel');
+        var colSel  = row.querySelector('.berre-svc-color-sel');
+        var preview = row.querySelector('.berre-svc-icon-preview');
+        var ic = ICONS_SVG.find(i => i.key === iconSel.value);
+        var color = COLORS[colSel.value] || '#2D6AB0';
+        preview.style.background = color;
+        preview.innerHTML = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="white" stroke-width="1.8">' + (ic ? ic.svg : '') + '</svg>';
+    }
+
+    function buildRow() {
+        var iconOpts  = ICONS_SVG.map(i => `<option value="${i.key}">${i.key}</option>`).join('');
+        var row = document.createElement('div');
+        row.className = 'berre-svc-row';
+        row.draggable = true;
+        row.innerHTML = `
+            <span class="berre-drag-handle">⠿</span>
+            <div class="berre-svc-icon-preview" style="background:#2D6AB0">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="white" stroke-width="1.8"></svg>
+            </div>
+            <input type="text" name="svc_title[]" placeholder="Titre" required>
+            <input type="text" name="svc_desc[]"  placeholder="Description courte">
+            <input type="url"  name="svc_url[]"   placeholder="/mon-service">
+            <select name="svc_icon[]"  class="berre-svc-icon-sel"  onchange="updatePreview(this)">${ICONS_SVG.map(i=>`<option value="${i.key}">${i.key}</option>`).join('')}</select>
+            <select name="svc_color[]" class="berre-svc-color-sel" onchange="updatePreview(this)">
+                <option value="bleu">🔵 Bleu</option>
+                <option value="vert">🟢 Vert</option>
+                <option value="or">🟡 Or</option>
+            </select>
+            <button type="button" class="button berre-del-svc" onclick="if(confirm('Supprimer ?'))this.closest('.berre-svc-row').remove()" style="color:#c00">✕</button>
+        `;
+        return row;
+    }
+
+    document.getElementById('berre-add-svc').addEventListener('click', function() {
+        document.getElementById('berre-svc-list').appendChild(buildRow());
+    });
+
+    // Drag & drop
+    (function() {
+        var list = document.getElementById('berre-svc-list');
+        var dragging = null;
+        list.addEventListener('dragstart', function(e) {
+            dragging = e.target.closest('.berre-svc-row');
+            if (dragging) setTimeout(()=>dragging.style.opacity='.4',0);
+        });
+        list.addEventListener('dragend', function() {
+            if (dragging) dragging.style.opacity='';
+            dragging=null;
+        });
+        list.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            var row = e.target.closest('.berre-svc-row');
+            if (row && row !== dragging) {
+                var r = row.getBoundingClientRect();
+                list.insertBefore(dragging, e.clientY < r.top + r.height/2 ? row : row.nextSibling);
+            }
+        });
+    })();
+    </script>
+    <?php
+}
+
+/* ── Mise à jour du shortcode [berre_services_grid] ──
+   Lit maintenant depuis berre_services (nouvelle option dédiée)
+   avec fallback sur berre_page_content pour la rétrocompatibilité ── */
+remove_shortcode('berre_services_grid');
+add_shortcode('berre_services_grid', function() {
+    // Priorité : nouvelle option dédiée
+    $services = get_option('berre_services');
+    if (empty($services)) {
+        // Fallback : ancienne option page_content
+        $page_content = berre_get_page_content();
+        $services = $page_content['services'] ?? [];
+    }
+    if (empty($services)) $services = berre_services_defaults();
+
+    $ic  = berre_icons_list();
+    $out = '<div class="berre-services-grid">';
+    foreach (array_slice($services, 0, 8) as $s) {
+        $svg = $ic[$s['icon']]['svg'] ?? $ic['document']['svg'];
+        $out .= sprintf(
+            '<div class="berre-service-card berre-service-card--%s">'
+            . '<div class="berre-service-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8">%s</svg></div>'
+            . '<h3>%s</h3><p>%s</p>'
+            . '<a href="%s" class="berre-service-link">Accéder →</a>'
+            . '</div>',
+            esc_attr($s['color']), $svg,
+            esc_html($s['title']), esc_html($s['desc']),
+            esc_url($s['url'] ?? '#')
+        );
+    }
+    $out .= '</div>';
+    return $out;
+});
