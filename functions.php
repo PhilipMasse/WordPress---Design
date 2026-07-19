@@ -703,18 +703,7 @@ function berre_get_acces_rapides() {
 }
 
 /* ── Menu admin ── */
-function berre_admin_menu() {
-    add_menu_page(
-        "Accès Rapides",
-        "Accès Rapides",
-        "manage_options",
-        "berre-acces-rapides",
-        "berre_admin_page",
-        "dashicons-grid-view",
-        60
-    );
-}
-add_action( "admin_menu", "berre_admin_menu" );
+// Accès Rapides menu géré par le menu unifié berre-admin
 
 /* ── Sauvegarde ── */
 function berre_save_acces_rapides() {
@@ -869,7 +858,7 @@ function berre_admin_page() {
             <td><span class="berre-drag">⠿</span></td>
             <td><div class="berre-icon-preview berre-icon-preview-cell" style="background:#2D6AB0"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8">${preview}</svg></div></td>
             <td><input type="text" name="ar_${group}_label[]" value="${label}" class="regular-text" style="width:100%" placeholder="Libellé" required></td>
-            <td><input type="text" name="ar_${group}_url[]"   value="${url}"   class="regular-text" style="width:100%" placeholder="/mon-lien"></td>
+            <td><div class="berre-url-picker" data-uid="new-${Date.now()}"><div class="berre-url-type-toggle"><label class="berre-url-toggle-label active"><input type="radio" name="ar_${group}_url_type[]" value="internal" checked class="berre-url-radio"> 🏠 Interne</label><label class="berre-url-toggle-label"><input type="radio" name="ar_${group}_url_type[]" value="external" class="berre-url-radio"> 🌐 Externe</label></div><div class="berre-url-internal"><select name="ar_${group}_url_internal[]" class="berre-url-select"><?php echo implode('', array_map(fn($o) => '<option value="'.esc_attr($o["value"]).'">'.esc_html($o["label"]).'</option>', berre_get_page_options())); ?></select></div><div class="berre-url-external" style="display:none"><input type="url" name="ar_${group}_url_external[]" placeholder="https://..." class="berre-url-input"></div><input type="hidden" name="ar_${group}_url[]" value="/"></div></td>
             <td><select name="ar_${group}_color[]" style="width:100%">${selColor}</select></td>
             <td><select name="ar_${group}_target[]" style="width:100%"><option value="_self">Même page</option><option value="_blank">Nouvel onglet ↗</option></select></td>
             <td><button type="button" class="button berre-del-row" style="color:#c00;padding:2px 8px">✕</button></td>
@@ -985,7 +974,7 @@ function berre_admin_row( $link, $group, $icons, $colors ) {
             </div>
         </td>
         <td><input type="text" name="ar_<?php echo $group; ?>_label[]" value="<?php echo esc_attr($link['label']); ?>" class="regular-text" style="width:100%" required></td>
-        <td><input type="text" name="ar_<?php echo $group; ?>_url[]"   value="<?php echo esc_attr($link['url']); ?>"   class="regular-text" style="width:100%"></td>
+        <td><?php echo berre_url_picker_html('ar_' . $group . '_url', $link['url'] ?? '#', $i); ?></td>
         <td>
             <select name="ar_<?php echo $group; ?>_color[]" style="width:100%">
                 <?php foreach ($colors as $val => $lbl) : ?>
@@ -1117,17 +1106,7 @@ add_action( "admin_notices", function() {
 } );
 
 // Page Outils dans le menu admin
-add_action( "admin_menu", function() {
-    add_menu_page(
-        "Outils Thème",
-        "Outils Thème",
-        "manage_options",
-        "berre-outils",
-        "berre_outils_page",
-        "dashicons-admin-tools",
-        58
-    );
-} );
+// Submenu : Outils Thème (géré par le menu unifié berre-admin)
 
 function berre_outils_page() {
     $reset_url = wp_nonce_url(
@@ -1378,17 +1357,7 @@ function berre_get_page_content() {
 }
 
 /* ── Menu admin ── */
-add_action( 'admin_menu', function() {
-    add_menu_page(
-        'Éditeur de page',
-        'Éditeur de page',
-        'manage_options',
-        'berre-page-editor',
-        'berre_page_editor_page',
-        'dashicons-edit-page',
-        59
-    );
-});
+// Éditeur de page géré par le menu unifié berre-admin
 
 /* ── Sauvegarde ── */
 add_action( 'admin_init', function() {
@@ -1784,7 +1753,7 @@ function berre_page_editor_page() {
                 </div>
                 <div class="berre-field" style="margin:4px 0"><label>Description</label><input type="text" name="svc_desc[]" placeholder="Courte description"></div>
                 <div class="berre-row">
-                    <div class="berre-field" style="margin:0"><label>URL</label><input type="url" name="svc_url[]" placeholder="/mon-service"></div>
+                    <div class="berre-field" style="margin:0"><label>URL</label><div class="berre-url-picker" style="margin-top:4px"><div class="berre-url-type-toggle"><label class="berre-url-toggle-label active"><input type="radio" name="svc_url_type[]" value="internal" checked class="berre-url-radio"> 🏠 Interne</label><label class="berre-url-toggle-label"><input type="radio" name="svc_url_type[]" value="external" class="berre-url-radio"> 🌐 Externe</label></div><div class="berre-url-internal"><select name="svc_url_internal[]" class="berre-url-select"><?php echo implode('', array_map(fn($o)=>'<option value="'.esc_attr($o["value"]).'">'.esc_html($o["label"]).'</option>', berre_get_page_options())); ?></select></div><div class="berre-url-external" style="display:none"><input type="url" name="svc_url_external[]" placeholder="https://..." class="berre-url-input"></div><input type="hidden" name="svc_url[]" value="/"></div></div>
                     <div class="berre-field" style="margin:0"><label>Icône</label><select name="svc_icon[]"><?php foreach($ic as $k=>$v): echo '<option value="'.esc_attr($k).'">'.esc_html($v['label']).'</option>'; endforeach; ?></select></div>
                 </div>
             </div>`;
@@ -2157,17 +2126,7 @@ function berre_get_hero_media() {
 }
 
 /* ── Menu admin ── */
-add_action( 'admin_menu', function() {
-    add_menu_page(
-        'Photo / Vidéo Hero',
-        'Photo / Vidéo',
-        'manage_options',
-        'berre-hero-media',
-        'berre_hero_media_page',
-        'dashicons-format-video',
-        57
-    );
-} );
+// Submenu : Photo / Vidéo (géré par le menu unifié berre-admin)
 
 /* ── Sauvegarde ── */
 add_action( 'admin_init', function() {
@@ -2919,17 +2878,7 @@ function berre_get_services() {
 }
 
 /* ── Menu admin ── */
-add_action( 'admin_menu', function() {
-    add_menu_page(
-        'Services municipaux',
-        'Services municipaux',
-        'manage_options',
-        'berre-services',
-        'berre_services_admin_page',
-        'dashicons-networking',
-        61
-    );
-} );
+// Submenu : Services municipaux (géré par le menu unifié berre-admin)
 
 /* ── Sauvegarde ── */
 add_action( 'admin_init', function() {
@@ -3016,7 +2965,7 @@ function berre_services_admin_page() {
                 </div>
                 <input type="text"  name="svc_title[]"  value="<?php echo esc_attr($svc['title']); ?>" placeholder="Titre" required>
                 <input type="text"  name="svc_desc[]"   value="<?php echo esc_attr($svc['desc']); ?>"  placeholder="Description courte">
-                <input type="url"   name="svc_url[]"    value="<?php echo esc_attr($svc['url']); ?>"   placeholder="/mon-service">
+                <?php echo berre_url_picker_html('svc_url', $svc['url'] ?? '#', $i); ?>
                 <select name="svc_icon[]" class="berre-svc-icon-sel" onchange="updatePreview(this)">
                     <?php foreach ($icons as $k => $v) : ?>
                     <option value="<?php echo esc_attr($k); ?>" <?php selected($svc['icon'],$k); ?>>
@@ -3157,3 +3106,220 @@ add_shortcode('berre_services_grid', function() {
     $out .= '</div>';
     return $out;
 });
+
+
+/* ============================================================
+   MENU UNIFIÉ BERRE-LES-ALPES
+   Tous les outils du thème sous un seul menu
+   ============================================================ */
+
+add_action( 'admin_menu', function() {
+
+    // ── Menu parent ──
+    add_menu_page(
+        'Berre-les-Alpes',
+        'Berre-les-Alpes',
+        'manage_options',
+        'berre-admin',
+        'berre_dashboard_admin',
+        'dashicons-admin-site-alt3',
+        56
+    );
+
+    // ── Sous-menus ──
+    add_submenu_page( 'berre-admin', 'Tableau de bord',    'Tableau de bord',    'manage_options', 'berre-admin',         'berre_dashboard_admin' );
+    add_submenu_page( 'berre-admin', 'Accès Rapides',      'Accès Rapides',      'manage_options', 'berre-acces-rapides', 'berre_admin_page' );
+    add_submenu_page( 'berre-admin', 'Services municipaux','Services municipaux','manage_options', 'berre-services',      'berre_services_admin_page' );
+    add_submenu_page( 'berre-admin', 'Éditeur de page',    'Éditeur de page',    'manage_options', 'berre-page-editor',   'berre_page_editor_page' );
+    add_submenu_page( 'berre-admin', 'Photo / Vidéo',      '🎬 Photo / Vidéo',   'manage_options', 'berre-hero-media',    'berre_hero_media_page' );
+    add_submenu_page( 'berre-admin', 'Outils Thème',       '🛠 Outils',          'manage_options', 'berre-outils',        'berre_outils_page' );
+} );
+
+/* ── Tableau de bord du thème ── */
+function berre_dashboard_admin() {
+    $version = wp_get_theme()->get('Version');
+    $pages = [
+        ['slug'=>'berre-acces-rapides', 'icon'=>'🔗', 'title'=>'Accès Rapides',       'desc'=>'Gérez les icônes d\'accès rapide (primaires et secondaires).'],
+        ['slug'=>'berre-services',      'icon'=>'⚙️', 'title'=>'Services municipaux', 'desc'=>'Modifiez la grille des services sur la page d\'accueil.'],
+        ['slug'=>'berre-page-editor',   'icon'=>'✏️', 'title'=>'Éditeur de page',     'desc'=>'Hero, Commune, Contact, Newsletter, Footer — avec aperçu temps réel.'],
+        ['slug'=>'berre-hero-media',    'icon'=>'🎬', 'title'=>'Photo / Vidéo',       'desc'=>'Choisissez la photo ou vidéo de fond de la page d\'accueil.'],
+        ['slug'=>'berre-outils',        'icon'=>'🛠', 'title'=>'Outils Thème',        'desc'=>'Réinitialiser les templates FSE, vérifier les mises à jour.'],
+    ];
+    ?>
+    <div class="wrap" style="max-width:900px">
+        <div style="display:flex;align-items:center;gap:16px;margin:20px 0 28px">
+            <div style="width:52px;height:52px;background:<?php echo esc_attr('#2D6AB0'); ?>;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px">🏛</div>
+            <div>
+                <h1 style="margin:0;font-size:1.6rem">Berre-les-Alpes</h1>
+                <p style="margin:2px 0 0;color:#888;font-size:12px">Thème FSE v<?php echo esc_html($version); ?> · <a href="https://github.com/PhilipMasse/WordPress---Design" target="_blank" rel="noopener">GitHub</a></p>
+            </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px">
+        <?php foreach ($pages as $p) : ?>
+            <a href="<?php echo esc_url(admin_url('admin.php?page=' . $p['slug'])); ?>"
+               style="background:#fff;border:1px solid #e0e0e0;border-radius:8px;padding:18px 20px;text-decoration:none;display:block;transition:box-shadow .15s"
+               onmouseover="this.style.boxShadow='0 4px 12px rgba(0,0,0,.1)'"
+               onmouseout="this.style.boxShadow=''">
+                <div style="font-size:24px;margin-bottom:8px"><?php echo $p['icon']; ?></div>
+                <div style="font-size:14px;font-weight:700;color:#111;margin-bottom:4px"><?php echo esc_html($p['title']); ?></div>
+                <div style="font-size:12px;color:#777;line-height:1.4"><?php echo esc_html($p['desc']); ?></div>
+            </a>
+        <?php endforeach; ?>
+        </div>
+
+        <div style="margin-top:28px;background:#fff;border:1px solid #e0e0e0;border-radius:8px;padding:18px 20px">
+            <h3 style="margin:0 0 10px;font-size:13px">Raccourcis</h3>
+            <div style="display:flex;gap:10px;flex-wrap:wrap">
+                <a href="<?php echo admin_url('post-new.php?post_type=actualite'); ?>" class="button">➕ Nouvelle actualité</a>
+                <a href="<?php echo admin_url('post-new.php?post_type=agenda'); ?>" class="button">➕ Nouvel événement</a>
+                <a href="<?php echo admin_url('edit.php?post_type=actualite'); ?>" class="button">📋 Toutes les actualités</a>
+                <a href="<?php echo admin_url('edit.php?post_type=agenda'); ?>" class="button">📋 Tous les événements</a>
+                <a href="<?php echo home_url('/'); ?>" target="_blank" class="button">🌐 Voir le site</a>
+            </div>
+        </div>
+    </div>
+    <?php
+}
+
+/* ============================================================
+   UTILITAIRE — Sélecteur URL (interne / externe)
+   Utilisé dans Accès Rapides et Services
+   ============================================================ */
+
+function berre_get_page_options() {
+    $options = [
+        ['value' => '/',            'label' => 'Accueil'],
+        ['value' => '/actualites',  'label' => 'Actualités'],
+        ['value' => '/agenda',      'label' => 'Agenda'],
+        ['value' => '/services',    'label' => 'Services'],
+        ['value' => '/contact',     'label' => 'Contact'],
+    ];
+    $pages = get_pages(['post_status' => 'publish', 'sort_column' => 'post_title']);
+    foreach ($pages as $page) {
+        $path = wp_make_link_relative(get_permalink($page->ID));
+        $options[] = ['value' => $path, 'label' => $page->post_title];
+    }
+    return $options;
+}
+
+function berre_url_picker_html( $name, $current_url = '#', $index = 0 ) {
+    $page_options = berre_get_page_options();
+    $is_external = ( substr($current_url, 0, 4) === 'http' || substr($current_url, 0, 2) === '//' );
+    // Vérifier si l'URL interne est dans la liste
+    $found_internal = false;
+    foreach ($page_options as $opt) {
+        if ($opt['value'] === $current_url) { $found_internal = true; break; }
+    }
+    $type = ($is_external || (!$found_internal && $current_url !== '#' && $current_url !== '')) ? 'external' : 'internal';
+    $uid  = 'berre-url-' . $name . '-' . $index . '-' . wp_rand(1000, 9999);
+    ob_start();
+    ?>
+    <div class="berre-url-picker" data-uid="<?php echo esc_attr($uid); ?>">
+        <!-- Toggle type -->
+        <div class="berre-url-type-toggle">
+            <label class="berre-url-toggle-label <?php echo $type==='internal'?'active':''; ?>">
+                <input type="radio" name="<?php echo esc_attr($name); ?>_type[]" value="internal"
+                       <?php checked($type,'internal'); ?> class="berre-url-radio"
+                       onchange="berreUrlToggle('<?php echo esc_js($uid); ?>')">
+                🏠 Page interne
+            </label>
+            <label class="berre-url-toggle-label <?php echo $type==='external'?'active':''; ?>">
+                <input type="radio" name="<?php echo esc_attr($name); ?>_type[]" value="external"
+                       <?php checked($type,'external'); ?> class="berre-url-radio"
+                       onchange="berreUrlToggle('<?php echo esc_js($uid); ?>')">
+                🌐 URL externe
+            </label>
+        </div>
+
+        <!-- Sélecteur interne -->
+        <div class="berre-url-internal" id="<?php echo esc_attr($uid); ?>-internal"
+             style="<?php echo $type==='external'?'display:none':''; ?>">
+            <select name="<?php echo esc_attr($name); ?>_internal[]"
+                    class="berre-url-select"
+                    onchange="berreUrlSyncInternal('<?php echo esc_js($uid); ?>')">
+                <?php foreach ($page_options as $opt) : ?>
+                <option value="<?php echo esc_attr($opt['value']); ?>"
+                    <?php selected(($type==='internal' ? $current_url : ''), $opt['value']); ?>>
+                    <?php echo esc_html($opt['label']); ?>
+                </option>
+                <?php endforeach; ?>
+            </select>
+        </div>
+
+        <!-- Saisie externe -->
+        <div class="berre-url-external" id="<?php echo esc_attr($uid); ?>-external"
+             style="<?php echo $type==='internal'?'display:none':''; ?>">
+            <input type="url" name="<?php echo esc_attr($name); ?>_external[]"
+                   value="<?php echo esc_attr($type==='external' ? $current_url : ''); ?>"
+                   placeholder="https://..."
+                   class="berre-url-input"
+                   oninput="berreUrlSyncExternal('<?php echo esc_js($uid); ?>')">
+        </div>
+
+        <!-- Champ caché — URL finale -->
+        <input type="hidden" name="<?php echo esc_attr($name); ?>[]"
+               id="<?php echo esc_attr($uid); ?>-value"
+               value="<?php echo esc_attr($current_url); ?>">
+    </div>
+    <?php
+    return ob_get_clean();
+}
+
+/* CSS + JS pour le sélecteur URL — injecté une seule fois */
+add_action( 'admin_head', function() {
+    static $printed = false;
+    if ($printed) return;
+    $printed = true;
+    ?>
+    <style>
+    .berre-url-picker { display:flex; flex-direction:column; gap:6px; width:100%; }
+    .berre-url-type-toggle { display:flex; gap:0; border:1px solid #ddd; border-radius:5px; overflow:hidden; }
+    .berre-url-toggle-label {
+        flex:1; text-align:center; padding:5px 8px; font-size:11.5px; font-weight:600;
+        cursor:pointer; transition:all .15s; color:#666; background:#f9f9f9;
+        display:flex; align-items:center; justify-content:center; gap:4px;
+    }
+    .berre-url-toggle-label input[type=radio] { display:none; }
+    .berre-url-toggle-label.active, .berre-url-toggle-label:has(input:checked) {
+        background:#2D6AB0; color:#fff;
+    }
+    .berre-url-select, .berre-url-input {
+        width:100% !important; padding:5px 8px !important;
+        border:1px solid #ddd !important; border-radius:4px !important;
+        font-size:12px !important;
+    }
+    .berre-url-input:focus, .berre-url-select:focus {
+        border-color:#2D6AB0 !important; outline:none !important;
+        box-shadow:0 0 0 2px rgba(45,106,176,.12) !important;
+    }
+    </style>
+    <script>
+    function berreUrlToggle(uid) {
+        var intDiv  = document.getElementById(uid + '-internal');
+        var extDiv  = document.getElementById(uid + '-external');
+        var radios  = document.querySelectorAll('[data-uid="' + uid + '"] .berre-url-radio');
+        var type    = 'internal';
+        radios.forEach(function(r){ if(r.checked) type = r.value; });
+        intDiv.style.display = type==='internal' ? '' : 'none';
+        extDiv.style.display = type==='external' ? '' : 'none';
+        // Sync labels
+        document.querySelectorAll('[data-uid="' + uid + '"] .berre-url-toggle-label').forEach(function(l){
+            l.classList.toggle('active', l.querySelector('input').value === type);
+        });
+        if (type==='internal') berreUrlSyncInternal(uid);
+        else berreUrlSyncExternal(uid);
+    }
+    function berreUrlSyncInternal(uid) {
+        var sel = document.querySelector('[data-uid="' + uid + '"] .berre-url-select');
+        var hid = document.getElementById(uid + '-value');
+        if (sel && hid) hid.value = sel.value;
+    }
+    function berreUrlSyncExternal(uid) {
+        var inp = document.querySelector('[data-uid="' + uid + '"] .berre-url-input');
+        var hid = document.getElementById(uid + '-value');
+        if (inp && hid) hid.value = inp.value;
+    }
+    </script>
+    <?php
+} );
