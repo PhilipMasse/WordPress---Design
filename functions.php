@@ -2455,3 +2455,440 @@ add_shortcode('berre_hero', function() {
     echo '</div>';
     return ob_get_clean();
 });
+
+
+/* ============================================================
+   AGENDA — Champs personnalisés (date, heure, lieu)
+   + API REST pour le calendrier
+   ============================================================ */
+
+/* ── Enregistrer les meta fields ── */
+add_action( 'init', function() {
+    register_post_meta( 'agenda', 'berre_event_date_start', [
+        'single' => true, 'type' => 'string', 'show_in_rest' => true,
+        'auth_callback' => function() { return current_user_can('edit_posts'); }
+    ]);
+    register_post_meta( 'agenda', 'berre_event_date_end', [
+        'single' => true, 'type' => 'string', 'show_in_rest' => true,
+        'auth_callback' => function() { return current_user_can('edit_posts'); }
+    ]);
+    register_post_meta( 'agenda', 'berre_event_time', [
+        'single' => true, 'type' => 'string', 'show_in_rest' => true,
+        'auth_callback' => function() { return current_user_can('edit_posts'); }
+    ]);
+    register_post_meta( 'agenda', 'berre_event_location', [
+        'single' => true, 'type' => 'string', 'show_in_rest' => true,
+        'auth_callback' => function() { return current_user_can('edit_posts'); }
+    ]);
+} );
+
+/* ── Metabox dans l'éditeur ── */
+add_action( 'add_meta_boxes', function() {
+    add_meta_box(
+        'berre_event_details',
+        '📅 Détails de l\'événement',
+        'berre_event_metabox_html',
+        'agenda', 'side', 'high'
+    );
+} );
+
+function berre_event_metabox_html( $post ) {
+    wp_nonce_field( 'berre_event_meta', 'berre_event_nonce' );
+    $start    = get_post_meta( $post->ID, 'berre_event_date_start', true );
+    $end      = get_post_meta( $post->ID, 'berre_event_date_end',   true );
+    $time     = get_post_meta( $post->ID, 'berre_event_time',       true );
+    $location = get_post_meta( $post->ID, 'berre_event_location',   true );
+    ?>
+    <p>
+        <label style="font-weight:600;font-size:12px">Date de début *</label><br>
+        <input type="date" name="berre_event_date_start" value="<?php echo esc_attr($start); ?>" style="width:100%">
+    </p>
+    <p>
+        <label style="font-weight:600;font-size:12px">Date de fin (si multi-jours)</label><br>
+        <input type="date" name="berre_event_date_end" value="<?php echo esc_attr($end); ?>" style="width:100%">
+    </p>
+    <p>
+        <label style="font-weight:600;font-size:12px">Heure (ex: 14h00)</label><br>
+        <input type="text" name="berre_event_time" value="<?php echo esc_attr($time); ?>" placeholder="10h00 – 18h00" style="width:100%">
+    </p>
+    <p>
+        <label style="font-weight:600;font-size:12px">Lieu</label><br>
+        <input type="text" name="berre_event_location" value="<?php echo esc_attr($location); ?>" placeholder="Salle des fêtes, Place de la Mairie…" style="width:100%">
+    </p>
+    <?php
+}
+
+add_action( 'save_post_agenda', function( $post_id ) {
+    if ( ! isset($_POST['berre_event_nonce']) || ! wp_verify_nonce($_POST['berre_event_nonce'], 'berre_event_meta') ) return;
+    if ( defined('DOING_AUTOSAVE') && DOING_AUTOSAVE ) return;
+    if ( ! current_user_can('edit_post', $post_id) ) return;
+
+    $fields = ['berre_event_date_start','berre_event_date_end','berre_event_time','berre_event_location'];
+    foreach ($fields as $field) {
+        if ( isset($_POST[$field]) ) {
+            update_post_meta($post_id, $field, sanitize_text_field($_POST[$field]));
+        }
+    }
+} );
+
+/* ── Endpoint REST pour le calendrier ── */
+add_action( 'rest_api_init', function() {
+    register_rest_route( 'berre/v1', '/agenda', [
+        'methods'             => 'GET',
+        'callback'            => 'berre_rest_agenda_events',
+        'permission_callback' => '__return_true',
+        'args' => [
+            'month' => [ 'required' => false, 'sanitize_callback' => 'sanitize_text_field' ],
+        ],
+    ]);
+} );
+
+function berre_rest_agenda_events( WP_REST_Request $request ) {
+    $month = $request->get_param('month') ?: date('Y-m');
+
+    list($year, $mon) = explode('-', $month . '-' . date('m'));
+    $year = intval($year);
+    $mon  = intval($mon);
+
+    // Récupérer les événements du mois ET du mois suivant (pour affichage calendrier)
+    $date_from = sprintf('%04d-%02d-01', $year, $mon);
+    $date_to   = date('Y-m-t', strtotime("+1 month", strtotime($date_from)));
+
+    $posts = get_posts([
+        'post_type'      => 'agenda',
+        'post_status'    => 'publish',
+        'posts_per_page' => 100,
+        'orderby'        => 'meta_value',
+        'meta_key'       => 'berre_event_date_start',
+        'order'          => 'ASC',
+        'meta_query'     => [
+            'relation' => 'OR',
+            // Événements qui commencent dans la plage
+            [
+                'key'     => 'berre_event_date_start',
+                'value'   => [$date_from, $date_to],
+                'compare' => 'BETWEEN',
+                'type'    => 'DATE',
+            ],
+            // Événements multi-jours qui chevauchent
+            [
+                'relation' => 'AND',
+                [
+                    'key'     => 'berre_event_date_start',
+                    'value'   => $date_from,
+                    'compare' => '<=',
+                    'type'    => 'DATE',
+                ],
+                [
+                    'key'     => 'berre_event_date_end',
+                    'value'   => $date_to,
+                    'compare' => '>=',
+                    'type'    => 'DATE',
+                ],
+            ],
+            // Fallback : pas de date → utiliser date de publication
+            [
+                'key'     => 'berre_event_date_start',
+                'compare' => 'NOT EXISTS',
+            ],
+        ],
+    ]);
+
+    // Si pas de posts avec meta → fallback sur tous les posts du mois
+    if ( empty($posts) ) {
+        $posts = get_posts([
+            'post_type'      => 'agenda',
+            'post_status'    => 'publish',
+            'posts_per_page' => 50,
+            'date_query'     => [[
+                'year'  => $year,
+                'month' => $mon,
+            ]],
+            'orderby' => 'date',
+            'order'   => 'ASC',
+        ]);
+    }
+
+    $events = [];
+    foreach ( $posts as $post ) {
+        $start    = get_post_meta($post->ID, 'berre_event_date_start', true) ?: get_the_date('Y-m-d', $post);
+        $end      = get_post_meta($post->ID, 'berre_event_date_end',   true) ?: $start;
+        $time     = get_post_meta($post->ID, 'berre_event_time',       true);
+        $location = get_post_meta($post->ID, 'berre_event_location',   true);
+
+        $thumb_id  = get_post_thumbnail_id($post->ID);
+        $thumb_url = $thumb_id ? wp_get_attachment_image_url($thumb_id, 'medium') : '';
+
+        $events[] = [
+            'id'        => $post->ID,
+            'title'     => $post->post_title,
+            'dateStart' => $start,
+            'dateEnd'   => $end,
+            'time'      => $time,
+            'location'  => $location,
+            'img'       => $thumb_url,
+            'url'       => get_permalink($post->ID),
+            'cats'      => wp_get_object_terms($post->ID, 'categorie_agenda', ['fields' => 'names']),
+        ];
+    }
+
+    return rest_ensure_response($events);
+}
+
+/* ── Shortcode [berre_calendrier_agenda] ── */
+add_shortcode( 'berre_calendrier_agenda', function() {
+    static $loaded = false;
+    $nonce = wp_create_nonce('wp_rest');
+    ob_start(); ?>
+    <div class="berre-cal" id="berre-cal" data-nonce="<?php echo esc_attr($nonce); ?>"
+         data-api="<?php echo esc_url(rest_url('berre/v1/agenda')); ?>">
+
+      <div class="berre-cal__header">
+        <div class="berre-cal__nav-left">
+          <button class="berre-cal__btn" id="berre-cal-prev" aria-label="Mois précédent">‹</button>
+          <span class="berre-cal__month-label" id="berre-cal-label"></span>
+          <button class="berre-cal__btn" id="berre-cal-next" aria-label="Mois suivant">›</button>
+        </div>
+        <button class="berre-cal__today-btn" id="berre-cal-today">Aujourd'hui</button>
+      </div>
+
+      <div class="berre-cal__weekdays">
+        <div>lun.</div><div>mar.</div><div>mer.</div>
+        <div>jeu.</div><div>ven.</div><div>sam.</div><div>dim.</div>
+      </div>
+
+      <div class="berre-cal__grid" id="berre-cal-grid">
+        <div class="berre-cal__loading">Chargement du calendrier…</div>
+      </div>
+
+      <!-- Popup événement -->
+      <div class="berre-cal__popup" id="berre-cal-popup" style="display:none" role="dialog" aria-modal="true">
+        <button class="berre-cal__popup-close" id="berre-cal-popup-close" aria-label="Fermer">×</button>
+        <div class="berre-cal__popup-img-wrap" id="berre-cal-popup-img-wrap"></div>
+        <div class="berre-cal__popup-body">
+          <div class="berre-cal__popup-cat" id="berre-cal-popup-cat"></div>
+          <h3 class="berre-cal__popup-title" id="berre-cal-popup-title"></h3>
+          <div class="berre-cal__popup-meta" id="berre-cal-popup-meta"></div>
+          <div class="berre-cal__popup-share">
+            <a class="berre-cal__popup-share-icon" id="berre-cal-share-fb" href="#" title="Facebook">
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor"><path d="M18 2h-3a5 5 0 00-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 011-1h3z"/></svg>
+            </a>
+            <a class="berre-cal__popup-share-icon" id="berre-cal-share-tw" href="#" title="X">
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+            </a>
+            <a class="berre-cal__popup-share-icon" id="berre-cal-share-ln" href="#" title="LinkedIn">
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor"><path d="M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-2-2 2 2 0 00-2 2v7h-4v-7a6 6 0 016-6zM2 9h4v12H2z"/><circle cx="4" cy="4" r="2"/></svg>
+            </a>
+          </div>
+          <a class="berre-cal__popup-cta" id="berre-cal-popup-cta" href="#">En savoir plus</a>
+        </div>
+      </div>
+      <div class="berre-cal__overlay" id="berre-cal-overlay" style="display:none"></div>
+
+    </div>
+
+    <script>
+    (function(){
+      var cal    = document.getElementById('berre-cal');
+      var grid   = document.getElementById('berre-cal-grid');
+      var label  = document.getElementById('berre-cal-label');
+      var popup  = document.getElementById('berre-cal-popup');
+      var overlay= document.getElementById('berre-cal-overlay');
+      var API    = cal.dataset.api;
+      var NONCE  = cal.dataset.nonce;
+
+      var today  = new Date();
+      var curYear  = today.getFullYear();
+      var curMonth = today.getMonth(); // 0-based
+      var eventsCache = {};
+
+      var MONTHS_FR = ['Janvier','Février','Mars','Avril','Mai','Juin',
+                       'Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+
+      /* ── Charger les événements ── */
+      function loadEvents(year, month, cb) {
+        var key = year + '-' + pad(month+1);
+        if (eventsCache[key]) { cb(eventsCache[key]); return; }
+        fetch(API + '?month=' + key, {
+          headers: { 'X-WP-Nonce': NONCE }
+        })
+        .then(function(r){ return r.json(); })
+        .then(function(data){
+          eventsCache[key] = data;
+          cb(data);
+        })
+        .catch(function(){ cb([]); });
+      }
+
+      /* ── Construire l'index date→événements ── */
+      function buildIndex(events, year, month) {
+        var idx = {};
+        events.forEach(function(ev){
+          var start = new Date(ev.dateStart + 'T00:00:00');
+          var end   = ev.dateEnd ? new Date(ev.dateEnd + 'T00:00:00') : start;
+          var d = new Date(start);
+          while (d <= end) {
+            if (d.getFullYear() === year && d.getMonth() === month) {
+              var key = pad(d.getDate());
+              if (!idx[key]) idx[key] = [];
+              idx[key].push(ev);
+            }
+            d.setDate(d.getDate() + 1);
+          }
+        });
+        return idx;
+      }
+
+      /* ── Rendu calendrier ── */
+      function renderCalendar(year, month, events) {
+        label.textContent = MONTHS_FR[month] + ' ' + year;
+        var idx = buildIndex(events, year, month);
+
+        var firstDay = new Date(year, month, 1);
+        var lastDay  = new Date(year, month + 1, 0);
+        // Lundi = 0 en index FR
+        var startDow = (firstDay.getDay() + 6) % 7; // 0=lun
+
+        var html = '';
+        // Jours avant le 1er
+        var prevLast = new Date(year, month, 0).getDate();
+        for (var i = startDow - 1; i >= 0; i--) {
+          html += '<div class="berre-cal__day berre-cal__day--other"><span class="berre-cal__day-num">' + (prevLast - i) + '</span></div>';
+        }
+
+        // Jours du mois
+        for (var d = 1; d <= lastDay.getDate(); d++) {
+          var isToday = (d === today.getDate() && month === today.getMonth() && year === today.getFullYear());
+          var dayEvs  = idx[pad(d)] || [];
+          var cls     = 'berre-cal__day' + (isToday ? ' berre-cal__day--today' : '');
+          html += '<div class="' + cls + '">';
+          html += '<span class="berre-cal__day-num">' + d + '</span>';
+          var maxShow = 2;
+          dayEvs.slice(0, maxShow).forEach(function(ev){
+            html += '<button class="berre-cal__event" data-id="' + ev.id + '" title="' + escHtml(ev.title) + '">' + escHtml(truncate(ev.title, 18)) + '</button>';
+          });
+          if (dayEvs.length > maxShow) {
+            var more = dayEvs.length - maxShow;
+            html += '<button class="berre-cal__more" data-id="' + dayEvs[maxShow].id + '">+ ' + more + ' autre' + (more > 1 ? 's' : '') + '</button>';
+          }
+          html += '</div>';
+        }
+
+        // Jours après le dernier
+        var endDow = (lastDay.getDay() + 6) % 7;
+        for (var n = 1; endDow < 6 && n <= (6 - endDow); n++) {
+          html += '<div class="berre-cal__day berre-cal__day--other"><span class="berre-cal__day-num">' + n + '</span></div>';
+        }
+
+        grid.innerHTML = html;
+
+        // Attacher les listeners sur les événements
+        var allEvents = events;
+        grid.querySelectorAll('.berre-cal__event, .berre-cal__more').forEach(function(btn){
+          btn.addEventListener('click', function(e){
+            e.stopPropagation();
+            var id = parseInt(this.dataset.id);
+            var ev = allEvents.find(function(x){ return x.id === id; });
+            if (ev) openPopup(ev, this);
+          });
+        });
+      }
+
+      /* ── Popup ── */
+      function openPopup(ev, anchor) {
+        var imgWrap  = document.getElementById('berre-cal-popup-img-wrap');
+        var catEl    = document.getElementById('berre-cal-popup-cat');
+        var titleEl  = document.getElementById('berre-cal-popup-title');
+        var metaEl   = document.getElementById('berre-cal-popup-meta');
+        var ctaEl    = document.getElementById('berre-cal-popup-cta');
+
+        imgWrap.innerHTML = ev.img
+          ? '<img src="' + ev.img + '" alt="' + escHtml(ev.title) + '">'
+          : '';
+
+        catEl.textContent = ev.cats && ev.cats.length ? ev.cats.join(', ') : '';
+        titleEl.textContent = ev.title;
+
+        var meta = '';
+        var dateStr = formatDate(ev.dateStart);
+        if (ev.dateEnd && ev.dateEnd !== ev.dateStart) dateStr += ' – ' + formatDate(ev.dateEnd);
+        if (ev.time) dateStr += ', ' + ev.time;
+        meta += '<div class="berre-cal__popup-meta-row"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span>' + dateStr + '</span></div>';
+        if (ev.location) {
+          meta += '<div class="berre-cal__popup-meta-row"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg><span>' + escHtml(ev.location) + '</span></div>';
+        }
+        metaEl.innerHTML = meta;
+        ctaEl.href = ev.url;
+
+        // Partage
+        document.getElementById('berre-cal-share-fb').href = 'https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(ev.url);
+        document.getElementById('berre-cal-share-tw').href = 'https://twitter.com/intent/tweet?url=' + encodeURIComponent(ev.url) + '&text=' + encodeURIComponent(ev.title);
+        document.getElementById('berre-cal-share-ln').href = 'https://www.linkedin.com/shareArticle?mini=true&url=' + encodeURIComponent(ev.url);
+
+        // Positionnement popup
+        popup.style.display = 'block';
+        overlay.style.display = 'block';
+
+        // Aligner à droite de l'événement cliqué
+        var rect = anchor.getBoundingClientRect();
+        var calRect = cal.getBoundingClientRect();
+        var top  = rect.bottom - calRect.top + 4;
+        var left = rect.left - calRect.left;
+        if (left + 280 > calRect.width) left = calRect.width - 285;
+        if (left < 0) left = 0;
+        popup.style.top  = top + 'px';
+        popup.style.left = left + 'px';
+      }
+
+      function closePopup() {
+        popup.style.display = 'none';
+        overlay.style.display = 'none';
+      }
+
+      document.getElementById('berre-cal-popup-close').addEventListener('click', closePopup);
+      overlay.addEventListener('click', closePopup);
+      document.addEventListener('keydown', function(e){ if(e.key==='Escape') closePopup(); });
+
+      /* ── Navigation ── */
+      function navigate(year, month) {
+        curYear  = year;
+        curMonth = month;
+        grid.innerHTML = '<div class="berre-cal__loading">Chargement…</div>';
+        closePopup();
+        loadEvents(year, month, function(evs){
+          renderCalendar(year, month, evs);
+        });
+      }
+
+      document.getElementById('berre-cal-prev').addEventListener('click', function(){
+        var d = new Date(curYear, curMonth - 1, 1);
+        navigate(d.getFullYear(), d.getMonth());
+      });
+      document.getElementById('berre-cal-next').addEventListener('click', function(){
+        var d = new Date(curYear, curMonth + 1, 1);
+        navigate(d.getFullYear(), d.getMonth());
+      });
+      document.getElementById('berre-cal-today').addEventListener('click', function(){
+        navigate(today.getFullYear(), today.getMonth());
+      });
+
+      /* ── Utilitaires ── */
+      function pad(n){ return n < 10 ? '0' + n : '' + n; }
+      function escHtml(s){ var d=document.createElement('div');d.textContent=s;return d.innerHTML; }
+      function truncate(s,n){ return s.length>n ? s.slice(0,n)+'…' : s; }
+      function formatDate(str) {
+        if (!str) return '';
+        var d = new Date(str + 'T00:00:00');
+        var days=['dim.','lun.','mar.','mer.','jeu.','ven.','sam.'];
+        var months=['janv.','févr.','mars','avr.','mai','juin','juil.','août','sept.','oct.','nov.','déc.'];
+        return days[d.getDay()] + ' ' + d.getDate() + ' ' + months[d.getMonth()] + ' ' + d.getFullYear();
+      }
+
+      /* ── Init ── */
+      navigate(curYear, curMonth);
+
+    })();
+    </script>
+    <?php
+    return ob_get_clean();
+});

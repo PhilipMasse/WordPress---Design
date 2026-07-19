@@ -1615,3 +1615,283 @@ ul.berre-recents-grid,
   .berre-agenda-event-img { width: 80px !important; height: 60px !important; }
   .berre-agenda-event-link { width: 100% !important; text-align: center !important; }
 }
+
+/* ══════════════════════════════════════════════════════
+   CALENDRIER AGENDA — Widget interactif
+   ═══════════════════════════════════════════════════ */
+
+.berre-cal {
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 10px;
+  overflow: visible;
+  font-family: var(--sans);
+  position: relative;
+  user-select: none;
+}
+
+/* Header */
+.berre-cal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px 12px;
+  border-bottom: 1px solid #f0f0f0;
+}
+.berre-cal__nav-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.berre-cal__month-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+  min-width: 130px;
+}
+.berre-cal__btn {
+  background: none;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  width: 28px;
+  height: 28px;
+  cursor: pointer;
+  font-size: 16px;
+  color: #555;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all .15s;
+  line-height: 1;
+  padding: 0;
+}
+.berre-cal__btn:hover { background: var(--blt); border-color: var(--b); color: var(--b); }
+.berre-cal__today-btn {
+  font-size: 12px;
+  font-weight: 600;
+  border: 1.5px solid var(--b);
+  color: var(--b);
+  background: none;
+  border-radius: 4px;
+  padding: 5px 12px;
+  cursor: pointer;
+  transition: all .15s;
+}
+.berre-cal__today-btn:hover { background: var(--b); color: #fff; }
+
+/* En-têtes jours */
+.berre-cal__weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  border-bottom: 1px solid #f0f0f0;
+}
+.berre-cal__weekdays > div {
+  text-align: center;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: lowercase;
+  color: #999;
+  padding: 8px 4px;
+}
+
+/* Grille jours */
+.berre-cal__grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  border-left: 1px solid #f0f0f0;
+}
+.berre-cal__loading {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 40px;
+  color: #aaa;
+  font-size: 13px;
+}
+
+/* Cellule jour */
+.berre-cal__day {
+  min-height: 88px;
+  border-right: 1px solid #f0f0f0;
+  border-bottom: 1px solid #f0f0f0;
+  padding: 6px 6px 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  position: relative;
+}
+.berre-cal__day--other { background: #fafafa; }
+.berre-cal__day--other .berre-cal__day-num { color: #ccc; }
+.berre-cal__day--today { background: #eff5ff; }
+.berre-cal__day--today .berre-cal__day-num {
+  background: var(--b);
+  color: #fff;
+  border-radius: 50%;
+  width: 22px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Numéro du jour */
+.berre-cal__day-num {
+  font-size: 12px;
+  font-weight: 500;
+  color: #444;
+  line-height: 1;
+  margin-bottom: 2px;
+}
+
+/* Bouton événement */
+.berre-cal__event {
+  display: block;
+  width: 100%;
+  background: var(--blt);
+  border: none;
+  border-left: 2px solid var(--b);
+  border-radius: 2px;
+  padding: 2px 5px;
+  font-size: 10px;
+  color: var(--b);
+  text-align: left;
+  cursor: pointer;
+  font-family: var(--sans);
+  font-weight: 500;
+  transition: background .12s;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.berre-cal__event:hover { background: #c8dbf4; }
+
+/* Bouton "+N autres" */
+.berre-cal__more {
+  font-size: 9.5px;
+  color: var(--b);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 1px 0;
+  text-align: left;
+  font-weight: 600;
+  font-family: var(--sans);
+}
+.berre-cal__more:hover { text-decoration: underline; }
+
+/* ── POPUP ÉVÉNEMENT ── */
+.berre-cal__overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 99;
+  background: transparent;
+}
+.berre-cal__popup {
+  position: absolute;
+  z-index: 100;
+  width: 280px;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  box-shadow: 0 8px 32px rgba(0,0,0,.15);
+  overflow: hidden;
+}
+.berre-cal__popup-close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 2;
+  background: rgba(0,0,0,.45);
+  color: #fff;
+  border: none;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.berre-cal__popup-img-wrap img {
+  width: 100%;
+  height: 150px;
+  object-fit: cover;
+  display: block;
+}
+.berre-cal__popup-body {
+  padding: 12px 14px 14px;
+}
+.berre-cal__popup-cat {
+  font-size: 9.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  color: var(--or);
+  margin-bottom: 4px;
+}
+.berre-cal__popup-title {
+  font-family: var(--serif);
+  font-size: 14px;
+  font-weight: 700;
+  color: #111;
+  margin: 0 0 8px;
+  line-height: 1.35;
+}
+.berre-cal__popup-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-bottom: 10px;
+}
+.berre-cal__popup-meta-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  font-size: 11.5px;
+  color: #555;
+  line-height: 1.4;
+}
+.berre-cal__popup-meta-row svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+  color: #888;
+}
+.berre-cal__popup-share {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.berre-cal__popup-share-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1px solid #ddd;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #555;
+  text-decoration: none;
+  transition: all .15s;
+}
+.berre-cal__popup-share-icon:hover { border-color: var(--b); color: var(--b); background: var(--blt); }
+.berre-cal__popup-cta {
+  display: block;
+  background: var(--b);
+  color: #fff;
+  text-align: center;
+  padding: 9px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background .15s;
+}
+.berre-cal__popup-cta:hover { background: var(--bd); }
+
+/* Responsive */
+@media (max-width: 640px) {
+  .berre-cal__day { min-height: 60px; }
+  .berre-cal__event { font-size: 9px; }
+  .berre-cal__popup { width: 240px; }
+}
