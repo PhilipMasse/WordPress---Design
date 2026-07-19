@@ -1,143 +1,117 @@
 <!-- wp:template-part {"slug":"header"} /-->
 
-<!-- ARTICLE UNIQUE -->
 <!-- wp:group {"className":"berre-article-page","layout":{"type":"default"}} -->
 <div class="wp-block-group berre-article-page">
 
-<!-- HERO IMAGE PLEIN FORMAT -->
-<!-- wp:group {"className":"berre-article-hero","layout":{"type":"default"}} -->
-<div class="wp-block-group berre-article-hero">
-<!-- wp:post-featured-image {"isLink":false,"className":"berre-article-hero__img","aspectRatio":"16/9"} /-->
-</div>
-<!-- /wp:group -->
+<!-- ARTICLE — colonne unique centrée -->
+<!-- wp:group {"className":"berre-article-container","layout":{"type":"constrained","contentSize":"780px"}} -->
+<div class="wp-block-group berre-article-container">
 
-<!-- CONTENU + SIDEBAR -->
-<!-- wp:group {"className":"berre-article-wrap","layout":{"type":"constrained","contentSize":"1140px"}} -->
-<div class="wp-block-group berre-article-wrap">
-
-<!-- BREADCRUMB -->
+<!-- Fil d'Ariane -->
 <!-- wp:html -->
 <nav class="berre-breadcrumb" aria-label="Fil d'Ariane">
-  <a href="/">Accueil</a>
-  <span>›</span>
-  <a href="/actualites">Actualités</a>
-  <span>›</span>
+  <a href="/">Accueil</a><span>›</span>
+  <a href="/actualites">Actualités</a><span>›</span>
   <span class="berre-breadcrumb__cur">Article</span>
 </nav>
 <!-- /wp:html -->
 
-<!-- COLONNES -->
-<!-- wp:columns {"className":"berre-article-cols"} -->
-<div class="wp-block-columns berre-article-cols">
-
-<!-- COLONNE PRINCIPALE -->
-<!-- wp:column {"className":"berre-article-main"} -->
-<div class="wp-block-column berre-article-main">
-
-<!-- Catégorie(s) -->
+<!-- Catégorie(s) au-dessus du titre -->
 <!-- wp:post-terms {"term":"categorie_actu","className":"berre-article-cats"} /-->
+
+<!-- Date -->
+<!-- wp:post-date {"className":"berre-article-date","format":"j F Y"} /-->
 
 <!-- Titre -->
 <!-- wp:post-title {"level":1,"className":"berre-article-title"} /-->
 
-<!-- Métadonnées -->
-<!-- wp:group {"className":"berre-article-meta","layout":{"type":"flex","flexWrap":"nowrap","verticalAlignment":"center"}} -->
-<div class="wp-block-group berre-article-meta">
-<!-- wp:post-date {"className":"berre-article-meta__date","format":"j F Y"} /-->
-<!-- wp:post-author {"showAvatar":false,"className":"berre-article-meta__author"} /-->
-</div>
-<!-- /wp:group -->
-
 <!-- Séparateur -->
-<!-- wp:separator {"className":"berre-article-sep"} -->
-<hr class="wp-block-separator berre-article-sep"/>
+<!-- wp:separator {"className":"berre-sep-thin"} -->
+<hr class="wp-block-separator berre-sep-thin"/>
 <!-- /wp:separator -->
 
+<!-- Image mise en avant -->
+<!-- wp:post-featured-image {"isLink":false,"className":"berre-article-featured-img"} /-->
+
 <!-- Contenu -->
-<!-- wp:post-content {"className":"berre-article-content","layout":{"type":"constrained","contentSize":"680px"}} /-->
+<!-- wp:post-content {"className":"berre-article-content","layout":{"type":"constrained","contentSize":"780px"}} /-->
 
 <!-- Tags -->
 <!-- wp:post-terms {"term":"categorie_actu","className":"berre-article-tags"} /-->
+
+<!-- Séparateur -->
+<!-- wp:separator {"className":"berre-sep-thin"} -->
+<hr class="wp-block-separator berre-sep-thin"/>
+<!-- /wp:separator -->
+
+<!-- Partage -->
+<!-- wp:html -->
+<div class="berre-article-share">
+  <a class="berre-share-icon" href="#" title="Facebook"
+     onclick="window.open('https://www.facebook.com/sharer/sharer.php?u='+encodeURIComponent(location.href),'_blank','width=600,height=400');return false">
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M18 2h-3a5 5 0 00-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 011-1h3z"/></svg>
+  </a>
+  <a class="berre-share-icon" href="#" title="X / Twitter"
+     onclick="window.open('https://twitter.com/intent/tweet?url='+encodeURIComponent(location.href)+'&text='+encodeURIComponent(document.title),'_blank','width=600,height=400');return false">
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+  </a>
+  <a class="berre-share-icon" href="#" title="LinkedIn"
+     onclick="window.open('https://www.linkedin.com/shareArticle?mini=true&url='+encodeURIComponent(location.href),'_blank','width=600,height=400');return false">
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-2-2 2 2 0 00-2 2v7h-4v-7a6 6 0 016-6zM2 9h4v12H2z"/><circle cx="4" cy="4" r="2"/></svg>
+  </a>
+  <a class="berre-share-icon" href="#" title="Copier le lien"
+     onclick="navigator.clipboard.writeText(location.href).then(()=>{this.title='Lien copié !';setTimeout(()=>this.title='Copier le lien',2000)});return false">
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>
+  </a>
+</div>
+<!-- /wp:html -->
 
 <!-- Retour -->
 <!-- wp:html -->
 <div class="berre-article-back">
   <a href="/actualites" class="berre-article-back__link">
-    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
-    Toutes les actualités
+    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+    Retour aux actualités
   </a>
 </div>
 <!-- /wp:html -->
 
 </div>
-<!-- /wp:column -->
+<!-- /wp:group -->
 
-<!-- SIDEBAR -->
-<!-- wp:column {"className":"berre-article-sidebar"} -->
-<div class="wp-block-column berre-article-sidebar">
+<!-- POSTS RÉCENTS -->
+<!-- wp:group {"className":"berre-recents-section","layout":{"type":"constrained","contentSize":"1100px"}} -->
+<div class="wp-block-group berre-recents-section">
 
-<!-- Partager -->
-<!-- wp:html -->
-<div class="berre-sidebar-widget">
-  <h3 class="berre-sidebar-widget__title">Partager</h3>
-  <div class="berre-share">
-    <a href="#" class="berre-share__btn berre-share__btn--fb" onclick="window.open('https://www.facebook.com/sharer/sharer.php?u='+encodeURIComponent(location.href),'_blank','width=600,height=400');return false">
-      <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor"><path d="M18 2h-3a5 5 0 00-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 011-1h3z"/></svg> Facebook
-    </a>
-    <a href="#" class="berre-share__btn berre-share__btn--ml" onclick="window.location.href='mailto:?subject='+encodeURIComponent(document.title)+'&body='+encodeURIComponent(location.href);return false">
-      <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg> E-mail
-    </a>
-    <a href="#" class="berre-share__btn berre-share__btn--prt" onclick="window.print();return false">
-      <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg> Imprimer
-    </a>
-  </div>
-</div>
-<!-- /wp:html -->
-
-<!-- Articles récents -->
-<!-- wp:group {"className":"berre-sidebar-widget","layout":{"type":"default"}} -->
-<div class="wp-block-group berre-sidebar-widget">
-<!-- wp:heading {"level":3,"className":"berre-sidebar-widget__title"} -->
-<h3 class="wp-block-heading berre-sidebar-widget__title">À lire aussi</h3>
+<!-- wp:group {"className":"berre-recents-head","layout":{"type":"flex","justifyContent":"space-between","verticalAlignment":"center"}} -->
+<div class="wp-block-group berre-recents-head">
+<!-- wp:heading {"level":2,"className":"berre-recents-title"} -->
+<h2 class="wp-block-heading berre-recents-title">Posts récents</h2>
 <!-- /wp:heading -->
-<!-- wp:query {"queryId":20,"query":{"perPage":4,"postType":"actualite","order":"desc","orderBy":"date","exclude":[],"inherit":false},"className":"berre-sidebar-recents"} -->
-<div class="wp-block-query berre-sidebar-recents">
-<!-- wp:post-template -->
-<!-- wp:group {"className":"berre-sidebar-post","layout":{"type":"flex","flexWrap":"nowrap","verticalAlignment":"center"}} -->
-<div class="wp-block-group berre-sidebar-post">
-<!-- wp:post-featured-image {"isLink":true,"className":"berre-sidebar-post__img","width":"70px","height":"70px"} /-->
-<!-- wp:group {"className":"berre-sidebar-post__info","layout":{"type":"flex","orientation":"vertical","flexWrap":"nowrap"}} -->
-<div class="wp-block-group berre-sidebar-post__info">
-<!-- wp:post-title {"isLink":true,"level":4,"className":"berre-sidebar-post__title"} /-->
-<!-- wp:post-date {"className":"berre-sidebar-post__date","format":"j M Y"} /-->
+<!-- wp:paragraph --><p><a href="/actualites" class="berre-recents-voir-tout">Voir tout</a></p><!-- /wp:paragraph -->
+</div>
+<!-- /wp:group -->
+
+<!-- wp:query {"queryId":30,"query":{"perPage":3,"postType":"actualite","order":"desc","orderBy":"date","exclude":[],"inherit":false}} -->
+<div class="wp-block-query">
+<!-- wp:post-template {"className":"berre-recents-grid"} -->
+<!-- wp:group {"className":"berre-recent-card","layout":{"type":"default"}} -->
+<div class="wp-block-group berre-recent-card">
+<!-- wp:post-featured-image {"isLink":true,"className":"berre-recent-card__img","aspectRatio":"3/2"} /-->
+<!-- wp:group {"className":"berre-recent-card__body","layout":{"type":"flex","orientation":"vertical","flexWrap":"nowrap"}} -->
+<div class="wp-block-group berre-recent-card__body">
+<!-- wp:post-title {"isLink":true,"level":3,"className":"berre-recent-card__title"} /-->
+<!-- wp:post-date {"className":"berre-recent-card__date"} /-->
 </div>
 <!-- /wp:group -->
 </div>
 <!-- /wp:group -->
 <!-- /wp:post-template -->
+<!-- wp:query-no-results -->
+<!-- wp:paragraph --><p></p><!-- /wp:paragraph -->
+<!-- /wp:query-no-results -->
 </div>
 <!-- /wp:query -->
-</div>
-<!-- /wp:group -->
-
-<!-- Liens utiles -->
-<!-- wp:html -->
-<div class="berre-sidebar-widget">
-  <h3 class="berre-sidebar-widget__title">Liens utiles</h3>
-  <ul class="berre-sidebar-links">
-    <li><a href="/agenda">📅 Agenda municipal</a></li>
-    <li><a href="/services">⚙️ Services municipaux</a></li>
-    <li><a href="https://mesdemarches06.fr" target="_blank" rel="noopener">🖥 Mes Démarches 06</a></li>
-    <li><a href="/contact">✉️ Nous contacter</a></li>
-  </ul>
-</div>
-<!-- /wp:html -->
-
-</div>
-<!-- /wp:column -->
-
-</div>
-<!-- /wp:columns -->
 
 </div>
 <!-- /wp:group -->
