@@ -2019,18 +2019,21 @@ add_filter( 'pre_set_site_transient_update_themes', function( $transient ) {
     $current_version = wp_get_theme( BERRE_THEME_SLUG )->get( 'Version' );
 
     if ( version_compare( $latest_version, $current_version, '>' ) ) {
-        // Trouver l'asset ZIP dans la release
+        // Priorité 1 : asset ZIP joint à la release
         $zip_url = null;
         if ( ! empty( $release['assets'] ) ) {
             foreach ( $release['assets'] as $asset ) {
-                if ( str_ends_with( $asset['name'], '.zip' ) ) {
+                if ( substr( $asset['name'], -4 ) === '.zip' ) {
                     $zip_url = $asset['browser_download_url'];
                     break;
                 }
             }
         }
-        // Fallback : zipball GitHub (source code)
-        if ( ! $zip_url ) $zip_url = $release['zipball_url'];
+        // Fallback : zipball généré par GitHub (source code compressé)
+        if ( ! $zip_url ) {
+            $zip_url = 'https://github.com/' . BERRE_GITHUB_REPO
+                     . '/archive/refs/tags/' . $release['tag_name'] . '.zip';
+        }
 
         $transient->response[ BERRE_THEME_SLUG ] = [
             'theme'        => BERRE_THEME_SLUG,
@@ -2044,6 +2047,27 @@ add_filter( 'pre_set_site_transient_update_themes', function( $transient ) {
 
     return $transient;
 } );
+
+/* ── Renommer le dossier extrait vers theme1-aerien ──────────
+   GitHub extrait le ZIP dans "WordPress---Design-v2.5.0/"
+   WordPress a besoin de "theme1-aerien/" → on renomme.
+   ──────────────────────────────────────────────────────── */
+add_filter( 'upgrader_source_selection', function( $source, $remote_source, $upgrader, $hook_extra ) {
+    global $wp_filesystem;
+
+    if ( ! isset( $hook_extra['theme'] ) || $hook_extra['theme'] !== BERRE_THEME_SLUG ) {
+        return $source;
+    }
+
+    // Le dossier extrait ressemble à "WordPress---Design-v2.x.x/"
+    $new_source = trailingslashit( $remote_source ) . BERRE_THEME_SLUG . '/';
+
+    if ( $wp_filesystem->move( $source, $new_source ) ) {
+        return $new_source;
+    }
+
+    return $source;
+}, 10, 4 );
 
 /* ── Informations de la release dans la popup WordPress ── */
 add_filter( 'themes_api', function( $result, $action, $args ) {
