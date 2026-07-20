@@ -2427,3 +2427,23 @@ ul.berre-home-actu-grid,
   background: rgba(255,255,255,.22);
   border-color: rgba(255,255,255,.6);
 }
+
+/* ── Footer nav via shortcode — même style que les blocs WP ── */
+.berre-footer__col {
+  min-width: 140px;
+}
+.berre-footer__col .berre-footer__nav ul {
+  list-style: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 6px !important;
+}
+.berre-footer__col .berre-footer__nav a {
+  color: rgba(255,255,255,.7) !important;
+  text-decoration: none !important;
+  font-size: 13px !important;
+  transition: color .15s !important;
+}
+.berre-footer__col .berre-footer__nav a:hover { color: #fff !important; }

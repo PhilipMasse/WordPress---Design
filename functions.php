@@ -4026,3 +4026,258 @@ add_shortcode( 'berre_footer_contact', function() {
     <?php
     return ob_get_clean();
 } );
+
+
+/* ============================================================
+   FOOTER — Colonnes de navigation (droite)
+   Option WP : berre_footer_nav
+   ============================================================ */
+
+function berre_footer_nav_defaults() {
+    return [
+        [
+            'title' => 'Vivre à Berre',
+            'links' => [
+                ['label' => 'La Commune',     'url' => '/commune',    'ext' => false],
+                ['label' => 'Agenda',         'url' => '/agenda',     'ext' => false],
+                ['label' => 'Tourisme',       'url' => '/tourisme',   'ext' => false],
+                ['label' => 'Associations',   'url' => '/associations','ext' => false],
+            ],
+        ],
+        [
+            'title' => 'Votre Mairie',
+            'links' => [
+                ['label' => 'Actualités',       'url' => '/actualites', 'ext' => false],
+                ['label' => 'Services',         'url' => '/services',   'ext' => false],
+                ['label' => 'État Civil',       'url' => '/etat-civil', 'ext' => false],
+                ['label' => 'Urbanisme',        'url' => '/urbanisme',  'ext' => false],
+            ],
+        ],
+        [
+            'title' => 'Pratique',
+            'links' => [
+                ['label' => 'Contact',           'url' => '/contact',          'ext' => false],
+                ['label' => 'Mes Démarches 06', 'url' => 'https://mesdemarches06.fr', 'ext' => true],
+                ['label' => 'Service-Public.fr', 'url' => 'https://www.service-public.fr', 'ext' => true],
+                ['label' => 'Mentions légales',  'url' => '/mentions-legales', 'ext' => false],
+            ],
+        ],
+    ];
+}
+
+function berre_get_footer_nav() {
+    $saved = get_option('berre_footer_nav');
+    return (is_array($saved) && !empty($saved)) ? $saved : berre_footer_nav_defaults();
+}
+
+/* ── Sous-menu admin ── */
+add_action( 'admin_menu', function() {
+    add_submenu_page( 'berre-admin', 'Footer — Liens', '🔗 Footer Liens', 'manage_options', 'berre-footer-nav', 'berre_footer_nav_page' );
+}, 23 );
+
+/* ── Sauvegarde ── */
+add_action( 'admin_init', function() {
+    if ( ! isset($_POST['berre_save_footer_nav']) ) return;
+    if ( ! wp_verify_nonce($_POST['berre_footer_nav_nonce'] ?? '', 'berre_save_footer_nav') ) return;
+    if ( ! current_user_can('manage_options') ) return;
+
+    $columns = [];
+    $col_titles = (array)($_POST['col_title'] ?? []);
+    foreach ( $col_titles as $ci => $title ) {
+        $title = sanitize_text_field($title);
+        if ( $title === '' ) continue;
+        $links = [];
+        $labels  = (array)($_POST["link_label_{$ci}"]  ?? []);
+        $urls    = (array)($_POST["link_url_{$ci}"]    ?? []);
+        $targets = (array)($_POST["link_target_{$ci}"] ?? []);
+        foreach ( $labels as $li => $label ) {
+            $label = sanitize_text_field($label);
+            if ( $label === '' ) continue;
+            $links[] = [
+                'label' => $label,
+                'url'   => esc_url_raw($urls[$li] ?? '#'),
+                'ext'   => isset($targets[$li]) && $targets[$li] === '1',
+            ];
+        }
+        $columns[] = ['title' => $title, 'links' => $links];
+    }
+
+    // Liens légaux
+    $legal = [];
+    $ll = (array)($_POST['legal_label'] ?? []);
+    $lu = (array)($_POST['legal_url']   ?? []);
+    foreach ($ll as $i => $label) {
+        $label = sanitize_text_field($label);
+        if ($label) $legal[] = ['label'=>$label,'url'=>esc_url_raw($lu[$i]??'#')];
+    }
+
+    update_option('berre_footer_nav',   $columns);
+    update_option('berre_footer_legal', $legal);
+    set_transient('berre_footer_saved', true, 10);
+} );
+
+/* ── Page admin ── */
+function berre_footer_nav_page() {
+    $columns = berre_get_footer_nav();
+    $legal   = get_option('berre_footer_legal', [
+        ['label'=>'Mentions légales','url'=>'/mentions-legales'],
+        ['label'=>'Politique de confidentialité','url'=>'/confidentialite'],
+    ]);
+    $saved = get_transient('berre_footer_saved');
+    if ($saved) delete_transient('berre_footer_saved');
+    ?>
+    <style>
+    .berre-fn-wrap { max-width:960px;margin-top:20px; }
+    .berre-fn-cols { display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:20px; }
+    .berre-fn-col { background:#fff;border:1px solid #ddd;border-radius:8px;overflow:hidden; }
+    .berre-fn-col-head { background:#f6f7f7;border-bottom:1px solid #eee;padding:10px 14px;display:flex;align-items:center;gap:8px; }
+    .berre-fn-col-head input { flex:1;border:none;background:transparent;font-size:13px;font-weight:700;color:#333; }
+    .berre-fn-col-body { padding:12px 14px; }
+    .berre-fn-link-row { display:flex;align-items:center;gap:6px;margin-bottom:6px;padding:5px 6px;background:#f9f9f9;border-radius:4px;border:1px solid #eee; }
+    .berre-fn-link-row input[type=text],.berre-fn-link-row input[type=url] { flex:1;border:1px solid #ddd;border-radius:3px;padding:4px 7px;font-size:12px; }
+    .berre-drag-h { cursor:grab;color:#ccc;font-size:16px; }
+    .berre-del-btn { background:none;border:none;color:#bbb;cursor:pointer;font-size:14px;padding:2px 5px;border-radius:3px; }
+    .berre-del-btn:hover { color:#c00;background:#fff0f0; }
+    .berre-fn-add { font-size:12px;margin-top:6px;width:100%; }
+    </style>
+
+    <div class="wrap berre-fn-wrap">
+        <h1>🔗 Footer — Colonnes de navigation</h1>
+        <p style="color:#666">Gérez les 3 colonnes de liens du footer. Vous pouvez ajouter/supprimer des liens et les réordonner.</p>
+        <?php if ($saved): ?><div class="notice notice-success is-dismissible"><p>✅ Sauvegardé.</p></div><?php endif; ?>
+
+        <form method="post" id="berre-fn-form">
+            <?php wp_nonce_field('berre_save_footer_nav','berre_footer_nav_nonce'); ?>
+
+            <!-- Colonnes -->
+            <div class="berre-fn-cols" id="berre-fn-cols">
+            <?php foreach ($columns as $ci => $col): ?>
+            <div class="berre-fn-col" data-col="<?php echo $ci; ?>">
+                <div class="berre-fn-col-head">
+                    <span class="berre-drag-h">⠿</span>
+                    <input type="text" name="col_title[<?php echo $ci; ?>]"
+                           value="<?php echo esc_attr($col['title']); ?>"
+                           placeholder="Titre de la colonne">
+                </div>
+                <div class="berre-fn-col-body">
+                    <div class="berre-fn-links" id="berre-fn-links-<?php echo $ci; ?>">
+                    <?php foreach ($col['links'] as $li => $link): ?>
+                    <div class="berre-fn-link-row" draggable="true">
+                        <span class="berre-drag-h" style="font-size:13px">⠿</span>
+                        <input type="text" name="link_label_<?php echo $ci; ?>[]"
+                               value="<?php echo esc_attr($link['label']); ?>" placeholder="Libellé">
+                        <input type="url"  name="link_url_<?php echo $ci; ?>[]"
+                               value="<?php echo esc_attr($link['url']); ?>"  placeholder="URL ou /page">
+                        <label title="Ouvrir dans un nouvel onglet" style="font-size:10px;white-space:nowrap;color:#888;display:flex;align-items:center;gap:2px">
+                            <input type="checkbox" name="link_target_<?php echo $ci; ?>[]" value="1"
+                                   <?php checked(!empty($link['ext'])); ?>>↗
+                        </label>
+                        <button type="button" class="berre-del-btn" onclick="this.closest('.berre-fn-link-row').remove()">✕</button>
+                    </div>
+                    <?php endforeach; ?>
+                    </div>
+                    <button type="button" class="button berre-fn-add"
+                            onclick="addLink(this, <?php echo $ci; ?>)">+ Ajouter un lien</button>
+                </div>
+            </div>
+            <?php endforeach; ?>
+            </div>
+
+            <!-- Liens légaux (bas de footer) -->
+            <div style="background:#fff;border:1px solid #ddd;border-radius:8px;padding:16px 18px;margin-bottom:18px">
+                <h3 style="font-size:13px;margin:0 0 12px">Liens légaux (bas du footer)</h3>
+                <div id="berre-fn-legal">
+                <?php foreach ($legal as $l): ?>
+                <div class="berre-fn-link-row" style="max-width:600px">
+                    <input type="text" name="legal_label[]" value="<?php echo esc_attr($l['label']); ?>" placeholder="Libellé">
+                    <input type="url"  name="legal_url[]"   value="<?php echo esc_attr($l['url']); ?>"   placeholder="/page">
+                    <button type="button" class="berre-del-btn" onclick="this.closest('.berre-fn-link-row').remove()">✕</button>
+                </div>
+                <?php endforeach; ?>
+                </div>
+                <button type="button" class="button berre-fn-add" style="max-width:600px;margin-top:8px"
+                        onclick="addLegal()">+ Ajouter un lien légal</button>
+            </div>
+
+            <input type="submit" name="berre_save_footer_nav" class="button button-primary button-large" value="💾 Enregistrer">
+        </form>
+    </div>
+
+    <script>
+    function addLink(btn, ci) {
+        var list = document.getElementById('berre-fn-links-' + ci);
+        var row = document.createElement('div');
+        row.className = 'berre-fn-link-row';
+        row.draggable = true;
+        row.innerHTML =
+            '<span class="berre-drag-h" style="font-size:13px">⠿</span>' +
+            '<input type="text" name="link_label_' + ci + '[]" placeholder="Libellé">' +
+            '<input type="url" name="link_url_' + ci + '[]" placeholder="URL ou /page">' +
+            '<label title="Nouvel onglet" style="font-size:10px;white-space:nowrap;color:#888;display:flex;align-items:center;gap:2px">' +
+            '<input type="checkbox" name="link_target_' + ci + '[]" value="1">↗</label>' +
+            '<button type="button" class="berre-del-btn" onclick="this.closest(\'.berre-fn-link-row\').remove()">✕</button>';
+        list.appendChild(row);
+        row.querySelector('input[type=text]').focus();
+    }
+    function addLegal() {
+        var list = document.getElementById('berre-fn-legal');
+        var row = document.createElement('div');
+        row.className = 'berre-fn-link-row';
+        row.style.maxWidth = '600px';
+        row.innerHTML =
+            '<input type="text" name="legal_label[]" placeholder="Libellé">' +
+            '<input type="url" name="legal_url[]" placeholder="/page">' +
+            '<button type="button" class="berre-del-btn" onclick="this.closest(\'.berre-fn-link-row\').remove()">✕</button>';
+        list.appendChild(row);
+        row.querySelector('input').focus();
+    }
+    // Drag & drop intra-colonne
+    document.querySelectorAll('.berre-fn-links').forEach(function(list) {
+        var dr = null;
+        list.addEventListener('dragstart', function(e){
+            dr = e.target.closest('.berre-fn-link-row');
+            if(dr) setTimeout(function(){dr.style.opacity='.4';},0);
+        });
+        list.addEventListener('dragend', function(){if(dr){dr.style.opacity='';dr=null;}});
+        list.addEventListener('dragover', function(e){
+            e.preventDefault();
+            var row = e.target.closest('.berre-fn-link-row');
+            if(row && row !== dr){
+                var r = row.getBoundingClientRect();
+                list.insertBefore(dr, e.clientY < r.top+r.height/2 ? row : row.nextSibling);
+            }
+        });
+    });
+    </script>
+    <?php
+}
+
+/* ── Shortcodes de rendu ── */
+add_shortcode( 'berre_footer_nav', function() {
+    $columns = berre_get_footer_nav();
+    $out = '';
+    foreach ( $columns as $col ) {
+        $out .= '<div class="berre-footer__col">';
+        $out .= '<h4 class="berre-footer__col-title">' . esc_html($col['title']) . '</h4>';
+        $out .= '<nav class="berre-footer__nav"><ul>';
+        foreach ( $col['links'] as $link ) {
+            $target = !empty($link['ext']) ? ' target="_blank" rel="noopener"' : '';
+            $out .= '<li><a href="' . esc_url($link['url']) . '"' . $target . '>'
+                  . esc_html($link['label']) . '</a></li>';
+        }
+        $out .= '</ul></nav></div>';
+    }
+    return $out;
+} );
+
+add_shortcode( 'berre_footer_legal', function() {
+    $legal = get_option('berre_footer_legal', []);
+    if ( empty($legal) ) return '';
+    $out = '<nav class="berre-footer__legal"><ul style="display:flex;gap:16px;list-style:none;padding:0;margin:0">';
+    foreach ( $legal as $l ) {
+        $out .= '<li><a href="' . esc_url($l['url']) . '" style="color:rgba(255,255,255,.5);font-size:12px;text-decoration:none">'
+              . esc_html($l['label']) . '</a></li>';
+    }
+    $out .= '</ul></nav>';
+    return $out;
+} );
