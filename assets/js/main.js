@@ -4,6 +4,18 @@
 
   document.addEventListener('DOMContentLoaded', function () {
 
+
+    /* ── Header : ombre au scroll ── */
+    (function() {
+      var header = document.querySelector('.berre-header');
+      if (!header) return;
+      function onScroll() {
+        header.classList.toggle('scrolled', window.scrollY > 10);
+      }
+      window.addEventListener('scroll', onScroll, { passive: true });
+      onScroll();
+    })();
+
     /* ══ NETTOYAGE CACHE ══════════════════════════════════════════
        Supprime TOUS les anciens éléments avec les vieilles classes
        (.berre-icons-row, .berre-icons-block, .berre-icon-btn...)

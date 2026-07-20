@@ -24,8 +24,18 @@ a{text-decoration:none;color:inherit}
   border-bottom: 1px solid rgba(0,0,0,.08) !important;
   position: sticky !important;
   top: 0 !important;
-  z-index: 100 !important;
+  z-index: 9999 !important;
   padding: 0 !important;
+  transition: box-shadow .25s ease !important;
+}
+.berre-header.scrolled {
+  box-shadow: 0 2px 14px rgba(0,0,0,.1) !important;
+  border-bottom-color: transparent !important;
+}
+/* Barre d'admin WordPress */
+.admin-bar .berre-header { top: 32px !important; }
+@media screen and (max-width: 782px) {
+  .admin-bar .berre-header { top: 46px !important; }
 }
 /* Le groupe interne flex */
 .berre-header.wp-block-group {
@@ -2330,5 +2340,43 @@ ul.berre-home-actu-grid,
   }
   .berre-ar__label {
     font-size: 8.5px !important;
+  }
+}
+
+/* ── MENU HAMBURGER MOBILE — icône seule, pas de texte ── */
+@media (max-width: 700px) {
+
+  /* Bouton hamburger : cacher le texte "Menu", garder l'icône SVG */
+  .berre-nav-wp .wp-block-navigation__responsive-container-open {
+    font-size: 0 !important;       /* cache le texte sans casser l'icône SVG */
+    min-width: 44px !important;
+    width: 44px !important;
+    height: 44px !important;
+    padding: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 0 !important;
+    border-radius: 8px !important;
+  }
+  /* L'icône SVG n'est pas affectée par font-size */
+  .berre-nav-wp .wp-block-navigation__responsive-container-open svg {
+    width: 22px !important;
+    height: 22px !important;
+    flex-shrink: 0 !important;
+  }
+  /* Bouton de fermeture dans le menu ouvert */
+  .berre-nav-wp .wp-block-navigation__responsive-container-close {
+    font-size: 0 !important;
+    width: 44px !important;
+    height: 44px !important;
+    padding: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+  .berre-nav-wp .wp-block-navigation__responsive-container-close svg {
+    width: 22px !important;
+    height: 22px !important;
   }
 }
