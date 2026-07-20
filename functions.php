@@ -3695,92 +3695,112 @@ add_action( 'created_categorie_actu', function( $term_id ) {
     }
 } );
 
-/* ── CSS global + render_block pour couleurs catégories ── */
+/* ── Couleurs catégories — CSS haute spécificité + render_block ── */
 
-/* Carte de couleurs accessible globalement */
+/* Cache des couleurs par terme */
 function berre_get_cat_colors() {
     static $map = null;
     if ( $map !== null ) return $map;
-    $map = [];
+    $map   = [];
     $terms = get_terms( ['taxonomy' => 'categorie_actu', 'hide_empty' => false] );
     if ( is_wp_error($terms) ) return $map;
     foreach ( $terms as $t ) {
         $c = get_term_meta( $t->term_id, 'berre_cat_color', true );
-        if ( $c ) $map[ $t->term_id ] = [ 'color' => $c, 'slug' => $t->slug ];
+        if ( $c ) $map[ $t->term_id ] = [ 'color' => $c, 'slug' => $t->slug, 'term' => $t ];
     }
     return $map;
 }
 
-/* CSS injecté dans <head> pour les filtres de l'archive et les tags */
+/* CSS injecté dans <head> avec URLs exactes → sélecteur [href="..."] infaillible */
 add_action( 'wp_head', function() {
     $colors = berre_get_cat_colors();
     if ( empty($colors) ) return;
+
     $css = '<style id="berre-cat-colors">';
     foreach ( $colors as $tid => $info ) {
         $color = $info['color'];
-        $slug  = sanitize_html_class( $info['slug'] );
+        $term  = $info['term'];
+        $link  = get_term_link( $term );
+        if ( is_wp_error($link) ) continue;
+
+        // URL relative pour matcher quelle que soit la configuration
+        $path  = wp_make_link_relative( $link );
         $rgb   = sscanf( $color, '#%02x%02x%02x' );
         $light = sprintf( 'rgba(%d,%d,%d,0.13)', $rgb[0], $rgb[1], $rgb[2] );
 
-        // Tags bas de page article
-        $css .= ".berre-article-tags a[href*=\"{$slug}\"] { border-color:{$color}!important;color:{$color}!important }";
-        $css .= ".berre-article-tags a[href*=\"{$slug}\"]:hover { background:{$color}!important;color:#fff!important }";
-
-        // Filtre actif archive bannière
-        $css .= ".berre-filter[href*=\"{$slug}\"].berre-filter--active { color:{$color}!important;border-bottom-color:{$color}!important }";
+        // Sélecteurs ultra-spécifiques : URL exacte via [href="..."]
+        // Cards archive ET home page
+        foreach ( ['.berre-actu-card__cat', '.berre-home-actu-card__cat'] as $sel ) {
+            $css .= "{$sel} a[href="{$path}"],";
+            $css .= "{$sel} a[href="{$link}"]";
+            $css .= " { color:{$color} !important; }
+";
+        }
+        // Badge article
+        $css .= ".berre-article-cats a[href="{$path}"],";
+        $css .= ".berre-article-cats a[href="{$link}"]";
+        $css .= " { color:{$color} !important; background:{$light} !important; }
+";
+        // Tags bas d'article
+        $css .= ".berre-article-tags a[href="{$path}"],";
+        $css .= ".berre-article-tags a[href="{$link}"]";
+        $css .= " { color:{$color} !important; border-color:{$color} !important; }
+";
+        $css .= ".berre-article-tags a[href="{$path}"]:hover,";
+        $css .= ".berre-article-tags a[href="{$link}"]:hover";
+        $css .= " { background:{$color} !important; color:#fff !important; }
+";
+        // Filtre actif archive
+        $css .= ".berre-filter[href="{$path}"].berre-filter--active,";
+        $css .= ".berre-filter[href="{$link}"].berre-filter--active";
+        $css .= " { color:{$color} !important; border-bottom-color:{$color} !important; }
+";
     }
     $css .= '</style>';
     echo $css;
 } );
 
-/* render_block — injecter les couleurs directement dans le HTML des badges catégorie.
-   S'applique partout : archive, home cards, page article. */
+/* render_block en couche secondaire — modifie le HTML directement si disponible */
 add_filter( 'render_block', function( $html, $block ) {
     if ( ( $block['blockName'] ?? '' ) !== 'core/post-terms' ) return $html;
-    if ( ( $block['attrs']['term'] ?? '' ) !== 'categorie_actu' ) return $html;
+    if ( ( $block['attrs']['term'] ?? '' ) !== 'categorie_actu' )  return $html;
     if ( empty($html) ) return $html;
 
     $post_id = get_the_ID();
     if ( ! $post_id ) return $html;
 
-    $terms  = get_the_terms( $post_id, 'categorie_actu' );
+    $terms = get_the_terms( $post_id, 'categorie_actu' );
     if ( ! $terms || is_wp_error($terms) ) return $html;
 
     $colors = berre_get_cat_colors();
     if ( empty($colors) ) return $html;
 
-    // Construire une map slug → couleur
     $slug_map = [];
     foreach ( $colors as $tid => $info ) {
         $slug_map[ $info['slug'] ] = $info['color'];
+        $slug_map[ $info['slug'] . '-2' ] = $info['color']; // variantes de slug WordPress
     }
 
-    // Pour chaque terme du post, coloriser le lien correspondant
+    $class = $block['attrs']['className'] ?? '';
+    $is_article_badge = strpos($class, 'berre-article-cats') !== false
+                     || strpos($class, 'berre-article-tags') !== false;
+
     foreach ( $terms as $term ) {
         $color = $slug_map[ $term->slug ] ?? null;
         if ( ! $color ) continue;
-
-        $slug = preg_quote( $term->slug, '/' );
-        $rgb  = sscanf( $color, '#%02x%02x%02x' );
+        $rgb   = sscanf( $color, '#%02x%02x%02x' );
         $light = sprintf( 'rgba(%d,%d,%d,0.13)', $rgb[0], $rgb[1], $rgb[2] );
-
-        // Cibler le <a> qui contient le slug dans son href
-        $pattern = "/<a([^>]*href=[^>]*" . $slug . "[^>]*)>/i";
-
-        // Déterminer le contexte selon les classes du bloc
-        $class = $block['attrs']['className'] ?? '';
-
-        if ( strpos($class, 'berre-article-cats') !== false || strpos($class, 'berre-article-tags') !== false ) {
-            // Badge article : pill avec fond coloré
-            $replacement = '<a$1 style="color:' . esc_attr($color) . ';background:' . esc_attr($light) . ';border-color:' . esc_attr($color) . '">';
-        } else {
-            // Card archive / home : texte coloré en uppercase
-            $replacement = '<a$1 style="color:' . esc_attr($color) . '">';
-        }
-
-        $html = preg_replace( $pattern, $replacement, $html );
+        $slug  = preg_quote( $term->slug, '/' );
+        $style = $is_article_badge
+            ? 'color:' . $color . ';background:' . $light . ';border-color:' . $color
+            : 'color:' . $color;
+        // Ajouter le style sur le lien contenant le slug
+        $html = preg_replace(
+            '/(<a[^>]*href=["'][^"']*' . $slug . '[^"']*["'])([^>]*>)/i',
+            '$1 style="' . $style . '"$2',
+            $html
+        );
     }
-
     return $html;
 }, 10, 2 );
 
