@@ -1845,35 +1845,8 @@ add_shortcode('berre_hero_buttons', function() {
 });
 
 // [berre_commune_content] — section commune complète
-add_shortcode('berre_commune_content', function() {
-    $c = berre_get_page_content()['commune'];
-    ob_start(); ?>
-    <p class="berre-commune-eyebrow"><?php echo esc_html($c['eyebrow']); ?></p>
-    <h2><?php echo esc_html($c['title']); ?></h2>
-    <p class="berre-commune-desc"><?php echo nl2br(esc_html($c['description'])); ?></p>
-    <div class="berre-commune-facts">
-        <?php foreach ([1,2,3,4] as $n): ?>
-        <div class="berre-cf"><strong><?php echo esc_html($c["stat{$n}_val"]); ?></strong><span><?php echo esc_html($c["stat{$n}_lbl"]); ?></span></div>
-        <?php endforeach; ?>
-    </div>
-    <div class="wp-block-buttons"><div class="wp-block-button berre-commune-btn"><a class="wp-block-button__link wp-element-button" href="<?php echo esc_url($c['btn_url']); ?>"><?php echo esc_html($c['btn_text']); ?></a></div></div>
-    <?php return ob_get_clean();
-});
 
 // [berre_services_grid] — grille services
-add_shortcode('berre_services_grid', function() {
-    $svcs = berre_get_page_content()['services'];
-    $ic   = berre_icons_list();
-    ob_start();
-    echo '<div class="berre-services-grid">';
-    foreach (array_slice($svcs, 0, 8) as $s) {
-        $svg = $ic[$s['icon']]['svg'] ?? $ic['document']['svg'];
-        printf('<div class="berre-service-card berre-service-card--%s"><div class="berre-service-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8">%s</svg></div><h3>%s</h3><p>%s</p><a href="%s" class="berre-service-link">Accéder →</a></div>',
-            esc_attr($s['color']), $svg, esc_html($s['title']), esc_html($s['desc']), esc_url($s['url']));
-    }
-    echo '</div>';
-    return ob_get_clean();
-});
 
 // [berre_contact_content] — section contact
 add_shortcode('berre_contact_content', function() {
@@ -3529,33 +3502,6 @@ function berre_commune_admin_page() {
 
 /* ── Mise à jour du shortcode [berre_commune_content] ──
    Lit maintenant berre_commune (priorité) puis fallback berre_page_content ── */
-remove_shortcode('berre_commune_content');
-add_shortcode('berre_commune_content', function() {
-    $c = berre_get_commune();
-    $target = ($c['btn_target'] ?? '_self') === '_blank' ? ' target="_blank" rel="noopener"' : '';
-    ob_start(); ?>
-    <p class="berre-commune-eyebrow"><?php echo esc_html($c['eyebrow']); ?></p>
-    <h2><?php echo esc_html($c['title']); ?></h2>
-    <p class="berre-commune-desc"><?php echo nl2br(esc_html($c['description'])); ?></p>
-    <div class="berre-commune-facts">
-        <?php foreach ([1,2,3,4] as $n): ?>
-        <div class="berre-cf">
-            <strong><?php echo esc_html($c["stat{$n}_val"]); ?></strong>
-            <span><?php echo esc_html($c["stat{$n}_lbl"]); ?></span>
-        </div>
-        <?php endforeach; ?>
-    </div>
-    <div class="wp-block-buttons">
-        <div class="wp-block-button berre-commune-btn">
-            <a class="wp-block-button__link wp-element-button"
-               href="<?php echo esc_url($c['btn_url'] ?? '#'); ?>"
-               <?php echo $target; ?>>
-                <?php echo esc_html($c['btn_text']); ?>
-            </a>
-        </div>
-    </div>
-    <?php return ob_get_clean();
-});
 
 /* ── Ajouter Commune au menu unifié ── */
 add_action('admin_menu', function() {
