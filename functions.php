@@ -3568,3 +3568,221 @@ add_action('admin_menu', function() {
         'berre_commune_admin_page'
     );
 }, 20); // priorité 20 pour s'ajouter après le menu principal
+
+
+/* ============================================================
+   LA COMMUNE — Page d'administration dédiée
+   Option WP : berre_commune_data (prioritaire sur berre_page_content)
+   ============================================================ */
+
+function berre_commune_defaults() {
+    return [
+        'eyebrow'   => 'Découvrir la Commune',
+        'title'     => 'Un village d\'exception entre mer et montagne',
+        'desc'      => 'Perché à 682 m à 25 km de Nice, Berre-les-Alpes offre un panorama unique sur la Méditerranée et les Alpes-Maritimes. Village médiéval, sentiers balisés et art de vivre provençal.',
+        'stat1_val' => '1 234', 'stat1_lbl' => 'Habitants',
+        'stat2_val' => '682 m', 'stat2_lbl' => 'Altitude',
+        'stat3_val' => '25 km', 'stat3_lbl' => 'de Nice',
+        'stat4_val' => '9,58 km²', 'stat4_lbl' => 'Superficie',
+        'btn_text'  => 'Explorer nos sentiers →',
+        'btn_url'   => '/',
+    ];
+}
+
+function berre_get_commune_data() {
+    $saved = get_option( 'berre_commune_data' );
+    if ( ! empty($saved) && is_array($saved) ) return array_merge( berre_commune_defaults(), $saved );
+    // Fallback : ancienne option page_content
+    $pc = get_option('berre_page_content');
+    if ( ! empty($pc['commune']) ) return array_merge( berre_commune_defaults(), $pc['commune'] );
+    return berre_commune_defaults();
+}
+
+/* ── Sous-menu dans Berre-les-Alpes ── */
+add_action( 'admin_menu', function() {
+    add_submenu_page(
+        'berre-admin',
+        'La Commune',
+        '🏘 La Commune',
+        'manage_options',
+        'berre-commune',
+        'berre_commune_admin_page'
+    );
+}, 20 );
+
+/* ── Sauvegarde ── */
+add_action( 'admin_init', function() {
+    if ( ! isset($_POST['berre_save_commune']) ) return;
+    if ( ! wp_verify_nonce($_POST['berre_commune_nonce'] ?? '', 'berre_save_commune') ) wp_die('Sécurité invalide.');
+    if ( ! current_user_can('manage_options') ) return;
+
+    $data = [
+        'eyebrow'   => sanitize_text_field( $_POST['commune_eyebrow']   ?? '' ),
+        'title'     => sanitize_text_field( $_POST['commune_title']     ?? '' ),
+        'desc'      => sanitize_textarea_field( $_POST['commune_desc']  ?? '' ),
+        'stat1_val' => sanitize_text_field( $_POST['commune_stat1_val'] ?? '' ),
+        'stat1_lbl' => sanitize_text_field( $_POST['commune_stat1_lbl'] ?? '' ),
+        'stat2_val' => sanitize_text_field( $_POST['commune_stat2_val'] ?? '' ),
+        'stat2_lbl' => sanitize_text_field( $_POST['commune_stat2_lbl'] ?? '' ),
+        'stat3_val' => sanitize_text_field( $_POST['commune_stat3_val'] ?? '' ),
+        'stat3_lbl' => sanitize_text_field( $_POST['commune_stat3_lbl'] ?? '' ),
+        'stat4_val' => sanitize_text_field( $_POST['commune_stat4_val'] ?? '' ),
+        'stat4_lbl' => sanitize_text_field( $_POST['commune_stat4_lbl'] ?? '' ),
+        'btn_text'  => sanitize_text_field( $_POST['commune_btn_text']  ?? '' ),
+        'btn_url'   => esc_url_raw( $_POST['commune_btn_url'][0] ?? '/' ),
+    ];
+    update_option( 'berre_commune_data', $data );
+    set_transient( 'berre_commune_saved', true, 10 );
+} );
+
+/* ── Page admin ── */
+function berre_commune_admin_page() {
+    $d     = berre_get_commune_data();
+    $saved = get_transient('berre_commune_saved');
+    if ($saved) delete_transient('berre_commune_saved');
+    ?>
+    <style>
+    .berre-commune-wrap { max-width:820px; margin-top:20px; }
+    .berre-commune-card { background:#fff; border:1px solid #ddd; border-radius:8px; overflow:hidden; margin-bottom:18px; }
+    .berre-commune-card-head { background:#f6f7f7; border-bottom:1px solid #eee; padding:12px 20px; }
+    .berre-commune-card-head h2 { margin:0; font-size:13.5px; }
+    .berre-commune-card-body { padding:20px; }
+    .berre-field { margin-bottom:14px; }
+    .berre-field label { display:block; font-size:11.5px; font-weight:700; color:#444; margin-bottom:4px; text-transform:uppercase; letter-spacing:.06em; }
+    .berre-field input[type=text], .berre-field textarea { width:100%; padding:8px 10px; border:1px solid #ddd; border-radius:4px; font-size:13.5px; font-family:inherit; }
+    .berre-field textarea { height:100px; resize:vertical; }
+    .berre-field input:focus, .berre-field textarea:focus { border-color:#2D6AB0; outline:none; box-shadow:0 0 0 2px rgba(45,106,176,.1); }
+    .berre-stats-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:16px; }
+    .berre-stat-pair { display:flex; gap:10px; align-items:flex-end; }
+    .berre-stat-pair .berre-field { flex:1; margin:0; }
+    .berre-preview-commune { background:#2D6AB0; border-radius:8px; padding:28px 28px 24px; margin-bottom:18px; }
+    .berre-preview-commune__eyebrow { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.14em; color:rgba(255,255,255,.6); margin:0 0 10px; }
+    .berre-preview-commune__title { font-size:1.6rem; font-weight:800; color:#fff; margin:0 0 12px; line-height:1.3; }
+    .berre-preview-commune__desc { font-size:13px; color:rgba(255,255,255,.8); line-height:1.7; margin:0 0 16px; }
+    .berre-preview-commune__stats { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:18px; }
+    .berre-preview-commune__stat { background:rgba(255,255,255,.12); border-radius:6px; padding:12px 16px; min-width:100px; }
+    .berre-preview-commune__stat strong { display:block; font-size:1.2rem; font-weight:800; color:#fff; }
+    .berre-preview-commune__stat span { font-size:10px; text-transform:uppercase; letter-spacing:.1em; color:rgba(255,255,255,.6); }
+    .berre-preview-commune__btn { display:inline-block; background:#DEA128; color:#111; font-size:13px; font-weight:700; padding:10px 22px; border-radius:24px; text-decoration:none; }
+    </style>
+
+    <div class="wrap berre-commune-wrap">
+        <h1>🏘 La Commune</h1>
+        <?php if ($saved): ?>
+        <div class="notice notice-success is-dismissible"><p>✅ Section Commune sauvegardée.</p></div>
+        <?php endif; ?>
+
+        <!-- Aperçu temps réel -->
+        <div class="berre-preview-commune" id="berre-commune-preview">
+            <p class="berre-preview-commune__eyebrow" id="prev-eyebrow"><?php echo esc_html($d['eyebrow']); ?></p>
+            <h2 class="berre-preview-commune__title" id="prev-title"><?php echo esc_html($d['title']); ?></h2>
+            <p class="berre-preview-commune__desc" id="prev-desc"><?php echo nl2br(esc_html($d['desc'])); ?></p>
+            <div class="berre-preview-commune__stats">
+                <?php for ($i=1;$i<=4;$i++): ?>
+                <div class="berre-preview-commune__stat">
+                    <strong id="prev-stat<?php echo $i; ?>-val"><?php echo esc_html($d["stat{$i}_val"]); ?></strong>
+                    <span   id="prev-stat<?php echo $i; ?>-lbl"><?php echo esc_html($d["stat{$i}_lbl"]); ?></span>
+                </div>
+                <?php endfor; ?>
+            </div>
+            <a class="berre-preview-commune__btn" id="prev-btn"><?php echo esc_html($d['btn_text']); ?></a>
+        </div>
+
+        <form method="post">
+            <?php wp_nonce_field('berre_save_commune','berre_commune_nonce'); ?>
+
+            <!-- Textes principaux -->
+            <div class="berre-commune-card">
+                <div class="berre-commune-card-head"><h2>Textes</h2></div>
+                <div class="berre-commune-card-body">
+                    <div class="berre-field">
+                        <label>Surtitre</label>
+                        <input type="text" name="commune_eyebrow" id="f-eyebrow" value="<?php echo esc_attr($d['eyebrow']); ?>"
+                               oninput="document.getElementById('prev-eyebrow').textContent=this.value" placeholder="Découvrir la Commune">
+                    </div>
+                    <div class="berre-field">
+                        <label>Titre principal</label>
+                        <input type="text" name="commune_title" id="f-title" value="<?php echo esc_attr($d['title']); ?>"
+                               oninput="document.getElementById('prev-title').textContent=this.value">
+                    </div>
+                    <div class="berre-field">
+                        <label>Description</label>
+                        <textarea name="commune_desc" id="f-desc"
+                                  oninput="document.getElementById('prev-desc').textContent=this.value"><?php echo esc_textarea($d['desc']); ?></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Statistiques -->
+            <div class="berre-commune-card">
+                <div class="berre-commune-card-head"><h2>Statistiques (4 chiffres clés)</h2></div>
+                <div class="berre-commune-card-body">
+                    <div class="berre-stats-grid">
+                    <?php for ($i=1; $i<=4; $i++): ?>
+                        <div class="berre-stat-pair">
+                            <div class="berre-field">
+                                <label>Chiffre <?php echo $i; ?></label>
+                                <input type="text" name="commune_stat<?php echo $i; ?>_val"
+                                       value="<?php echo esc_attr($d["stat{$i}_val"]); ?>"
+                                       oninput="document.getElementById('prev-stat<?php echo $i; ?>-val').textContent=this.value"
+                                       placeholder="1 234">
+                            </div>
+                            <div class="berre-field">
+                                <label>Libellé</label>
+                                <input type="text" name="commune_stat<?php echo $i; ?>_lbl"
+                                       value="<?php echo esc_attr($d["stat{$i}_lbl"]); ?>"
+                                       oninput="document.getElementById('prev-stat<?php echo $i; ?>-lbl').textContent=this.value"
+                                       placeholder="Habitants">
+                            </div>
+                        </div>
+                    <?php endfor; ?>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bouton -->
+            <div class="berre-commune-card">
+                <div class="berre-commune-card-head"><h2>Bouton</h2></div>
+                <div class="berre-commune-card-body">
+                    <div class="berre-field">
+                        <label>Texte du bouton</label>
+                        <input type="text" name="commune_btn_text" value="<?php echo esc_attr($d['btn_text']); ?>"
+                               oninput="document.getElementById('prev-btn').textContent=this.value">
+                    </div>
+                    <div class="berre-field">
+                        <label>Lien du bouton</label>
+                        <?php echo berre_url_picker_html('commune_btn_url', $d['btn_url'], 0); ?>
+                    </div>
+                </div>
+            </div>
+
+            <input type="submit" name="berre_save_commune" class="button button-primary button-large" value="💾 Enregistrer">
+        </form>
+    </div>
+    <?php
+}
+
+/* ── Mettre à jour le shortcode pour lire d'abord la nouvelle option ── */
+remove_shortcode('berre_commune_content');
+add_shortcode('berre_commune_content', function() {
+    $c = berre_get_commune_data();
+    ob_start(); ?>
+    <p class="berre-commune-eyebrow"><?php echo esc_html($c['eyebrow']); ?></p>
+    <h2 class="berre-commune-title"><?php echo esc_html($c['title']); ?></h2>
+    <p class="berre-commune-desc"><?php echo nl2br(esc_html($c['desc'] ?: ($c['description'] ?? ''))); ?></p>
+    <div class="berre-commune-facts">
+        <?php for ($i=1; $i<=4; $i++): ?>
+        <div class="berre-cf">
+            <strong><?php echo esc_html($c["stat{$i}_val"]); ?></strong>
+            <span><?php echo esc_html($c["stat{$i}_lbl"]); ?></span>
+        </div>
+        <?php endfor; ?>
+    </div>
+    <?php if (!empty($c['btn_text'])): ?>
+    <a class="berre-commune-btn" href="<?php echo esc_url($c['btn_url'] ?? '/'); ?>">
+        <?php echo esc_html($c['btn_text']); ?>
+    </a>
+    <?php endif; ?>
+    <?php
+    return ob_get_clean();
+});
