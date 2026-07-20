@@ -3765,7 +3765,7 @@ add_filter( 'render_block', function( $html, $block ) {
         $light = sprintf( 'rgba(%d,%d,%d,0.13)', $rgb[0], $rgb[1], $rgb[2] );
 
         // Cibler le <a> qui contient le slug dans son href
-        $pattern = '/<a([^>]*href=["'][^"']*' . $slug . '[^"']*["'][^>]*)>/i';
+        $pattern = "/<a([^>]*href=[^>]*" . $slug . "[^>]*)>/i";
 
         // Déterminer le contexte selon les classes du bloc
         $class = $block['attrs']['className'] ?? '';
