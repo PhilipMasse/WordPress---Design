@@ -538,7 +538,7 @@ footer .wp-block-navigation__submenu-container .wp-block-navigation-item__conten
 .berre-nl-btn:hover{background:rgba(255,255,255,.9)}
 
 /* ── PARTENAIRES ── */
-..berre-partners-band{background:var(--b);border-top:1px solid rgba(255,255,255,.1);padding:10px 5vw;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.berre-partners-band{background:var(--b);border-top:1px solid rgba(255,255,255,.1);padding:10px 5vw;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
 .berre-partners-lbl{font-size:8.5px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:rgba(255,255,255,.5);flex-shrink:0;padding-right:16px;border-right:1px solid rgba(255,255,255,.15);align-self:center;line-height:1}
 .berre-partners-list{display:flex;gap:7px;flex-wrap:wrap}
 .berre-partner{font-size:10.5px;color:rgba(255,255,255,.45);padding:3px 11px;border:1px solid rgba(255,255,255,.14);border-radius:3px;transition:all .2s}
