@@ -1241,11 +1241,25 @@ ul.berre-recents-grid,
 /* Grille archive */
 .berre-archive-grid-wrap { padding: 32px 24px 48px !important; }
 
-.berre-actu-grid {
+.berre-actu-grid,
+ul.berre-actu-grid,
+.wp-block-post-template.berre-actu-grid {
   display: grid !important;
   grid-template-columns: repeat(3, 1fr) !important;
   gap: 24px !important;
   margin-bottom: 40px !important;
+  list-style: none !important;
+  padding: 0 !important;
+  align-items: start !important;  /* évite l'étirement vertical entre lignes */
+}
+/* Cellule li générée par wp:post-template */
+.berre-actu-grid > li,
+.berre-actu-grid > .wp-block-post {
+  margin: 0 !important;
+  padding: 0 !important;
+  list-style: none !important;
+  display: flex !important;
+  flex-direction: column !important;
 }
 .berre-actu-card {
   background: #fff !important;

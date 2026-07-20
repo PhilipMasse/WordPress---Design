@@ -3647,3 +3647,99 @@ add_shortcode('berre_commune_content', function() {
     return ob_get_clean();
 });
 
+
+
+/* ============================================================
+   COULEURS PAR CATÉGORIE D'ACTUALITÉ
+   Term meta : berre_cat_color
+   ============================================================ */
+
+/* ── Champ couleur dans l'édition de catégorie ── */
+add_action( 'categorie_actu_edit_form_fields', function( $term ) {
+    $color = get_term_meta( $term->term_id, 'berre_cat_color', true ) ?: '#2D6AB0';
+    ?>
+    <tr class="form-field">
+        <th scope="row"><label for="berre_cat_color">🎨 Couleur de la catégorie</label></th>
+        <td>
+            <input type="color" name="berre_cat_color" id="berre_cat_color"
+                   value="<?php echo esc_attr($color); ?>" style="width:60px;height:32px;cursor:pointer;border:1px solid #ddd;border-radius:4px;padding:2px">
+            <button type="button" onclick="document.getElementById('berre_cat_color').value='#2D6AB0'"
+                    style="margin-left:8px;font-size:12px;cursor:pointer">⟳ Réinitialiser</button>
+            <p class="description">Couleur du badge dans les cards d'actualité et sur la page article.</p>
+        </td>
+    </tr>
+    <?php
+} );
+
+/* Formulaire d'AJOUT de catégorie (nouvelle) */
+add_action( 'categorie_actu_add_form_fields', function() {
+    ?>
+    <div class="form-field">
+        <label for="berre_cat_color">🎨 Couleur de la catégorie</label>
+        <input type="color" name="berre_cat_color" id="berre_cat_color"
+               value="#2D6AB0" style="width:60px;height:32px;cursor:pointer;border:1px solid #ddd;border-radius:4px;padding:2px">
+        <p>Couleur du badge dans les cards d'actualité.</p>
+    </div>
+    <?php
+} );
+
+/* ── Sauvegarde ── */
+add_action( 'edited_categorie_actu', function( $term_id ) {
+    if ( isset($_POST['berre_cat_color']) ) {
+        update_term_meta( $term_id, 'berre_cat_color', sanitize_hex_color($_POST['berre_cat_color']) );
+    }
+} );
+add_action( 'created_categorie_actu', function( $term_id ) {
+    if ( isset($_POST['berre_cat_color']) ) {
+        update_term_meta( $term_id, 'berre_cat_color', sanitize_hex_color($_POST['berre_cat_color']) );
+    }
+} );
+
+/* ── Injecter le CSS des catégories dans <head> ── */
+add_action( 'wp_head', function() {
+    $terms = get_terms( ['taxonomy' => 'categorie_actu', 'hide_empty' => false] );
+    if ( is_wp_error($terms) || empty($terms) ) return;
+
+    $css = '<style id="berre-cat-colors">';
+    foreach ( $terms as $term ) {
+        $color = get_term_meta( $term->term_id, 'berre_cat_color', true );
+        if ( ! $color ) continue;
+        $slug  = sanitize_html_class( $term->slug );
+        $rgb   = sscanf( $color, '#%02x%02x%02x' );
+        $light = sprintf( 'rgba(%d,%d,%d,0.12)', $rgb[0], $rgb[1], $rgb[2] );
+
+        // Badge catégorie dans les cards
+        $css .= "\n.berre-actu-card__cat a[href*=\"{$slug}\"],";
+        $css .= "\n.berre-home-actu-card__cat a[href*=\"{$slug}\"] {";
+        $css .= " color:{$color} !important; }";
+
+        // Badge sur la page article
+        $css .= "\n.berre-article-cats a[href*=\"{$slug}\"] {";
+        $css .= " background:{$light} !important; color:{$color} !important; }";
+
+        // Tags en bas d'article
+        $css .= "\n.berre-article-tags a[href*=\"{$slug}\"] {";
+        $css .= " border-color:{$color} !important; color:{$color} !important; }";
+        $css .= "\n.berre-article-tags a[href*=\"{$slug}\"]:hover {";
+        $css .= " background:{$color} !important; color:#fff !important; }";
+
+        // Archive bannière — filtre actif
+        $css .= "\n.berre-filter[href*=\"{$slug}\"].berre-filter--active {";
+        $css .= " color:{$color} !important; border-bottom-color:{$color} !important; }";
+    }
+    $css .= "\n</style>\n";
+    echo $css;
+} );
+
+/* ── Colonne "Couleur" dans la liste des catégories ── */
+add_filter( 'manage_edit-categorie_actu_columns', function( $cols ) {
+    $cols['berre_color'] = 'Couleur';
+    return $cols;
+} );
+add_filter( 'manage_categorie_actu_custom_column', function( $out, $col, $term_id ) {
+    if ( $col !== 'berre_color' ) return $out;
+    $color = get_term_meta( $term_id, 'berre_cat_color', true ) ?: '#2D6AB0';
+    return '<span style="display:inline-block;width:20px;height:20px;border-radius:50%;background:'
+         . esc_attr($color) . ';border:1px solid rgba(0,0,0,.1);vertical-align:middle"></span> '
+         . '<code style="font-size:11px">' . esc_html($color) . '</code>';
+}, 10, 3 );
