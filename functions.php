@@ -3788,8 +3788,8 @@ add_filter( 'render_block', function( $html, $block ) {
             : 'color:' . $color;
         // Ajouter le style sur le lien contenant le slug
         $html = preg_replace(
-            '/(<a[^>]*href=["'][^"']*' . $slug . '[^"']*["'])([^>]*>)/i',
-            '$1 style="' . $style . '"$2',
+            '#(<a\b[^>]*\bhref=[^>]*' . $slug . '[^>]*)>#i',
+            '<a$1 style="' . esc_attr( $style ) . '">',
             $html
         );
     }
