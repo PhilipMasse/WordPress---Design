@@ -5,10 +5,46 @@
   document.addEventListener('DOMContentLoaded', function () {
 
 
-    /* ── Header : ombre au scroll ── */
+    /* ── Header sticky : remonter au bon élément parent ── */
     (function() {
       var header = document.querySelector('.berre-header');
       if (!header) return;
+
+      // Trouver l'ancêtre à rendre sticky (template part ou groupe WP)
+      // position:sticky doit être sur un enfant DIRECT du conteneur de scroll
+      var stickyEl = header;
+      var parent = header.parentElement;
+      // Remonter jusqu'à trouver un enfant direct de .wp-site-blocks ou body
+      while (parent && parent !== document.body) {
+        var gp = parent.parentElement;
+        if (!gp) break;
+        if (
+          gp.classList.contains('wp-site-blocks') ||
+          gp === document.body ||
+          gp.tagName === 'BODY'
+        ) {
+          stickyEl = parent;
+          break;
+        }
+        parent = gp;
+      }
+
+      // Appliquer sticky sur le bon élément
+      stickyEl.style.position   = 'sticky';
+      stickyEl.style.zIndex     = '9999';
+      stickyEl.style.top        = '0px';
+
+      // Ajuster pour la barre admin WordPress
+      function setTop() {
+        var adminBar = document.getElementById('wpadminbar');
+        if (adminBar) {
+          stickyEl.style.top = adminBar.offsetHeight + 'px';
+        }
+      }
+      setTop();
+      window.addEventListener('resize', setTop, { passive: true });
+
+      // Ombre au scroll
       function onScroll() {
         header.classList.toggle('scrolled', window.scrollY > 10);
       }

@@ -3808,3 +3808,15 @@ add_filter( 'manage_categorie_actu_custom_column', function( $out, $col, $term_i
          . esc_attr($color) . ';border:1px solid rgba(0,0,0,.1);vertical-align:middle"></span> '
          . '<code style="font-size:11px">' . esc_html($color) . '</code>';
 }, 10, 3 );
+
+/* ── Supprimer le texte "Menu" du bouton hamburger en PHP ── */
+add_filter( 'render_block', function( $html, $block ) {
+    if ( ( $block['blockName'] ?? '' ) !== 'core/navigation' ) return $html;
+    $html = preg_replace(
+        '#(<button[^>]*wp-block-navigation__responsive-container-open[^>]*>)(\s*<svg[^>]*>.*?</svg>)\s*(?:Menu|Ouvrir|Open|Naviguer|Fermer)?\s*(</button>)#si',
+        '$1$2$3',
+        $html
+    );
+    return $html;
+}, 5, 2 );
+

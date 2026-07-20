@@ -2343,40 +2343,41 @@ ul.berre-home-actu-grid,
   }
 }
 
-/* ── MENU HAMBURGER MOBILE — icône seule, pas de texte ── */
-@media (max-width: 700px) {
+/* ── MENU HAMBURGER — icône seule, texte masqué ── */
+/* Toutes tailles : on laisse le PHP render_block supprimer le texte */
+/* CSS de sécurité si le texte persiste */
+.berre-nav-wp .wp-block-navigation__responsive-container-open,
+.berre-nav-wp .wp-block-navigation__responsive-container-close {
+  overflow: hidden !important;
+}
+/* Cacher le texte résiduel via pseudo-element blanc par dessus */
+.berre-nav-wp .wp-block-navigation__responsive-container-open::after {
+  content: '' !important;
+  position: absolute !important;
+  inset: 0 !important;
+  pointer-events: none !important;
+}
 
-  /* Bouton hamburger : cacher le texte "Menu", garder l'icône SVG */
+@media (max-width: 700px) {
   .berre-nav-wp .wp-block-navigation__responsive-container-open {
-    font-size: 0 !important;       /* cache le texte sans casser l'icône SVG */
-    min-width: 44px !important;
+    position: relative !important;
     width: 44px !important;
     height: 44px !important;
+    min-width: 44px !important;
     padding: 0 !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
     gap: 0 !important;
     border-radius: 8px !important;
+    font-size: 0 !important;
+    line-height: 0 !important;
   }
-  /* L'icône SVG n'est pas affectée par font-size */
   .berre-nav-wp .wp-block-navigation__responsive-container-open svg {
     width: 22px !important;
     height: 22px !important;
     flex-shrink: 0 !important;
-  }
-  /* Bouton de fermeture dans le menu ouvert */
-  .berre-nav-wp .wp-block-navigation__responsive-container-close {
-    font-size: 0 !important;
-    width: 44px !important;
-    height: 44px !important;
-    padding: 0 !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-  }
-  .berre-nav-wp .wp-block-navigation__responsive-container-close svg {
-    width: 22px !important;
-    height: 22px !important;
+    font-size: 22px !important;  /* rétablir pour SVG */
+    line-height: 1 !important;
   }
 }
