@@ -3728,34 +3728,26 @@ add_action( 'wp_head', function() {
         $rgb   = sscanf( $color, '#%02x%02x%02x' );
         $light = sprintf( 'rgba(%d,%d,%d,0.13)', $rgb[0], $rgb[1], $rgb[2] );
 
-        // Sélecteurs ultra-spécifiques : URL exacte via [href="..."]
-        // Cards archive ET home page
-        foreach ( ['.berre-actu-card__cat', '.berre-home-actu-card__cat'] as $sel ) {
-            $css .= "{$sel} a[href="{$path}"],";
-            $css .= "{$sel} a[href="{$link}"]";
-            $css .= " { color:{$color} !important; }
-";
+        // CSS avec URL exactes (guillemets simples PHP pour éviter l'échappement)
+        $q = '"';  // guillemet double comme variable pour l'insérer dans les sélecteurs CSS
+        foreach ( array('.berre-actu-card__cat', '.berre-home-actu-card__cat') as $sel ) {
+            $css .= $sel . ' a[href=' . $q . $path . $q . '],' . "\n";
+            $css .= $sel . ' a[href=' . $q . $link . $q . ']';
+            $css .= ' { color:' . $color . ' !important }' . "\n";
         }
-        // Badge article
-        $css .= ".berre-article-cats a[href="{$path}"],";
-        $css .= ".berre-article-cats a[href="{$link}"]";
-        $css .= " { color:{$color} !important; background:{$light} !important; }
-";
-        // Tags bas d'article
-        $css .= ".berre-article-tags a[href="{$path}"],";
-        $css .= ".berre-article-tags a[href="{$link}"]";
-        $css .= " { color:{$color} !important; border-color:{$color} !important; }
-";
-        $css .= ".berre-article-tags a[href="{$path}"]:hover,";
-        $css .= ".berre-article-tags a[href="{$link}"]:hover";
-        $css .= " { background:{$color} !important; color:#fff !important; }
-";
-        // Filtre actif archive
-        $css .= ".berre-filter[href="{$path}"].berre-filter--active,";
-        $css .= ".berre-filter[href="{$link}"].berre-filter--active";
-        $css .= " { color:{$color} !important; border-bottom-color:{$color} !important; }
-";
-    }
+        $css .= '.berre-article-cats a[href=' . $q . $path . $q . '],' . "\n";
+        $css .= '.berre-article-cats a[href=' . $q . $link . $q . ']';
+        $css .= ' { color:' . $color . ' !important; background:' . $light . ' !important }' . "\n";
+        $css .= '.berre-article-tags a[href=' . $q . $path . $q . '],' . "\n";
+        $css .= '.berre-article-tags a[href=' . $q . $link . $q . ']';
+        $css .= ' { color:' . $color . ' !important; border-color:' . $color . ' !important }' . "\n";
+        $css .= '.berre-article-tags a[href=' . $q . $path . $q . ']:hover,' . "\n";
+        $css .= '.berre-article-tags a[href=' . $q . $link . $q . ']:hover';
+        $css .= ' { background:' . $color . ' !important; color:#fff !important }' . "\n";
+        $css .= '.berre-filter[href=' . $q . $path . $q . '].berre-filter--active,' . "\n";
+        $css .= '.berre-filter[href=' . $q . $link . $q . '].berre-filter--active';
+        $css .= ' { color:' . $color . ' !important; border-bottom-color:' . $color . ' !important }' . "\n";
+    }  // fin foreach $colors
     $css .= '</style>';
     echo $css;
 } );
