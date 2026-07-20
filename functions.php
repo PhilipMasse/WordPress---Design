@@ -3820,3 +3820,209 @@ add_filter( 'render_block', function( $html, $block ) {
     return $html;
 }, 5, 2 );
 
+
+
+/* ============================================================
+   ACTUALITÉS — Date de dépublication automatique
+   ============================================================ */
+
+/* ── Metabox dans l'éditeur ── */
+add_action( 'add_meta_boxes', function() {
+    add_meta_box(
+        'berre_expiry_date',
+        '📅 Dépublication automatique',
+        'berre_expiry_metabox_html',
+        'actualite', 'side', 'default'
+    );
+} );
+
+function berre_expiry_metabox_html( $post ) {
+    wp_nonce_field( 'berre_expiry_save', 'berre_expiry_nonce' );
+    $date = get_post_meta( $post->ID, 'berre_expiry_date', true );
+    ?>
+    <p style="font-size:12px;color:#666;margin-bottom:8px">
+        L'article sera automatiquement dépublié à la date choisie.<br>
+        Laissez vide pour ne pas dépublier.
+    </p>
+    <input type="date" name="berre_expiry_date" value="<?php echo esc_attr($date); ?>"
+           style="width:100%;padding:6px;border:1px solid #ddd;border-radius:4px;font-size:13px">
+    <?php if ($date): ?>
+    <p style="font-size:11px;color:<?php echo $date < date('Y-m-d') ? '#c00' : '#587526'; ?>;margin-top:6px">
+        <?php echo $date < date('Y-m-d') ? '⚠️ Date passée — cet article devrait être dépublié.' : '✓ Actif jusqu\'au ' . date('d/m/Y', strtotime($date)); ?>
+    </p>
+    <?php endif; ?>
+    <?php
+}
+
+add_action( 'save_post_actualite', function( $post_id ) {
+    if ( ! isset($_POST['berre_expiry_nonce']) || ! wp_verify_nonce($_POST['berre_expiry_nonce'], 'berre_expiry_save') ) return;
+    if ( defined('DOING_AUTOSAVE') && DOING_AUTOSAVE ) return;
+    if ( ! current_user_can('edit_post', $post_id) ) return;
+    $date = sanitize_text_field( $_POST['berre_expiry_date'] ?? '' );
+    if ( $date ) {
+        update_post_meta( $post_id, 'berre_expiry_date', $date );
+    } else {
+        delete_post_meta( $post_id, 'berre_expiry_date' );
+    }
+} );
+
+/* ── Tâche CRON quotidienne — dépublier les articles expirés ── */
+add_action( 'init', function() {
+    if ( ! wp_next_scheduled('berre_check_expiry') ) {
+        wp_schedule_event( time(), 'daily', 'berre_check_expiry' );
+    }
+} );
+
+add_action( 'berre_check_expiry', function() {
+    $today = date('Y-m-d');
+    $posts = get_posts( [
+        'post_type'      => 'actualite',
+        'post_status'    => 'publish',
+        'posts_per_page' => -1,
+        'meta_query'     => [ [
+            'key'     => 'berre_expiry_date',
+            'value'   => $today,
+            'compare' => '<',
+            'type'    => 'DATE',
+        ] ],
+    ] );
+    foreach ( $posts as $post ) {
+        wp_update_post( [ 'ID' => $post->ID, 'post_status' => 'draft' ] );
+    }
+} );
+
+/* ── Exclure les articles expirés côté frontend ── */
+add_action( 'pre_get_posts', function( $query ) {
+    if ( is_admin() ) return;
+    if ( $query->get('post_type') !== 'actualite' && ! in_array('actualite', (array)$query->get('post_type')) ) return;
+    $today = date('Y-m-d');
+    $existing = $query->get('meta_query') ?: [];
+    $existing[] = [
+        'relation' => 'OR',
+        [ 'key' => 'berre_expiry_date', 'compare' => 'NOT EXISTS' ],
+        [ 'key' => 'berre_expiry_date', 'value' => '', 'compare' => '=' ],
+        [ 'key' => 'berre_expiry_date', 'value' => $today, 'compare' => '>=', 'type' => 'DATE' ],
+    ];
+    $query->set( 'meta_query', $existing );
+} );
+
+/* ── Afficher la date d'expiration dans la liste des articles ── */
+add_filter( 'manage_actualite_posts_columns', function( $cols ) {
+    $cols['berre_expiry'] = '📅 Expiration';
+    return $cols;
+} );
+add_action( 'manage_actualite_posts_custom_column', function( $col, $post_id ) {
+    if ( $col !== 'berre_expiry' ) return;
+    $date = get_post_meta( $post_id, 'berre_expiry_date', true );
+    if ( ! $date ) { echo '<span style="color:#ccc">—</span>'; return; }
+    $past = $date < date('Y-m-d');
+    echo '<span style="color:' . ($past ? '#c00' : '#333') . ';font-size:12px">'
+       . ($past ? '⚠️ ' : '') . date('d/m/Y', strtotime($date)) . '</span>';
+}, 10, 2 );
+
+/* ============================================================
+   FOOTER — Informations contact (horaires, adresse, bouton)
+   Option WP : berre_mairie_info
+   ============================================================ */
+
+function berre_mairie_info_defaults() {
+    return [
+        'hours'    => "Lundi – Vendredi : 9h00 – 12h00\nLundi & Mercredi : 14h00 – 17h00\nFermé le week-end et jours fériés",
+        'address'  => "Place de la Mairie\n06390 Berre-les-Alpes",
+        'phone'    => '04 93 91 80 07',
+        'email'    => 'mairie@berrelesalpes.fr',
+        'btn_text' => 'Nous écrire',
+    ];
+}
+
+function berre_get_mairie_info() {
+    $saved = get_option('berre_mairie_info');
+    return empty($saved) ? berre_mairie_info_defaults() : array_merge(berre_mairie_info_defaults(), $saved);
+}
+
+/* Sous-menu admin */
+add_action( 'admin_menu', function() {
+    add_submenu_page( 'berre-admin', 'Infos Mairie', '🏛 Infos Mairie', 'manage_options', 'berre-mairie-info', 'berre_mairie_info_page' );
+}, 22 );
+
+add_action( 'admin_init', function() {
+    if ( ! isset($_POST['berre_save_mairie_info']) ) return;
+    if ( ! wp_verify_nonce($_POST['berre_mairie_nonce'] ?? '', 'berre_save_mairie_info') ) return;
+    if ( ! current_user_can('manage_options') ) return;
+    update_option( 'berre_mairie_info', [
+        'hours'   => sanitize_textarea_field( $_POST['mairie_hours']   ?? '' ),
+        'address' => sanitize_textarea_field( $_POST['mairie_address'] ?? '' ),
+        'phone'   => sanitize_text_field(     $_POST['mairie_phone']   ?? '' ),
+        'email'   => sanitize_email(          $_POST['mairie_email']   ?? '' ),
+        'btn_text'=> sanitize_text_field(     $_POST['mairie_btn_text']?? '' ),
+    ]);
+    set_transient('berre_mairie_saved', true, 10);
+} );
+
+function berre_mairie_info_page() {
+    $d = berre_get_mairie_info();
+    $saved = get_transient('berre_mairie_saved');
+    if ($saved) delete_transient('berre_mairie_saved');
+    ?>
+    <div class="wrap" style="max-width:680px;margin-top:20px">
+        <h1>🏛 Infos Mairie — Footer</h1>
+        <p style="color:#666">Ces informations s'affichent en bas de toutes les pages (footer).</p>
+        <?php if ($saved): ?><div class="notice notice-success is-dismissible"><p>✅ Sauvegardé.</p></div><?php endif; ?>
+        <form method="post" style="background:#fff;border:1px solid #ddd;border-radius:8px;padding:24px;margin-top:16px">
+            <?php wp_nonce_field('berre_save_mairie_info','berre_mairie_nonce'); ?>
+            <?php foreach([
+                ['mairie_hours',   'hours',   '🕐 Horaires d\'ouverture', 'textarea', "Lundi 9h–12h…"],
+                ['mairie_address', 'address', '📍 Adresse',               'textarea', "Place de la Mairie\n06390 Berre-les-Alpes"],
+                ['mairie_phone',   'phone',   '📞 Téléphone',             'text',     '04 93 91 80 07'],
+                ['mairie_email',   'email',   '✉️ Email',                  'email',    'mairie@berrelesalpes.fr'],
+                ['mairie_btn_text','btn_text','🔵 Texte du bouton',       'text',     'Nous écrire'],
+            ] as [$name, $key, $label, $type, $ph]): ?>
+            <div style="margin-bottom:16px">
+                <label style="display:block;font-size:12px;font-weight:700;color:#444;margin-bottom:4px;text-transform:uppercase;letter-spacing:.06em"><?php echo $label; ?></label>
+                <?php if ($type === 'textarea'): ?>
+                <textarea name="<?php echo $name; ?>" placeholder="<?php echo esc_attr($ph); ?>"
+                          style="width:100%;padding:8px;border:1px solid #ddd;border-radius:4px;height:80px;font-family:inherit;font-size:13px;resize:vertical"><?php echo esc_textarea($d[$key]); ?></textarea>
+                <?php else: ?>
+                <input type="<?php echo $type; ?>" name="<?php echo $name; ?>" value="<?php echo esc_attr($d[$key]); ?>"
+                       placeholder="<?php echo esc_attr($ph); ?>"
+                       style="width:100%;padding:8px;border:1px solid #ddd;border-radius:4px;font-size:13px">
+                <?php endif; ?>
+            </div>
+            <?php endforeach; ?>
+            <input type="submit" name="berre_save_mairie_info" class="button button-primary" value="💾 Enregistrer">
+        </form>
+    </div>
+    <?php
+}
+
+/* Shortcode [berre_footer_contact] */
+add_shortcode( 'berre_footer_contact', function() {
+    $d = berre_get_mairie_info();
+    ob_start(); ?>
+    <div class="berre-footer-contact">
+        <?php if (!empty($d['hours'])): ?>
+        <div class="berre-footer-contact__block">
+            <strong class="berre-footer-contact__label">Horaires d'ouverture</strong>
+            <p class="berre-footer-contact__hours"><?php echo nl2br(esc_html($d['hours'])); ?></p>
+        </div>
+        <?php endif; ?>
+        <?php if (!empty($d['address'])): ?>
+        <div class="berre-footer-contact__block">
+            <strong class="berre-footer-contact__label">Adresse</strong>
+            <p class="berre-footer-contact__address"><?php echo nl2br(esc_html($d['address'])); ?></p>
+        </div>
+        <?php endif; ?>
+        <?php if (!empty($d['phone'])): ?>
+        <a href="tel:<?php echo esc_attr(preg_replace('/\s/','',$d['phone'])); ?>" class="berre-footer-contact__phone">
+            📞 <?php echo esc_html($d['phone']); ?>
+        </a>
+        <?php endif; ?>
+        <?php if (!empty($d['email'])): ?>
+        <a href="mailto:<?php echo esc_attr($d['email']); ?>" class="berre-footer-contact__btn">
+            ✉️ <?php echo esc_html($d['btn_text'] ?: 'Nous écrire'); ?>
+        </a>
+        <?php endif; ?>
+    </div>
+    <?php
+    return ob_get_clean();
+} );

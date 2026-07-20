@@ -2381,3 +2381,49 @@ ul.berre-home-actu-grid,
     line-height: 1 !important;
   }
 }
+
+/* ── FOOTER CONTACT — Horaires, adresse, bouton ── */
+.berre-footer-contact { margin-top: 16px; }
+.berre-footer-contact__block { margin-bottom: 12px; }
+.berre-footer-contact__label {
+  display: block;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  color: rgba(255,255,255,.5);
+  margin-bottom: 4px;
+}
+.berre-footer-contact__hours,
+.berre-footer-contact__address {
+  font-size: 13px;
+  color: rgba(255,255,255,.8);
+  line-height: 1.6;
+  margin: 0;
+}
+.berre-footer-contact__phone {
+  display: block;
+  font-size: 13px;
+  color: rgba(255,255,255,.75);
+  text-decoration: none;
+  margin-bottom: 10px;
+  transition: color .15s;
+}
+.berre-footer-contact__phone:hover { color: #fff; }
+.berre-footer-contact__btn {
+  display: inline-block;
+  margin-top: 6px;
+  background: rgba(255,255,255,.12);
+  color: #fff !important;
+  border: 1.5px solid rgba(255,255,255,.3);
+  border-radius: 20px;
+  padding: 7px 16px;
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all .15s;
+}
+.berre-footer-contact__btn:hover {
+  background: rgba(255,255,255,.22);
+  border-color: rgba(255,255,255,.6);
+}
