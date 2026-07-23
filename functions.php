@@ -2317,80 +2317,34 @@ add_action( 'rest_api_init', function() {
 } );
 
 function berre_rest_agenda_events( WP_REST_Request $request ) {
-    $month = $request->get_param('month') ?: date('Y-m');
-
-    list($year, $mon) = explode('-', $month . '-' . date('m'));
-    $year = intval($year);
-    $mon  = intval($mon);
-
-    // Récupérer les événements du mois ET du mois suivant (pour affichage calendrier)
-    $date_from = sprintf('%04d-%02d-01', $year, $mon);
-    $date_to   = date('Y-m-t', strtotime("+1 month", strtotime($date_from)));
-
-    $posts = get_posts([
+    // Retourner tous les événements publiés — le JS filtre par mois
+    $posts = get_posts( [
         'post_type'      => 'agenda',
         'post_status'    => 'publish',
-        'posts_per_page' => 100,
-        'orderby'        => 'meta_value',
-        'meta_key'       => 'berre_event_date_start',
+        'posts_per_page' => 300,
+        'orderby'        => 'date',
         'order'          => 'ASC',
-        'meta_query'     => [
-            'relation' => 'OR',
-            // Événements qui commencent dans la plage
-            [
-                'key'     => 'berre_event_date_start',
-                'value'   => [$date_from, $date_to],
-                'compare' => 'BETWEEN',
-                'type'    => 'DATE',
-            ],
-            // Événements multi-jours qui chevauchent
-            [
-                'relation' => 'AND',
-                [
-                    'key'     => 'berre_event_date_start',
-                    'value'   => $date_from,
-                    'compare' => '<=',
-                    'type'    => 'DATE',
-                ],
-                [
-                    'key'     => 'berre_event_date_end',
-                    'value'   => $date_to,
-                    'compare' => '>=',
-                    'type'    => 'DATE',
-                ],
-            ],
-            // Fallback : pas de date → utiliser date de publication
-            [
-                'key'     => 'berre_event_date_start',
-                'compare' => 'NOT EXISTS',
-            ],
-        ],
-    ]);
-
-    // Si pas de posts avec meta → fallback sur tous les posts du mois
-    if ( empty($posts) ) {
-        $posts = get_posts([
-            'post_type'      => 'agenda',
-            'post_status'    => 'publish',
-            'posts_per_page' => 50,
-            'date_query'     => [[
-                'year'  => $year,
-                'month' => $mon,
-            ]],
-            'orderby' => 'date',
-            'order'   => 'ASC',
-        ]);
-    }
+    ] );
 
     $events = [];
     foreach ( $posts as $post ) {
-        $start    = get_post_meta($post->ID, 'berre_event_date_start', true) ?: get_the_date('Y-m-d', $post);
-        $end      = get_post_meta($post->ID, 'berre_event_date_end',   true) ?: $start;
-        $time     = get_post_meta($post->ID, 'berre_event_time',       true);
-        $location = get_post_meta($post->ID, 'berre_event_location',   true);
+        $start    = get_post_meta( $post->ID, 'berre_event_date_start', true );
+        if ( ! $start ) $start = get_the_date( 'Y-m-d', $post );
+        $end      = get_post_meta( $post->ID, 'berre_event_date_end', true );
+        if ( ! $end ) $end = $start;
+        $time     = get_post_meta( $post->ID, 'berre_event_time', true );
+        $location = get_post_meta( $post->ID, 'berre_event_location', true );
 
-        $thumb_id  = get_post_thumbnail_id($post->ID);
-        $thumb_url = $thumb_id ? wp_get_attachment_image_url($thumb_id, 'medium') : '';
+        $thumb_id  = get_post_thumbnail_id( $post->ID );
+        $thumb_url = $thumb_id ? wp_get_attachment_image_url( $thumb_id, 'medium' ) : '';
+
+        $cats = wp_get_object_terms( $post->ID, 'categorie_agenda', [ 'fields' => 'names' ] );
+        $cat_colors = [];
+        $cat_terms  = wp_get_object_terms( $post->ID, 'categorie_agenda' );
+        foreach ( $cat_terms as $ct ) {
+            $c = get_term_meta( $ct->term_id, 'berre_cat_agenda_color', true );
+            if ( $c ) $cat_colors[] = $c;
+        }
 
         $events[] = [
             'id'        => $post->ID,
@@ -2400,12 +2354,13 @@ function berre_rest_agenda_events( WP_REST_Request $request ) {
             'time'      => $time,
             'location'  => $location,
             'img'       => $thumb_url,
-            'url'       => get_permalink($post->ID),
-            'cats'      => wp_get_object_terms($post->ID, 'categorie_agenda', ['fields' => 'names']),
+            'url'       => get_permalink( $post->ID ),
+            'cats'      => is_array( $cats ) ? $cats : [],
+            'color'     => ! empty( $cat_colors ) ? $cat_colors[0] : '',
         ];
     }
 
-    return rest_ensure_response($events);
+    return rest_ensure_response( $events );
 }
 
 /* ── Shortcode [berre_calendrier_agenda] ── */
@@ -2658,7 +2613,11 @@ add_shortcode( 'berre_calendrier_agenda', function() {
       }
 
       /* ── Init ── */
-      navigate(curYear, curMonth);
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', function(){ navigate(curYear, curMonth); });
+      } else {
+        navigate(curYear, curMonth);
+      }
 
     })();
     </script>
@@ -4311,3 +4270,74 @@ add_shortcode( 'berre_footer_contact', function() {
     <?php
     return ob_get_clean();
 } );
+
+
+/* ============================================================
+   COULEURS PAR CATÉGORIE D'AGENDA — même système qu'actualités
+   Term meta : berre_cat_agenda_color
+   ============================================================ */
+
+add_action( 'categorie_agenda_edit_form_fields', function( $term ) {
+    $color = get_term_meta( $term->term_id, 'berre_cat_agenda_color', true ) ?: '#DEA128';
+    ?>
+    <tr class="form-field">
+        <th scope="row"><label for="berre_cat_agenda_color">🎨 Couleur de la catégorie</label></th>
+        <td>
+            <input type="color" name="berre_cat_agenda_color" id="berre_cat_agenda_color"
+                   value="<?php echo esc_attr($color); ?>"
+                   style="width:60px;height:32px;cursor:pointer;border:1px solid #ddd;border-radius:4px;padding:2px">
+            <p class="description">Couleur affichée dans le calendrier et les pages agenda.</p>
+        </td>
+    </tr>
+    <?php
+} );
+
+add_action( 'categorie_agenda_add_form_fields', function() {
+    ?>
+    <div class="form-field">
+        <label for="berre_cat_agenda_color">🎨 Couleur</label>
+        <input type="color" name="berre_cat_agenda_color" id="berre_cat_agenda_color" value="#DEA128"
+               style="width:60px;height:32px;cursor:pointer;border:1px solid #ddd;border-radius:4px;padding:2px">
+    </div>
+    <?php
+} );
+
+add_action( 'edited_categorie_agenda', function( $term_id ) {
+    if ( isset($_POST['berre_cat_agenda_color']) )
+        update_term_meta( $term_id, 'berre_cat_agenda_color', sanitize_hex_color($_POST['berre_cat_agenda_color']) );
+} );
+add_action( 'created_categorie_agenda', function( $term_id ) {
+    if ( isset($_POST['berre_cat_agenda_color']) )
+        update_term_meta( $term_id, 'berre_cat_agenda_color', sanitize_hex_color($_POST['berre_cat_agenda_color']) );
+} );
+
+/* CSS agenda catégories injecté dans <head> */
+add_action( 'wp_head', function() {
+    $terms = get_terms( ['taxonomy' => 'categorie_agenda', 'hide_empty' => false] );
+    if ( is_wp_error($terms) || empty($terms) ) return;
+    $css = '<style id="berre-agenda-cat-colors">';
+    foreach ( $terms as $term ) {
+        $color = get_term_meta( $term->term_id, 'berre_cat_agenda_color', true );
+        if ( ! $color ) continue;
+        $slug  = sanitize_html_class( $term->slug );
+        $link  = wp_make_link_relative( get_term_link( $term ) );
+        $rgb   = sscanf( $color, '#%02x%02x%02x' );
+        $light = sprintf( 'rgba(%d,%d,%d,0.13)', $rgb[0], $rgb[1], $rgb[2] );
+        // Badge agenda dans les pages
+        $css .= ".berre-agenda-event-cat a[href=\"{$link}\"] { color:{$color}!important }";
+        $css .= ".berre-event-card__cat a[href=\"{$link}\"] { color:{$color}!important }";
+    }
+    $css .= '</style>';
+    echo $css;
+} );
+
+/* Colonne couleur dans la liste des catégories agenda */
+add_filter( 'manage_edit-categorie_agenda_columns', function( $cols ) {
+    $cols['berre_color'] = 'Couleur';
+    return $cols;
+} );
+add_filter( 'manage_categorie_agenda_custom_column', function( $out, $col, $term_id ) {
+    if ( $col !== 'berre_color' ) return $out;
+    $color = get_term_meta( $term_id, 'berre_cat_agenda_color', true ) ?: '#DEA128';
+    return '<span style="display:inline-block;width:20px;height:20px;border-radius:50%;background:' . esc_attr($color) . ';border:1px solid rgba(0,0,0,.1);vertical-align:middle"></span> <code style="font-size:11px">' . esc_html($color) . '</code>';
+}, 10, 3 );
