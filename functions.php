@@ -2436,7 +2436,7 @@ add_shortcode( 'berre_calendrier_agenda', function() {
       <div class="berre-cal__overlay" id="berre-cal-overlay" style="display:none"></div>
     </div>
     <script>
-    window.addEventListener('DOMContentLoaded', function() {
+    (function() {  /* Le script vient APRÈS le HTML → éléments déjà dans le DOM */
       var dataEl = document.getElementById('berre-cal-events');
       var ALL_EVENTS = [];
       try { ALL_EVENTS = JSON.parse(dataEl ? dataEl.textContent : '[]'); } catch(e) { ALL_EVENTS = []; }
@@ -2558,7 +2558,7 @@ add_shortcode( 'berre_calendrier_agenda', function() {
       document.addEventListener('keydown', function(e){ if(e.key==='Escape') closePopup(); });
 
       render(curYear, curMonth);
-    });
+    })();  /* exécution immédiate */
     </script>
     <?php
     return ob_get_clean();
