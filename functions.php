@@ -2363,203 +2363,105 @@ function berre_rest_agenda_events( WP_REST_Request $request ) {
     return rest_ensure_response( $events );
 }
 
-/* ── Shortcode [berre_calendrier_agenda] ── */
+/* ── Shortcode [berre_calendrier_agenda] — rendu PHP pur (sans JS pour la grille) ── */
 add_shortcode( 'berre_calendrier_agenda', function() {
-    // Récupérer TOUS les événements et les embarquer en JSON dans la page
-    // (évite tout problème d'API/nonce/CORS)
-    $posts = get_posts( [
-        'post_type'      => 'agenda',
-        'post_status'    => 'publish',
-        'posts_per_page' => 300,
-        'orderby'        => 'date',
-        'order'          => 'ASC',
-    ] );
+    // Mois courant depuis URL ou date du jour
+    $raw_month = isset($_GET['cal_month']) ? sanitize_text_field($_GET['cal_month']) : date('Y-m');
+    if (!preg_match('/^\d{4}-\d{2}$/', $raw_month)) $raw_month = date('Y-m');
+    list($y_str, $m_str) = explode('-', $raw_month);
+    $year  = intval($y_str);
+    $mon   = intval($m_str); // 1-based
 
-    $events = [];
-    foreach ( $posts as $post ) {
-        $start    = get_post_meta( $post->ID, 'berre_event_date_start', true );
-        if ( ! $start ) $start = get_the_date( 'Y-m-d', $post );
-        $end_d    = get_post_meta( $post->ID, 'berre_event_date_end', true );
-        if ( ! $end_d ) $end_d = $start;
-        $time     = get_post_meta( $post->ID, 'berre_event_time',       true );
-        $location = get_post_meta( $post->ID, 'berre_event_location',   true );
-        $thumb    = get_post_thumbnail_id( $post->ID );
-        $thumb_url= $thumb ? wp_get_attachment_image_url( $thumb, 'medium' ) : '';
-        $cats     = wp_get_object_terms( $post->ID, 'categorie_agenda', [ 'fields' => 'names' ] );
-        $events[] = [
-            'id'        => $post->ID,
-            'title'     => $post->post_title,
-            'dateStart' => $start,
-            'dateEnd'   => $end_d,
-            'time'      => $time,
-            'location'  => $location,
-            'img'       => $thumb_url,
-            'url'       => get_permalink( $post->ID ),
-            'cats'      => is_array($cats) ? $cats : [],
-        ];
+    // Événements du mois
+    $posts = get_posts(['post_type'=>'agenda','post_status'=>'publish','posts_per_page'=>300,'orderby'=>'date','order'=>'ASC']);
+    $events_by_day = [];
+    foreach ($posts as $post) {
+        $start_d = get_post_meta($post->ID,'berre_event_date_start',true) ?: get_the_date('Y-m-d',$post);
+        $end_d   = get_post_meta($post->ID,'berre_event_date_end',true) ?: $start_d;
+        $time    = get_post_meta($post->ID,'berre_event_time',true);
+        $loc     = get_post_meta($post->ID,'berre_event_location',true);
+        $thumb   = get_post_thumbnail_id($post->ID);
+        $img     = $thumb ? wp_get_attachment_image_url($thumb,'thumbnail') : '';
+        // Ajouter à chaque jour couvert par cet événement dans le mois
+        $d_cur = new DateTime($start_d);
+        $d_end = new DateTime($end_d);
+        while ($d_cur <= $d_end) {
+            if ((int)$d_cur->format('Y') === $year && (int)$d_cur->format('n') === $mon) {
+                $day_key = (int)$d_cur->format('j');
+                $events_by_day[$day_key][] = [
+                    'id'=>$post->ID,'title'=>$post->post_title,
+                    'url'=>get_permalink($post->ID),'time'=>$time,'loc'=>$loc,'img'=>$img,
+                ];
+            }
+            $d_cur->modify('+1 day');
+        }
     }
 
-    $events_json = wp_json_encode( $events ) ?: '[]';
-    ob_start();
-    ?>
-    <script type="application/json" id="berre-cal-events"><?php echo $events_json; ?></script>
-    <div class="berre-cal" id="berre-cal">
+    // Navigation
+    $prev_month = date('Y-m', mktime(0,0,0,$mon-1,1,$year));
+    $next_month = date('Y-m', mktime(0,0,0,$mon+1,1,$year));
+    $base_url   = strtok($_SERVER['REQUEST_URI'],'?');
+    $months_fr  = ['','Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+
+    // Premier jour du mois (lundi=0 … dimanche=6)
+    $first_dow = (int)(new DateTime("$year-$mon-01"))->format('N') - 1; // 0=lun
+    $days_in_month = (int)(new DateTime("$year-$mon-01"))->format('t');
+
+    ob_start(); ?>
+    <div class="berre-cal">
       <div class="berre-cal__header">
         <div class="berre-cal__nav-left">
-          <button class="berre-cal__btn" id="berre-cal-prev">&#8249;</button>
-          <span class="berre-cal__month-label" id="berre-cal-label"></span>
-          <button class="berre-cal__btn" id="berre-cal-next">&#8250;</button>
+          <a href="<?php echo esc_url($base_url.'?cal_month='.$prev_month); ?>" class="berre-cal__btn">&#8249;</a>
+          <span class="berre-cal__month-label"><?php echo esc_html($months_fr[$mon].' '.$year); ?></span>
+          <a href="<?php echo esc_url($base_url.'?cal_month='.$next_month); ?>" class="berre-cal__btn">&#8250;</a>
         </div>
-        <button class="berre-cal__today-btn" id="berre-cal-today">Aujourd'hui</button>
+        <a href="<?php echo esc_url($base_url.'?cal_month='.date('Y-m')); ?>" class="berre-cal__today-btn">Aujourd'hui</a>
       </div>
       <div class="berre-cal__weekdays">
         <div>lun.</div><div>mar.</div><div>mer.</div>
         <div>jeu.</div><div>ven.</div><div>sam.</div><div>dim.</div>
       </div>
-      <div class="berre-cal__grid" id="berre-cal-grid">
-        <div class="berre-cal__loading">Chargement…</div>
-      </div>
-      <div class="berre-cal__popup" id="berre-cal-popup" style="display:none">
-        <button class="berre-cal__popup-close" id="berre-cal-popup-close">&#215;</button>
-        <div class="berre-cal__popup-img-wrap" id="berre-cal-popup-img-wrap"></div>
-        <div class="berre-cal__popup-body">
-          <div class="berre-cal__popup-cat" id="berre-cal-popup-cat"></div>
-          <h3 class="berre-cal__popup-title" id="berre-cal-popup-title"></h3>
-          <div class="berre-cal__popup-meta" id="berre-cal-popup-meta"></div>
-          <div class="berre-cal__popup-share">
-            <a class="berre-cal__popup-share-icon" id="berre-cal-share-fb" href="#" target="_blank">f</a>
-            <a class="berre-cal__popup-share-icon" id="berre-cal-share-tw" href="#" target="_blank">X</a>
-          </div>
-          <a class="berre-cal__popup-cta" id="berre-cal-popup-cta" href="#">En savoir plus</a>
+      <div class="berre-cal__grid">
+        <?php
+        // Jours du mois précédent
+        $prev_days = (int)(new DateTime("$year-$mon-01"))->modify('-1 day')->format('t');
+        for ($i = $first_dow - 1; $i >= 0; $i--): ?>
+        <div class="berre-cal__day berre-cal__day--other">
+          <span class="berre-cal__day-num"><?php echo $prev_days - $i; ?></span>
         </div>
-      </div>
-      <div class="berre-cal__overlay" id="berre-cal-overlay" style="display:none"></div>
-    </div>
-    <script>
-    (function() {  /* Le script vient APRÈS le HTML → éléments déjà dans le DOM */
-      var dataEl = document.getElementById('berre-cal-events');
-      var ALL_EVENTS = [];
-      try { ALL_EVENTS = JSON.parse(dataEl ? dataEl.textContent : '[]'); } catch(e) { ALL_EVENTS = []; }
+        <?php endfor;
 
-      var today = new Date();
-      var curYear = today.getFullYear();
-      var curMonth = today.getMonth();
-      var MONTHS = ['Janvier','Fevrier','Mars','Avril','Mai','Juin','Juillet','Aout','Septembre','Octobre','Novembre','Decembre'];
-      var MONTHS_FR = ['Janvier','F\u00e9vrier','Mars','Avril','Mai','Juin','Juillet','Ao\u00fbt','Septembre','Octobre','Novembre','D\u00e9cembre'];
+        // Jours du mois courant
+        $today = date('j'); $today_m = date('n'); $today_y = date('Y');
+        for ($d = 1; $d <= $days_in_month; $d++):
+            $is_today = ($d == $today && $mon == $today_m && $year == $today_y);
+            $day_events = $events_by_day[$d] ?? [];
+        ?>
+        <div class="berre-cal__day<?php echo $is_today ? ' berre-cal__day--today' : ''; ?>">
+          <span class="berre-cal__day-num"><?php echo $d; ?></span>
+          <?php foreach (array_slice($day_events, 0, 2) as $ev): ?>
+          <a href="<?php echo esc_url($ev['url']); ?>" class="berre-cal__event" title="<?php echo esc_attr($ev['title']); ?>">
+            <?php echo esc_html(mb_substr($ev['title'],0,18)); ?>
+          </a>
+          <?php endforeach;
+          if (count($day_events) > 2): ?>
+          <a href="<?php echo esc_url($day_events[2]['url']); ?>" class="berre-cal__more">
+            +<?php echo count($day_events)-2; ?> autre<?php echo count($day_events)>3?'s':''; ?>
+          </a>
+          <?php endif; ?>
+        </div>
+        <?php endfor;
 
-      function pad(n) { return n < 10 ? '0'+n : ''+n; }
-      function esc(s) { var d=document.createElement('div');d.textContent=s||'';return d.innerHTML; }
-
-      function buildIdx(evs, y, m) {
-        var idx = {};
-        evs.forEach(function(ev) {
-          var s = new Date((ev.dateStart||'').replace(/-/g,'/'));
-          var e2 = ev.dateEnd ? new Date((ev.dateEnd||'').replace(/-/g,'/')) : new Date(s);
-          if (isNaN(s.getTime())) return;
-          var d = new Date(s.getTime());
-          for (var i=0; i<200; i++) {
-            if (d > e2) break;
-            if (d.getFullYear()===y && d.getMonth()===m) {
-              var k = pad(d.getDate());
-              if (!idx[k]) idx[k]=[];
-              idx[k].push(ev);
-            }
-            d.setDate(d.getDate()+1);
-          }
-        });
-        return idx;
-      }
-
-      function render(y, m) {
-        var lbl  = document.getElementById('berre-cal-label');
-        var grid = document.getElementById('berre-cal-grid');
-        if (!lbl || !grid) return;
-        lbl.textContent = MONTHS_FR[m] + ' ' + y;
-        var idx = buildIdx(ALL_EVENTS, y, m);
-        var first = new Date(y, m, 1);
-        var last  = new Date(y, m+1, 0);
-        var dow0  = (first.getDay()+6)%7;
-        var html  = '';
-        var prevLast = new Date(y, m, 0).getDate();
-        for (var i=dow0-1; i>=0; i--)
-          html += '<div class="berre-cal__day berre-cal__day--other"><span class="berre-cal__day-num">'+(prevLast-i)+'</span></div>';
-        for (var d=1; d<=last.getDate(); d++) {
-          var isT = d===today.getDate() && m===today.getMonth() && y===today.getFullYear();
-          var evs = idx[pad(d)]||[];
-          html += '<div class="berre-cal__day'+(isT?' berre-cal__day--today':'')+'"><span class="berre-cal__day-num">'+d+'</span>';
-          evs.slice(0,2).forEach(function(ev){
-            html += '<button class="berre-cal__event" data-id="'+ev.id+'">'+esc(ev.title.substring(0,18))+'</button>';
-          });
-          if (evs.length>2) html += '<button class="berre-cal__more" data-id="'+evs[2].id+'">+'+(evs.length-2)+' autre(s)</button>';
-          html += '</div>';
-        }
-        var last_dow = (last.getDay()+6)%7;
-        var fill = last_dow < 6 ? 6-last_dow : 0;
-        for (var n=1; n<=fill; n++)
-          html += '<div class="berre-cal__day berre-cal__day--other"><span class="berre-cal__day-num">'+n+'</span></div>';
-        grid.innerHTML = html;
-        grid.querySelectorAll('.berre-cal__event,.berre-cal__more').forEach(function(btn){
-          btn.addEventListener('click', function(e){
-            e.stopPropagation();
-            var id = parseInt(this.dataset.id);
-            var ev = ALL_EVENTS.find(function(x){return x.id===id;});
-            if (ev) showPopup(ev, this);
-          });
-        });
-      }
-
-      function showPopup(ev, btn) {
-        var popup   = document.getElementById('berre-cal-popup');
-        var overlay = document.getElementById('berre-cal-overlay');
-        var cal     = document.getElementById('berre-cal');
-        if (!popup) return;
-        document.getElementById('berre-cal-popup-img-wrap').innerHTML = ev.img ? '<img src="'+ev.img+'" alt="">' : '';
-        document.getElementById('berre-cal-popup-cat').textContent   = (ev.cats||[]).join(', ');
-        document.getElementById('berre-cal-popup-title').textContent = ev.title||'';
-        var ds = ev.dateStart ? new Date((ev.dateStart).replace(/-/g,'/')).toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'long',year:'numeric'}) : '';
-        if (ev.dateEnd && ev.dateEnd!==ev.dateStart) ds += ' \u2013 ' + new Date((ev.dateEnd).replace(/-/g,'/')).toLocaleDateString('fr-FR',{day:'numeric',month:'long'});
-        if (ev.time) ds += ', '+ev.time;
-        var meta = '<div>'+esc(ds)+'</div>';
-        if (ev.location) meta += '<div>'+esc(ev.location)+'</div>';
-        document.getElementById('berre-cal-popup-meta').innerHTML = meta;
-        document.getElementById('berre-cal-popup-cta').href = ev.url||'#';
-        document.getElementById('berre-cal-share-fb').href  = 'https://www.facebook.com/sharer/sharer.php?u='+encodeURIComponent(ev.url||'');
-        document.getElementById('berre-cal-share-tw').href  = 'https://twitter.com/intent/tweet?url='+encodeURIComponent(ev.url||'');
-        popup.style.display   = 'block';
-        overlay.style.display = 'block';
-        var r = btn.getBoundingClientRect();
-        var c = cal.getBoundingClientRect();
-        var top  = r.bottom - c.top + 4;
-        var left = r.left   - c.left;
-        if (left+280 > c.width) left = c.width-285;
-        if (left<0) left=0;
-        popup.style.top  = top+'px';
-        popup.style.left = left+'px';
-      }
-
-      function closePopup() {
-        var p = document.getElementById('berre-cal-popup');
-        var o = document.getElementById('berre-cal-overlay');
-        if (p) p.style.display = 'none';
-        if (o) o.style.display = 'none';
-      }
-
-      document.getElementById('berre-cal-prev').addEventListener('click',function(){
-        curMonth--; if(curMonth<0){curMonth=11;curYear--;} render(curYear,curMonth);
-      });
-      document.getElementById('berre-cal-next').addEventListener('click',function(){
-        curMonth++; if(curMonth>11){curMonth=0;curYear++;} render(curYear,curMonth);
-      });
-      document.getElementById('berre-cal-today').addEventListener('click',function(){
-        curYear=today.getFullYear(); curMonth=today.getMonth(); render(curYear,curMonth);
-      });
-      document.getElementById('berre-cal-popup-close').addEventListener('click', closePopup);
-      document.getElementById('berre-cal-overlay').addEventListener('click', closePopup);
-      document.addEventListener('keydown', function(e){ if(e.key==='Escape') closePopup(); });
-
-      render(curYear, curMonth);
-    })();  /* exécution immédiate */
-    </script>
+        // Jours du mois suivant
+        $last_dow = (int)(new DateTime("$year-$mon-$days_in_month"))->format('N') - 1;
+        $fill = $last_dow < 6 ? 6 - $last_dow : 0;
+        for ($n = 1; $n <= $fill; $n++): ?>
+        <div class="berre-cal__day berre-cal__day--other">
+          <span class="berre-cal__day-num"><?php echo $n; ?></span>
+        </div>
+        <?php endfor; ?>
+      </div><!-- .berre-cal__grid -->
+    </div><!-- .berre-cal -->
     <?php
     return ob_get_clean();
 } );
