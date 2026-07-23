@@ -2365,11 +2365,43 @@ function berre_rest_agenda_events( WP_REST_Request $request ) {
 
 /* ── Shortcode [berre_calendrier_agenda] ── */
 add_shortcode( 'berre_calendrier_agenda', function() {
-    static $loaded = false;
-    $nonce = wp_create_nonce('wp_rest');
+    // Récupérer TOUS les événements et les embarquer en JSON dans la page
+    // (évite tout problème d'API/nonce/CORS)
+    $posts = get_posts( [
+        'post_type'      => 'agenda',
+        'post_status'    => 'publish',
+        'posts_per_page' => 300,
+        'orderby'        => 'date',
+        'order'          => 'ASC',
+    ] );
+
+    $events = [];
+    foreach ( $posts as $post ) {
+        $start    = get_post_meta( $post->ID, 'berre_event_date_start', true );
+        if ( ! $start ) $start = get_the_date( 'Y-m-d', $post );
+        $end_d    = get_post_meta( $post->ID, 'berre_event_date_end', true );
+        if ( ! $end_d ) $end_d = $start;
+        $time     = get_post_meta( $post->ID, 'berre_event_time',       true );
+        $location = get_post_meta( $post->ID, 'berre_event_location',   true );
+        $thumb    = get_post_thumbnail_id( $post->ID );
+        $thumb_url= $thumb ? wp_get_attachment_image_url( $thumb, 'medium' ) : '';
+        $cats     = wp_get_object_terms( $post->ID, 'categorie_agenda', [ 'fields' => 'names' ] );
+        $events[] = [
+            'id'        => $post->ID,
+            'title'     => $post->post_title,
+            'dateStart' => $start,
+            'dateEnd'   => $end_d,
+            'time'      => $time,
+            'location'  => $location,
+            'img'       => $thumb_url,
+            'url'       => get_permalink( $post->ID ),
+            'cats'      => is_array($cats) ? $cats : [],
+        ];
+    }
+
+    $events_json = wp_json_encode( $events );
     ob_start(); ?>
-    <div class="berre-cal" id="berre-cal" data-nonce="<?php echo esc_attr($nonce); ?>"
-         data-api="<?php echo esc_url(rest_url('berre/v1/agenda')); ?>">
+    <div class="berre-cal" id="berre-cal">
 
       <div class="berre-cal__header">
         <div class="berre-cal__nav-left">
@@ -2386,26 +2418,22 @@ add_shortcode( 'berre_calendrier_agenda', function() {
       </div>
 
       <div class="berre-cal__grid" id="berre-cal-grid">
-        <div class="berre-cal__loading">Chargement du calendrier…</div>
+        <div class="berre-cal__loading">Chargement…</div>
       </div>
 
-      <!-- Popup événement -->
-      <div class="berre-cal__popup" id="berre-cal-popup" style="display:none" role="dialog" aria-modal="true">
-        <button class="berre-cal__popup-close" id="berre-cal-popup-close" aria-label="Fermer">×</button>
+      <div class="berre-cal__popup" id="berre-cal-popup" style="display:none" role="dialog">
+        <button class="berre-cal__popup-close" id="berre-cal-popup-close">×</button>
         <div class="berre-cal__popup-img-wrap" id="berre-cal-popup-img-wrap"></div>
         <div class="berre-cal__popup-body">
           <div class="berre-cal__popup-cat" id="berre-cal-popup-cat"></div>
           <h3 class="berre-cal__popup-title" id="berre-cal-popup-title"></h3>
           <div class="berre-cal__popup-meta" id="berre-cal-popup-meta"></div>
           <div class="berre-cal__popup-share">
-            <a class="berre-cal__popup-share-icon" id="berre-cal-share-fb" href="#" title="Facebook">
+            <a class="berre-cal__popup-share-icon" id="berre-cal-share-fb" href="#" target="_blank">
               <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor"><path d="M18 2h-3a5 5 0 00-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 011-1h3z"/></svg>
             </a>
-            <a class="berre-cal__popup-share-icon" id="berre-cal-share-tw" href="#" title="X">
+            <a class="berre-cal__popup-share-icon" id="berre-cal-share-tw" href="#" target="_blank">
               <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
-            </a>
-            <a class="berre-cal__popup-share-icon" id="berre-cal-share-ln" href="#" title="LinkedIn">
-              <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor"><path d="M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-2-2 2 2 0 00-2 2v7h-4v-7a6 6 0 016-6zM2 9h4v12H2z"/><circle cx="4" cy="4" r="2"/></svg>
             </a>
           </div>
           <a class="berre-cal__popup-cta" id="berre-cal-popup-cta" href="#">En savoir plus</a>
@@ -2417,43 +2445,29 @@ add_shortcode( 'berre_calendrier_agenda', function() {
 
     <script>
     (function(){
-      var cal    = document.getElementById('berre-cal');
-      var grid   = document.getElementById('berre-cal-grid');
-      var label  = document.getElementById('berre-cal-label');
-      var popup  = document.getElementById('berre-cal-popup');
-      var overlay= document.getElementById('berre-cal-overlay');
-      var API    = cal.dataset.api;
-      var NONCE  = cal.dataset.nonce;
-
+      var ALL_EVENTS = <?php echo $events_json; ?>;
       var today  = new Date();
       var curYear  = today.getFullYear();
-      var curMonth = today.getMonth(); // 0-based
-      var eventsCache = {};
+      var curMonth = today.getMonth();
+      var MONTHS_FR = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
 
-      var MONTHS_FR = ['Janvier','Février','Mars','Avril','Mai','Juin',
-                       'Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
-
-      /* ── Charger les événements ── */
-      function loadEvents(year, month, cb) {
-        var key = year + '-' + pad(month+1);
-        if (eventsCache[key]) { cb(eventsCache[key]); return; }
-        fetch(API + '?month=' + key, {
-          headers: { 'X-WP-Nonce': NONCE }
-        })
-        .then(function(r){ return r.json(); })
-        .then(function(data){
-          eventsCache[key] = data;
-          cb(data);
-        })
-        .catch(function(){ cb([]); });
+      function pad(n){ return n < 10 ? '0' + n : '' + n; }
+      function escHtml(s){ var d=document.createElement('div');d.textContent=s||'';return d.innerHTML; }
+      function truncate(s,n){ return (s||'').length>n ? s.slice(0,n)+'…' : s||''; }
+      function formatDate(str) {
+        if (!str) return '';
+        var d = new Date(str + 'T00:00:00');
+        var days=['dim.','lun.','mar.','mer.','jeu.','ven.','sam.'];
+        var months=['janv.','févr.','mars','avr.','mai','juin','juil.','août','sept.','oct.','nov.','déc.'];
+        return days[d.getDay()] + ' ' + d.getDate() + ' ' + months[d.getMonth()] + ' ' + d.getFullYear();
       }
 
-      /* ── Construire l'index date→événements ── */
       function buildIndex(events, year, month) {
         var idx = {};
         events.forEach(function(ev){
-          var start = new Date(ev.dateStart + 'T00:00:00');
-          var end   = ev.dateEnd ? new Date(ev.dateEnd + 'T00:00:00') : start;
+          var start = new Date((ev.dateStart||'').replace(/-/g,'/'));
+          var end   = ev.dateEnd ? new Date((ev.dateEnd||'').replace(/-/g,'/')) : start;
+          if (isNaN(start.getTime())) return;
           var d = new Date(start);
           while (d <= end) {
             if (d.getFullYear() === year && d.getMonth() === month) {
@@ -2467,97 +2481,73 @@ add_shortcode( 'berre_calendrier_agenda', function() {
         return idx;
       }
 
-      /* ── Rendu calendrier ── */
-      function renderCalendar(year, month, events) {
+      function renderCalendar(year, month) {
+        var label  = document.getElementById('berre-cal-label');
+        var grid   = document.getElementById('berre-cal-grid');
+        if (!label || !grid) return;
         label.textContent = MONTHS_FR[month] + ' ' + year;
-        var idx = buildIndex(events, year, month);
-
+        var idx = buildIndex(ALL_EVENTS, year, month);
         var firstDay = new Date(year, month, 1);
         var lastDay  = new Date(year, month + 1, 0);
-        // Lundi = 0 en index FR
-        var startDow = (firstDay.getDay() + 6) % 7; // 0=lun
-
+        var startDow = (firstDay.getDay() + 6) % 7;
         var html = '';
-        // Jours avant le 1er
         var prevLast = new Date(year, month, 0).getDate();
         for (var i = startDow - 1; i >= 0; i--) {
           html += '<div class="berre-cal__day berre-cal__day--other"><span class="berre-cal__day-num">' + (prevLast - i) + '</span></div>';
         }
-
-        // Jours du mois
         for (var d = 1; d <= lastDay.getDate(); d++) {
           var isToday = (d === today.getDate() && month === today.getMonth() && year === today.getFullYear());
           var dayEvs  = idx[pad(d)] || [];
           var cls     = 'berre-cal__day' + (isToday ? ' berre-cal__day--today' : '');
           html += '<div class="' + cls + '">';
           html += '<span class="berre-cal__day-num">' + d + '</span>';
-          var maxShow = 2;
-          dayEvs.slice(0, maxShow).forEach(function(ev){
-            html += '<button class="berre-cal__event" data-id="' + ev.id + '" title="' + escHtml(ev.title) + '">' + escHtml(truncate(ev.title, 18)) + '</button>';
+          dayEvs.slice(0, 2).forEach(function(ev){
+            html += '<button class="berre-cal__event" data-id="' + ev.id + '">' + escHtml(truncate(ev.title, 18)) + '</button>';
           });
-          if (dayEvs.length > maxShow) {
-            var more = dayEvs.length - maxShow;
-            html += '<button class="berre-cal__more" data-id="' + dayEvs[maxShow].id + '">+ ' + more + ' autre' + (more > 1 ? 's' : '') + '</button>';
+          if (dayEvs.length > 2) {
+            html += '<button class="berre-cal__more" data-id="' + dayEvs[2].id + '">+ ' + (dayEvs.length - 2) + ' autre' + (dayEvs.length > 3 ? 's' : '') + '</button>';
           }
           html += '</div>';
         }
-
-        // Jours après le dernier
         var endDow = (lastDay.getDay() + 6) % 7;
-        for (var n = 1; endDow < 6 && n <= (6 - endDow); n++) {
+        for (var n = 1; endDow < 6; n++, endDow++) {
           html += '<div class="berre-cal__day berre-cal__day--other"><span class="berre-cal__day-num">' + n + '</span></div>';
         }
-
         grid.innerHTML = html;
-
-        // Attacher les listeners sur les événements
-        var allEvents = events;
         grid.querySelectorAll('.berre-cal__event, .berre-cal__more').forEach(function(btn){
           btn.addEventListener('click', function(e){
             e.stopPropagation();
             var id = parseInt(this.dataset.id);
-            var ev = allEvents.find(function(x){ return x.id === id; });
+            var ev = ALL_EVENTS.find(function(x){ return x.id === id; });
             if (ev) openPopup(ev, this);
           });
         });
       }
 
-      /* ── Popup ── */
       function openPopup(ev, anchor) {
         var imgWrap  = document.getElementById('berre-cal-popup-img-wrap');
         var catEl    = document.getElementById('berre-cal-popup-cat');
         var titleEl  = document.getElementById('berre-cal-popup-title');
         var metaEl   = document.getElementById('berre-cal-popup-meta');
         var ctaEl    = document.getElementById('berre-cal-popup-cta');
-
-        imgWrap.innerHTML = ev.img
-          ? '<img src="' + ev.img + '" alt="' + escHtml(ev.title) + '">'
-          : '';
-
+        var popup    = document.getElementById('berre-cal-popup');
+        var overlay  = document.getElementById('berre-cal-overlay');
+        var cal      = document.getElementById('berre-cal');
+        if (!popup) return;
+        imgWrap.innerHTML = ev.img ? '<img src="' + ev.img + '" alt="">' : '';
         catEl.textContent = ev.cats && ev.cats.length ? ev.cats.join(', ') : '';
-        titleEl.textContent = ev.title;
-
-        var meta = '';
+        titleEl.textContent = ev.title || '';
         var dateStr = formatDate(ev.dateStart);
         if (ev.dateEnd && ev.dateEnd !== ev.dateStart) dateStr += ' – ' + formatDate(ev.dateEnd);
         if (ev.time) dateStr += ', ' + ev.time;
-        meta += '<div class="berre-cal__popup-meta-row"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span>' + dateStr + '</span></div>';
-        if (ev.location) {
-          meta += '<div class="berre-cal__popup-meta-row"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg><span>' + escHtml(ev.location) + '</span></div>';
-        }
+        var meta = '<div class="berre-cal__popup-meta-row"><span>' + dateStr + '</span></div>';
+        if (ev.location) meta += '<div class="berre-cal__popup-meta-row"><span>' + escHtml(ev.location) + '</span></div>';
         metaEl.innerHTML = meta;
-        ctaEl.href = ev.url;
-
-        // Partage
-        document.getElementById('berre-cal-share-fb').href = 'https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(ev.url);
-        document.getElementById('berre-cal-share-tw').href = 'https://twitter.com/intent/tweet?url=' + encodeURIComponent(ev.url) + '&text=' + encodeURIComponent(ev.title);
-        document.getElementById('berre-cal-share-ln').href = 'https://www.linkedin.com/shareArticle?mini=true&url=' + encodeURIComponent(ev.url);
-
-        // Positionnement popup
+        ctaEl.href = ev.url || '#';
+        document.getElementById('berre-cal-share-fb').href = 'https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(ev.url||'');
+        document.getElementById('berre-cal-share-tw').href = 'https://twitter.com/intent/tweet?url=' + encodeURIComponent(ev.url||'');
         popup.style.display = 'block';
         overlay.style.display = 'block';
-
-        // Aligner à droite de l'événement cliqué
         var rect = anchor.getBoundingClientRect();
         var calRect = cal.getBoundingClientRect();
         var top  = rect.bottom - calRect.top + 4;
@@ -2569,61 +2559,54 @@ add_shortcode( 'berre_calendrier_agenda', function() {
       }
 
       function closePopup() {
-        popup.style.display = 'none';
-        overlay.style.display = 'none';
+        var popup   = document.getElementById('berre-cal-popup');
+        var overlay = document.getElementById('berre-cal-overlay');
+        if (popup)   popup.style.display   = 'none';
+        if (overlay) overlay.style.display = 'none';
       }
 
-      document.getElementById('berre-cal-popup-close').addEventListener('click', closePopup);
-      overlay.addEventListener('click', closePopup);
-      document.addEventListener('keydown', function(e){ if(e.key==='Escape') closePopup(); });
-
-      /* ── Navigation ── */
       function navigate(year, month) {
         curYear  = year;
         curMonth = month;
-        grid.innerHTML = '<div class="berre-cal__loading">Chargement…</div>';
         closePopup();
-        loadEvents(year, month, function(evs){
-          renderCalendar(year, month, evs);
+        renderCalendar(year, month);
+      }
+
+      function init() {
+        var prev   = document.getElementById('berre-cal-prev');
+        var next   = document.getElementById('berre-cal-next');
+        var todayB = document.getElementById('berre-cal-today');
+        var closeB = document.getElementById('berre-cal-popup-close');
+        var overlay= document.getElementById('berre-cal-overlay');
+        if (!prev) return;
+        prev.addEventListener('click', function(){
+          var d = new Date(curYear, curMonth - 1, 1);
+          navigate(d.getFullYear(), d.getMonth());
         });
-      }
-
-      document.getElementById('berre-cal-prev').addEventListener('click', function(){
-        var d = new Date(curYear, curMonth - 1, 1);
-        navigate(d.getFullYear(), d.getMonth());
-      });
-      document.getElementById('berre-cal-next').addEventListener('click', function(){
-        var d = new Date(curYear, curMonth + 1, 1);
-        navigate(d.getFullYear(), d.getMonth());
-      });
-      document.getElementById('berre-cal-today').addEventListener('click', function(){
-        navigate(today.getFullYear(), today.getMonth());
-      });
-
-      /* ── Utilitaires ── */
-      function pad(n){ return n < 10 ? '0' + n : '' + n; }
-      function escHtml(s){ var d=document.createElement('div');d.textContent=s;return d.innerHTML; }
-      function truncate(s,n){ return s.length>n ? s.slice(0,n)+'…' : s; }
-      function formatDate(str) {
-        if (!str) return '';
-        var d = new Date(str + 'T00:00:00');
-        var days=['dim.','lun.','mar.','mer.','jeu.','ven.','sam.'];
-        var months=['janv.','févr.','mars','avr.','mai','juin','juil.','août','sept.','oct.','nov.','déc.'];
-        return days[d.getDay()] + ' ' + d.getDate() + ' ' + months[d.getMonth()] + ' ' + d.getFullYear();
-      }
-
-      /* ── Init ── */
-      if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', function(){ navigate(curYear, curMonth); });
-      } else {
+        next.addEventListener('click', function(){
+          var d = new Date(curYear, curMonth + 1, 1);
+          navigate(d.getFullYear(), d.getMonth());
+        });
+        todayB.addEventListener('click', function(){
+          navigate(today.getFullYear(), today.getMonth());
+        });
+        if (closeB)  closeB.addEventListener('click', closePopup);
+        if (overlay) overlay.addEventListener('click', closePopup);
+        document.addEventListener('keydown', function(e){ if(e.key==='Escape') closePopup(); });
         navigate(curYear, curMonth);
       }
 
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+      } else {
+        init();
+      }
     })();
     </script>
     <?php
     return ob_get_clean();
-});
+} );
+
 
 
 /* ============================================================
