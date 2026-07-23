@@ -2391,6 +2391,7 @@ add_shortcode( 'berre_calendrier_agenda', function() {
                 $events_by_day[$day_key][] = [
                     'id'=>$post->ID,'title'=>$post->post_title,
                     'url'=>get_permalink($post->ID),'time'=>$time,'loc'=>$loc,'img'=>$img,
+                    'dateStart'=>$start_d,
                 ];
             }
             $d_cur->modify('+1 day');
@@ -2440,14 +2441,31 @@ add_shortcode( 'berre_calendrier_agenda', function() {
         <div class="berre-cal__day<?php echo $is_today ? ' berre-cal__day--today' : ''; ?>">
           <span class="berre-cal__day-num"><?php echo $d; ?></span>
           <?php foreach (array_slice($day_events, 0, 2) as $ev): ?>
-          <a href="<?php echo esc_url($ev['url']); ?>" class="berre-cal__event" title="<?php echo esc_attr($ev['title']); ?>">
+          <button type="button" class="berre-cal__event"
+                  data-title="<?php echo esc_attr($ev['title']); ?>"
+                  data-url="<?php echo esc_url($ev['url']); ?>"
+                  data-time="<?php echo esc_attr($ev['time']); ?>"
+                  data-loc="<?php echo esc_attr($ev['loc']); ?>"
+                  data-img="<?php echo esc_attr($ev['img']); ?>"
+                  data-date="<?php
+                    $dm = date_create($ev['dateStart'] ?? '');
+                    $mfr = ['jan.','fév.','mars','avr.','mai','juin','juil.','août','sept.','oct.','nov.','déc.'];
+                    echo $dm ? esc_attr($dm->format('j').' '.$mfr[$dm->format('n')-1].' '.$dm->format('Y')) : '';
+                  ?>"
+                  onclick="berrePopup(this)">
             <?php echo esc_html(mb_substr($ev['title'],0,18)); ?>
-          </a>
+          </button>
           <?php endforeach;
           if (count($day_events) > 2): ?>
-          <a href="<?php echo esc_url($day_events[2]['url']); ?>" class="berre-cal__more">
+          <button type="button" class="berre-cal__more"
+                  data-title="<?php echo esc_attr($day_events[2]['title']); ?>"
+                  data-url="<?php echo esc_url($day_events[2]['url']); ?>"
+                  data-time="<?php echo esc_attr($day_events[2]['time']); ?>"
+                  data-loc="<?php echo esc_attr($day_events[2]['loc']); ?>"
+                  data-img="<?php echo esc_attr($day_events[2]['img']); ?>"
+                  data-date="" onclick="berrePopup(this)">
             +<?php echo count($day_events)-2; ?> autre<?php echo count($day_events)>3?'s':''; ?>
-          </a>
+          </button>
           <?php endif; ?>
         </div>
         <?php endfor;
@@ -2462,6 +2480,53 @@ add_shortcode( 'berre_calendrier_agenda', function() {
         <?php endfor; ?>
       </div><!-- .berre-cal__grid -->
     </div><!-- .berre-cal -->
+    <!-- POPUP -->
+    <div id="berre-cal-popup" style="display:none;position:absolute;z-index:100;width:280px;background:#fff;border:1px solid #ddd;border-radius:10px;box-shadow:0 8px 32px rgba(0,0,0,.15);overflow:hidden">
+      <button onclick="document.getElementById('berre-cal-popup').style.display='none'" style="position:absolute;top:8px;right:8px;z-index:2;background:rgba(0,0,0,.45);color:#fff;border:none;border-radius:50%;width:24px;height:24px;cursor:pointer;font-size:14px;line-height:1;display:flex;align-items:center;justify-content:center">×</button>
+      <div id="bcp-img-wrap"></div>
+      <div style="padding:12px 14px 14px">
+        <div id="bcp-cat" style="font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#DEA128;margin-bottom:4px"></div>
+        <h3 id="bcp-title" style="font-family:Georgia,serif;font-size:14px;font-weight:700;color:#111;margin:0 0 8px;line-height:1.35"></h3>
+        <div id="bcp-meta" style="font-size:12px;color:#555;line-height:1.6;margin-bottom:10px"></div>
+        <a id="bcp-btn" href="#" style="display:block;background:#2D6AB0;color:#fff;text-align:center;padding:9px;border-radius:6px;font-size:13px;font-weight:600;text-decoration:none">En savoir plus</a>
+      </div>
+    </div>
+    <div id="berre-cal-overlay" onclick="document.getElementById('berre-cal-popup').style.display='none'" style="display:none;position:fixed;inset:0;z-index:99"></div>
+    <script>
+    function berrePopup(el) {
+      var popup   = document.getElementById('berre-cal-popup');
+      var overlay = document.getElementById('berre-cal-overlay');
+      var title   = el.dataset.title || '';
+      var url     = el.dataset.url   || '#';
+      var time    = el.dataset.time  || '';
+      var loc     = el.dataset.loc   || '';
+      var img     = el.dataset.img   || '';
+      var date    = el.dataset.date  || '';
+      document.getElementById('bcp-img-wrap').innerHTML = img ? '<img src="'+img+'" style="width:100%;height:150px;object-fit:cover;display:block">' : '';
+      document.getElementById('bcp-title').textContent = title;
+      document.getElementById('bcp-btn').href = url;
+      var meta = '';
+      if (date) meta += '<div>&#128197; ' + date + (time ? ', ' + time : '') + '</div>';
+      if (loc)  meta += '<div>&#128205; ' + loc + '</div>';
+      document.getElementById('bcp-meta').innerHTML = meta;
+      overlay.style.display = 'block';
+      popup.style.display   = 'block';
+      // Positionnement
+      var er = el.getBoundingClientRect();
+      var cr = el.closest('.berre-cal').getBoundingClientRect();
+      var top  = er.bottom - cr.top + 4;
+      var left = er.left   - cr.left;
+      if (left + 285 > cr.width) left = Math.max(0, cr.width - 290);
+      popup.style.top  = top  + 'px';
+      popup.style.left = left + 'px';
+    }
+    document.addEventListener('keydown', function(e){
+      if (e.key==='Escape') {
+        document.getElementById('berre-cal-popup').style.display  = 'none';
+        document.getElementById('berre-cal-overlay').style.display = 'none';
+      }
+    });
+    </script>
     <?php
     return ob_get_clean();
 } );
