@@ -2453,64 +2453,61 @@ ul.berre-home-actu-grid,
 }
 .berre-footer__col .berre-footer__nav a:hover { color: #fff !important; }
 
-/* ── FOOTER — Réseaux sociaux à droite ── */
-.berre-footer__right {
-  display: flex !important;
-  flex-direction: column !important;
-  align-items: flex-end !important;
-  gap: 24px !important;
-}
-
-.berre-footer-social {
+/* ── FOOTER — Ligne téléphone + réseaux sociaux (centre) + bouton (droite) ── */
+.berre-footer-contact__row {
   display: flex;
-  gap: 8px;
-  justify-content: flex-end;
-  margin-bottom: 4px;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+  width: 100%;
+}
+.berre-footer-contact__row-spacer {
+  flex: 1;
+  min-width: 16px;
+}
+.berre-footer-contact__phone {
+  font-size: 13px;
+  color: rgba(255,255,255,.8);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.berre-footer-contact__phone:hover { color: #fff; }
+
+/* Réseaux sociaux inline (dans la ligne tel+social+btn) */
+.berre-footer-social--inline {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-shrink: 0;
 }
 .berre-footer-social__link {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
   background: rgba(255,255,255,.12);
   color: rgba(255,255,255,.8);
   text-decoration: none;
   transition: background .15s, color .15s;
+  flex-shrink: 0;
 }
-.berre-footer-social__link:hover {
-  background: rgba(255,255,255,.25);
-  color: #fff;
-}
-.berre-footer-social__link--facebook:hover { background: #1877f2; }
-.berre-footer-social__link--youtube:hover  { background: #ff0000; }
+.berre-footer-social__link:hover { background: rgba(255,255,255,.25); color: #fff; }
+.berre-footer-social__link--facebook:hover  { background: #1877f2; }
+.berre-footer-social__link--youtube:hover   { background: #ff0000; }
 .berre-footer-social__link--instagram:hover { background: #e1306c; }
-.berre-footer-social__link--twitter:hover  { background: #000; }
-.berre-footer-social__link--linkedin:hover { background: #0077b5; }
+.berre-footer-social__link--twitter:hover   { background: #000; }
+.berre-footer-social__link--linkedin:hover  { background: #0077b5; }
 
-/* ── Téléphone + bouton sur la même ligne ── */
-.berre-footer-contact__inline {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  flex-wrap: wrap;
-  margin-top: 12px;
-}
-.berre-footer-contact__phone {
-  font-size: 13px !important;
-  color: rgba(255,255,255,.8) !important;
-  text-decoration: none !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  gap: 5px !important;
-  white-space: nowrap !important;
-}
-.berre-footer-contact__phone:hover { color: #fff !important; }
-
-/* ── Colonnes nav alignées avec flexbox ── */
-.berre-footer__right [data-shortcode="berre_footer_nav"],
-.berre-footer__right > div:last-child {
+/* Colonnes nav : s'affichent en flex horizontal comme avant */
+.berre-footer__top .berre-footer__nav + .berre-footer__nav,
+.berre-footer-nav-cols {
   display: flex;
   gap: 40px;
 }

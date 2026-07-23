@@ -4255,7 +4255,7 @@ function berre_footer_nav_page() {
 /* ── Shortcodes de rendu ── */
 add_shortcode( 'berre_footer_nav', function() {
     $columns = berre_get_footer_nav();
-    $out = '';
+    $out = '<div class="berre-footer-nav-cols">';
     foreach ( $columns as $col ) {
         $out .= '<div class="berre-footer__col">';
         $out .= '<h4 class="berre-footer__col-title">' . esc_html($col['title']) . '</h4>';
@@ -4267,6 +4267,7 @@ add_shortcode( 'berre_footer_nav', function() {
         }
         $out .= '</ul></nav></div>';
     }
+    $out .= '</div>';
     return $out;
 } );
 
@@ -4420,10 +4421,11 @@ add_shortcode( 'berre_footer_social', function() {
     return $out;
 } );
 
-/* ── Mise à jour du shortcode [berre_footer_contact] : tel + btn sur la même ligne ── */
+/* ── Shortcode [berre_footer_contact] : horaires, adresse, puis ligne tel + réseaux + bouton ── */
 remove_shortcode( 'berre_footer_contact' );
 add_shortcode( 'berre_footer_contact', function() {
-    $d = berre_get_mairie_info();
+    $d       = berre_get_mairie_info();
+    $socials = berre_get_footer_social();
     ob_start(); ?>
     <div class="berre-footer-contact">
         <?php if (!empty($d['hours'])): ?>
@@ -4438,13 +4440,25 @@ add_shortcode( 'berre_footer_contact', function() {
             <p class="berre-footer-contact__address"><?php echo nl2br(esc_html($d['address'])); ?></p>
         </div>
         <?php endif; ?>
-        <!-- Téléphone + bouton sur la même ligne -->
-        <?php if (!empty($d['phone']) || !empty($d['email'])): ?>
-        <div class="berre-footer-contact__inline">
+        <!-- Ligne : téléphone (gauche) | réseaux sociaux | bouton Nous écrire (droite) -->
+        <div class="berre-footer-contact__row">
             <?php if (!empty($d['phone'])): ?>
             <a href="tel:<?php echo esc_attr(preg_replace('/\s/','',$d['phone'])); ?>" class="berre-footer-contact__phone">
                 📞 <?php echo esc_html($d['phone']); ?>
             </a>
+            <?php endif; ?>
+            <div class="berre-footer-contact__row-spacer"></div>
+            <?php if (!empty($socials)): ?>
+            <div class="berre-footer-social berre-footer-social--inline">
+                <?php foreach ($socials as $n):
+                    $svc = esc_attr($n['service'] ?? '');
+                ?>
+                <a href="<?php echo esc_url($n['url']); ?>" class="berre-footer-social__link berre-footer-social__link--<?php echo $svc; ?>"
+                   target="_blank" rel="noopener" aria-label="<?php echo esc_attr($n['label'] ?? $svc); ?>">
+                    <?php echo berre_social_icon($svc); ?>
+                </a>
+                <?php endforeach; ?>
+            </div>
             <?php endif; ?>
             <?php if (!empty($d['email'])): ?>
             <a href="mailto:<?php echo esc_attr($d['email']); ?>" class="berre-footer-contact__btn">
@@ -4452,7 +4466,6 @@ add_shortcode( 'berre_footer_contact', function() {
             </a>
             <?php endif; ?>
         </div>
-        <?php endif; ?>
     </div>
     <?php
     return ob_get_clean();
