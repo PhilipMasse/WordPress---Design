@@ -4281,3 +4281,179 @@ add_shortcode( 'berre_footer_legal', function() {
     $out .= '</ul></nav>';
     return $out;
 } );
+
+
+/* ============================================================
+   FOOTER — Réseaux sociaux administrables
+   Option WP : berre_footer_social
+   ============================================================ */
+
+function berre_footer_social_defaults() {
+    return [
+        ['service' => 'facebook',  'url' => 'https://www.facebook.com', 'label' => 'Facebook'],
+        ['service' => 'youtube',   'url' => 'https://www.youtube.com',  'label' => 'YouTube'],
+    ];
+}
+
+function berre_get_footer_social() {
+    $saved = get_option('berre_footer_social');
+    return (is_array($saved) && !empty($saved)) ? $saved : berre_footer_social_defaults();
+}
+
+/* Icônes SVG par réseau */
+function berre_social_icon( $service ) {
+    $icons = [
+        'facebook'  => '<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M18 2h-3a5 5 0 00-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 011-1h3z"/></svg>',
+        'youtube'   => '<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M22.54 6.42a2.78 2.78 0 00-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46A2.78 2.78 0 001.46 6.42 29 29 0 001 12a29 29 0 00.46 5.58a2.78 2.78 0 001.95 1.96C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 001.95-1.96A29 29 0 0023 12a29 29 0 00-.46-5.58zM9.75 15.02V8.98L15.5 12l-5.75 3.02z"/></svg>',
+        'instagram' => '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1112.63 8 4 4 0 0116 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>',
+        'twitter'   => '<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>',
+        'linkedin'  => '<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-2-2 2 2 0 00-2 2v7h-4v-7a6 6 0 016-6zM2 9h4v12H2z"/><circle cx="4" cy="4" r="2"/></svg>',
+    ];
+    return $icons[$service] ?? '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>';
+}
+
+/* ── Sous-menu admin ── */
+add_action( 'admin_menu', function() {
+    add_submenu_page( 'berre-admin', 'Réseaux sociaux', '📣 Réseaux sociaux', 'manage_options', 'berre-footer-social', 'berre_footer_social_page' );
+}, 24 );
+
+/* ── Sauvegarde ── */
+add_action( 'admin_init', function() {
+    if ( ! isset($_POST['berre_save_social']) ) return;
+    if ( ! wp_verify_nonce($_POST['berre_social_nonce'] ?? '', 'berre_save_social') ) return;
+    if ( ! current_user_can('manage_options') ) return;
+
+    $networks = [];
+    $services = (array)($_POST['social_service'] ?? []);
+    $urls     = (array)($_POST['social_url']     ?? []);
+    $labels   = (array)($_POST['social_label']   ?? []);
+    foreach ( $services as $i => $service ) {
+        $service = sanitize_key($service);
+        $url     = esc_url_raw($urls[$i] ?? '');
+        if ( $service && $url ) {
+            $networks[] = ['service'=>$service,'url'=>$url,'label'=>sanitize_text_field($labels[$i]??$service)];
+        }
+    }
+    update_option('berre_footer_social', $networks);
+    set_transient('berre_social_saved', true, 10);
+} );
+
+/* ── Page admin ── */
+function berre_footer_social_page() {
+    $networks = berre_get_footer_social();
+    $saved    = get_transient('berre_social_saved');
+    if ($saved) delete_transient('berre_social_saved');
+    $services_list = ['facebook','instagram','twitter','youtube','linkedin'];
+    ?>
+    <style>
+    .berre-soc-row{display:flex;align-items:center;gap:10px;margin-bottom:8px;background:#fff;border:1px solid #e0e0e0;border-radius:6px;padding:10px 14px}
+    .berre-soc-row select,.berre-soc-row input[type=url]{padding:6px 9px;border:1px solid #ddd;border-radius:4px;font-size:13px}
+    .berre-soc-row select{width:150px}
+    .berre-soc-row input[type=url]{flex:1}
+    .berre-soc-preview{width:36px;height:36px;border-radius:50%;background:rgba(45,106,176,.15);display:flex;align-items:center;justify-content:center;color:var(--b,#2D6AB0);flex-shrink:0}
+    </style>
+    <div class="wrap" style="max-width:680px;margin-top:20px">
+        <h1>📣 Réseaux sociaux</h1>
+        <p style="color:#666">Ces liens s'affichent en haut à droite du footer.</p>
+        <?php if ($saved): ?><div class="notice notice-success is-dismissible"><p>✅ Sauvegardé.</p></div><?php endif; ?>
+        <form method="post">
+            <?php wp_nonce_field('berre_save_social','berre_social_nonce'); ?>
+            <div id="berre-soc-list">
+            <?php foreach ($networks as $n): ?>
+            <div class="berre-soc-row" draggable="true">
+                <span class="berre-drag-h" style="cursor:grab;color:#ccc;font-size:18px">⠿</span>
+                <div class="berre-soc-preview" id="soc-prev-<?php echo esc_attr($n['service']); ?>">
+                    <?php echo berre_social_icon($n['service']); ?>
+                </div>
+                <select name="social_service[]" onchange="updateSocIcon(this)">
+                    <?php foreach ($services_list as $s): ?>
+                    <option value="<?php echo $s; ?>" <?php selected($n['service'],$s); ?>><?php echo ucfirst($s); ?></option>
+                    <?php endforeach; ?>
+                </select>
+                <input type="url" name="social_url[]" value="<?php echo esc_attr($n['url']); ?>" placeholder="https://...">
+                <input type="hidden" name="social_label[]" value="<?php echo esc_attr($n['label']); ?>">
+                <button type="button" class="button berre-del-btn" onclick="this.closest('.berre-soc-row').remove()" style="color:#c00">✕</button>
+            </div>
+            <?php endforeach; ?>
+            </div>
+            <div style="display:flex;gap:10px;margin-top:12px;align-items:center">
+                <button type="button" id="add-soc" class="button">➕ Ajouter un réseau</button>
+                <input type="submit" name="berre_save_social" class="button button-primary" value="💾 Enregistrer">
+            </div>
+        </form>
+    </div>
+    <script>
+    var SOC_ICONS = <?php echo json_encode(array_combine($services_list, array_map('berre_social_icon', $services_list))); ?>;
+    function updateSocIcon(sel) {
+        var prev = sel.closest('.berre-soc-row').querySelector('.berre-soc-preview');
+        if (prev) prev.innerHTML = SOC_ICONS[sel.value] || '';
+    }
+    document.getElementById('add-soc').addEventListener('click', function() {
+        var row = document.createElement('div');
+        row.className = 'berre-soc-row';
+        row.draggable = true;
+        var opts = <?php echo json_encode(array_map(fn($s)=>'<option value="'.$s.'">'.ucfirst($s).'</option>', $services_list)); ?>.join('');
+        row.innerHTML = '<span class="berre-drag-h" style="cursor:grab;color:#ccc;font-size:18px">⠿</span>' +
+            '<div class="berre-soc-preview">' + SOC_ICONS['facebook'] + '</div>' +
+            '<select name="social_service[]" onchange="updateSocIcon(this)">' + opts + '</select>' +
+            '<input type="url" name="social_url[]" placeholder="https://...">' +
+            '<input type="hidden" name="social_label[]" value="">' +
+            '<button type="button" class="button berre-del-btn" onclick="this.closest(\'.berre-soc-row\').remove()" style="color:#c00">✕</button>';
+        document.getElementById('berre-soc-list').appendChild(row);
+    });
+    </script>
+    <?php
+}
+
+/* ── Shortcode [berre_footer_social] ── */
+add_shortcode( 'berre_footer_social', function() {
+    $networks = berre_get_footer_social();
+    if ( empty($networks) ) return '';
+    $out = '<div class="berre-footer-social">';
+    foreach ( $networks as $n ) {
+        $out .= '<a href="' . esc_url($n['url']) . '" class="berre-footer-social__link berre-footer-social__link--' . esc_attr($n['service']) . '"'
+              . ' target="_blank" rel="noopener noreferrer" aria-label="' . esc_attr($n['label']) . '">'
+              . berre_social_icon($n['service'])
+              . '</a>';
+    }
+    $out .= '</div>';
+    return $out;
+} );
+
+/* ── Mise à jour du shortcode [berre_footer_contact] : tel + btn sur la même ligne ── */
+remove_shortcode( 'berre_footer_contact' );
+add_shortcode( 'berre_footer_contact', function() {
+    $d = berre_get_mairie_info();
+    ob_start(); ?>
+    <div class="berre-footer-contact">
+        <?php if (!empty($d['hours'])): ?>
+        <div class="berre-footer-contact__block">
+            <strong class="berre-footer-contact__label">Horaires d'ouverture</strong>
+            <p class="berre-footer-contact__hours"><?php echo nl2br(esc_html($d['hours'])); ?></p>
+        </div>
+        <?php endif; ?>
+        <?php if (!empty($d['address'])): ?>
+        <div class="berre-footer-contact__block">
+            <strong class="berre-footer-contact__label">Adresse</strong>
+            <p class="berre-footer-contact__address"><?php echo nl2br(esc_html($d['address'])); ?></p>
+        </div>
+        <?php endif; ?>
+        <!-- Téléphone + bouton sur la même ligne -->
+        <?php if (!empty($d['phone']) || !empty($d['email'])): ?>
+        <div class="berre-footer-contact__inline">
+            <?php if (!empty($d['phone'])): ?>
+            <a href="tel:<?php echo esc_attr(preg_replace('/\s/','',$d['phone'])); ?>" class="berre-footer-contact__phone">
+                📞 <?php echo esc_html($d['phone']); ?>
+            </a>
+            <?php endif; ?>
+            <?php if (!empty($d['email'])): ?>
+            <a href="mailto:<?php echo esc_attr($d['email']); ?>" class="berre-footer-contact__btn">
+                ✉️ <?php echo esc_html($d['btn_text'] ?: 'Nous écrire'); ?>
+            </a>
+            <?php endif; ?>
+        </div>
+        <?php endif; ?>
+    </div>
+    <?php
+    return ob_get_clean();
+} );
