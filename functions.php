@@ -2400,216 +2400,165 @@ add_shortcode( 'berre_calendrier_agenda', function() {
     }
 
     $events_json = wp_json_encode( $events ) ?: '[]';
-    ob_start(); ?>
+    ob_start();
+    ?>
+    <script type="application/json" id="berre-cal-events"><?php echo $events_json; ?></script>
     <div class="berre-cal" id="berre-cal">
-
       <div class="berre-cal__header">
         <div class="berre-cal__nav-left">
-          <button class="berre-cal__btn" id="berre-cal-prev" aria-label="Mois précédent">‹</button>
+          <button class="berre-cal__btn" id="berre-cal-prev">&#8249;</button>
           <span class="berre-cal__month-label" id="berre-cal-label"></span>
-          <button class="berre-cal__btn" id="berre-cal-next" aria-label="Mois suivant">›</button>
+          <button class="berre-cal__btn" id="berre-cal-next">&#8250;</button>
         </div>
         <button class="berre-cal__today-btn" id="berre-cal-today">Aujourd'hui</button>
       </div>
-
       <div class="berre-cal__weekdays">
         <div>lun.</div><div>mar.</div><div>mer.</div>
         <div>jeu.</div><div>ven.</div><div>sam.</div><div>dim.</div>
       </div>
-
       <div class="berre-cal__grid" id="berre-cal-grid">
         <div class="berre-cal__loading">Chargement…</div>
       </div>
-
-      <div class="berre-cal__popup" id="berre-cal-popup" style="display:none" role="dialog">
-        <button class="berre-cal__popup-close" id="berre-cal-popup-close">×</button>
+      <div class="berre-cal__popup" id="berre-cal-popup" style="display:none">
+        <button class="berre-cal__popup-close" id="berre-cal-popup-close">&#215;</button>
         <div class="berre-cal__popup-img-wrap" id="berre-cal-popup-img-wrap"></div>
         <div class="berre-cal__popup-body">
           <div class="berre-cal__popup-cat" id="berre-cal-popup-cat"></div>
           <h3 class="berre-cal__popup-title" id="berre-cal-popup-title"></h3>
           <div class="berre-cal__popup-meta" id="berre-cal-popup-meta"></div>
           <div class="berre-cal__popup-share">
-            <a class="berre-cal__popup-share-icon" id="berre-cal-share-fb" href="#" target="_blank">
-              <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor"><path d="M18 2h-3a5 5 0 00-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 011-1h3z"/></svg>
-            </a>
-            <a class="berre-cal__popup-share-icon" id="berre-cal-share-tw" href="#" target="_blank">
-              <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
-            </a>
+            <a class="berre-cal__popup-share-icon" id="berre-cal-share-fb" href="#" target="_blank">f</a>
+            <a class="berre-cal__popup-share-icon" id="berre-cal-share-tw" href="#" target="_blank">X</a>
           </div>
           <a class="berre-cal__popup-cta" id="berre-cal-popup-cta" href="#">En savoir plus</a>
         </div>
       </div>
       <div class="berre-cal__overlay" id="berre-cal-overlay" style="display:none"></div>
-
     </div>
-
     <script>
-    (function(){
-      var ALL_EVENTS = <?php echo $events_json; ?>;
-      var today  = new Date();
-      var curYear  = today.getFullYear();
+    window.addEventListener('DOMContentLoaded', function() {
+      var dataEl = document.getElementById('berre-cal-events');
+      var ALL_EVENTS = [];
+      try { ALL_EVENTS = JSON.parse(dataEl ? dataEl.textContent : '[]'); } catch(e) { ALL_EVENTS = []; }
+
+      var today = new Date();
+      var curYear = today.getFullYear();
       var curMonth = today.getMonth();
-      var MONTHS_FR = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+      var MONTHS = ['Janvier','Fevrier','Mars','Avril','Mai','Juin','Juillet','Aout','Septembre','Octobre','Novembre','Decembre'];
+      var MONTHS_FR = ['Janvier','F\u00e9vrier','Mars','Avril','Mai','Juin','Juillet','Ao\u00fbt','Septembre','Octobre','Novembre','D\u00e9cembre'];
 
-      function pad(n){ return n < 10 ? '0' + n : '' + n; }
-      function escHtml(s){ var d=document.createElement('div');d.textContent=s||'';return d.innerHTML; }
-      function truncate(s,n){ return (s||'').length>n ? s.slice(0,n)+'…' : s||''; }
-      function formatDate(str) {
-        if (!str) return '';
-        var d = new Date(str + 'T00:00:00');
-        var days=['dim.','lun.','mar.','mer.','jeu.','ven.','sam.'];
-        var months=['janv.','févr.','mars','avr.','mai','juin','juil.','août','sept.','oct.','nov.','déc.'];
-        return days[d.getDay()] + ' ' + d.getDate() + ' ' + months[d.getMonth()] + ' ' + d.getFullYear();
-      }
+      function pad(n) { return n < 10 ? '0'+n : ''+n; }
+      function esc(s) { var d=document.createElement('div');d.textContent=s||'';return d.innerHTML; }
 
-      function buildIndex(events, year, month) {
+      function buildIdx(evs, y, m) {
         var idx = {};
-        events.forEach(function(ev){
-          var start = new Date((ev.dateStart||'').replace(/-/g,'/'));
-          var end   = ev.dateEnd ? new Date((ev.dateEnd||'').replace(/-/g,'/')) : start;
-          if (isNaN(start.getTime())) return;
-          var d = new Date(start);
-          while (d <= end) {
-            if (d.getFullYear() === year && d.getMonth() === month) {
-              var key = pad(d.getDate());
-              if (!idx[key]) idx[key] = [];
-              idx[key].push(ev);
+        evs.forEach(function(ev) {
+          var s = new Date((ev.dateStart||'').replace(/-/g,'/'));
+          var e2 = ev.dateEnd ? new Date((ev.dateEnd||'').replace(/-/g,'/')) : new Date(s);
+          if (isNaN(s.getTime())) return;
+          var d = new Date(s.getTime());
+          for (var i=0; i<200; i++) {
+            if (d > e2) break;
+            if (d.getFullYear()===y && d.getMonth()===m) {
+              var k = pad(d.getDate());
+              if (!idx[k]) idx[k]=[];
+              idx[k].push(ev);
             }
-            d.setDate(d.getDate() + 1);
+            d.setDate(d.getDate()+1);
           }
         });
         return idx;
       }
 
-      function renderCalendar(year, month) {
-        var label  = document.getElementById('berre-cal-label');
-        var grid   = document.getElementById('berre-cal-grid');
-        if (!label || !grid) return;
-        label.textContent = MONTHS_FR[month] + ' ' + year;
-        var idx = buildIndex(ALL_EVENTS, year, month);
-        var firstDay = new Date(year, month, 1);
-        var lastDay  = new Date(year, month + 1, 0);
-        var startDow = (firstDay.getDay() + 6) % 7;
-        var html = '';
-        var prevLast = new Date(year, month, 0).getDate();
-        for (var i = startDow - 1; i >= 0; i--) {
-          html += '<div class="berre-cal__day berre-cal__day--other"><span class="berre-cal__day-num">' + (prevLast - i) + '</span></div>';
-        }
-        for (var d = 1; d <= lastDay.getDate(); d++) {
-          var isToday = (d === today.getDate() && month === today.getMonth() && year === today.getFullYear());
-          var dayEvs  = idx[pad(d)] || [];
-          var cls     = 'berre-cal__day' + (isToday ? ' berre-cal__day--today' : '');
-          html += '<div class="' + cls + '">';
-          html += '<span class="berre-cal__day-num">' + d + '</span>';
-          dayEvs.slice(0, 2).forEach(function(ev){
-            html += '<button class="berre-cal__event" data-id="' + ev.id + '">' + escHtml(truncate(ev.title, 18)) + '</button>';
+      function render(y, m) {
+        var lbl  = document.getElementById('berre-cal-label');
+        var grid = document.getElementById('berre-cal-grid');
+        if (!lbl || !grid) return;
+        lbl.textContent = MONTHS_FR[m] + ' ' + y;
+        var idx = buildIdx(ALL_EVENTS, y, m);
+        var first = new Date(y, m, 1);
+        var last  = new Date(y, m+1, 0);
+        var dow0  = (first.getDay()+6)%7;
+        var html  = '';
+        var prevLast = new Date(y, m, 0).getDate();
+        for (var i=dow0-1; i>=0; i--)
+          html += '<div class="berre-cal__day berre-cal__day--other"><span class="berre-cal__day-num">'+(prevLast-i)+'</span></div>';
+        for (var d=1; d<=last.getDate(); d++) {
+          var isT = d===today.getDate() && m===today.getMonth() && y===today.getFullYear();
+          var evs = idx[pad(d)]||[];
+          html += '<div class="berre-cal__day'+(isT?' berre-cal__day--today':'')+'"><span class="berre-cal__day-num">'+d+'</span>';
+          evs.slice(0,2).forEach(function(ev){
+            html += '<button class="berre-cal__event" data-id="'+ev.id+'">'+esc(ev.title.substring(0,18))+'</button>';
           });
-          if (dayEvs.length > 2) {
-            html += '<button class="berre-cal__more" data-id="' + dayEvs[2].id + '">+ ' + (dayEvs.length - 2) + ' autre' + (dayEvs.length > 3 ? 's' : '') + '</button>';
-          }
+          if (evs.length>2) html += '<button class="berre-cal__more" data-id="'+evs[2].id+'">+'+(evs.length-2)+' autre(s)</button>';
           html += '</div>';
         }
-        var endDow = (lastDay.getDay() + 6) % 7;
-        var fillCount = endDow < 6 ? (6 - endDow) : 0;
-        for (var n = 1; n <= fillCount; n++) {
-          html += '<div class="berre-cal__day berre-cal__day--other"><span class="berre-cal__day-num">' + n + '</span></div>';
-        }
+        var last_dow = (last.getDay()+6)%7;
+        var fill = last_dow < 6 ? 6-last_dow : 0;
+        for (var n=1; n<=fill; n++)
+          html += '<div class="berre-cal__day berre-cal__day--other"><span class="berre-cal__day-num">'+n+'</span></div>';
         grid.innerHTML = html;
-        grid.querySelectorAll('.berre-cal__event, .berre-cal__more').forEach(function(btn){
+        grid.querySelectorAll('.berre-cal__event,.berre-cal__more').forEach(function(btn){
           btn.addEventListener('click', function(e){
             e.stopPropagation();
             var id = parseInt(this.dataset.id);
-            var ev = ALL_EVENTS.find(function(x){ return x.id === id; });
-            if (ev) openPopup(ev, this);
+            var ev = ALL_EVENTS.find(function(x){return x.id===id;});
+            if (ev) showPopup(ev, this);
           });
         });
       }
 
-      function openPopup(ev, anchor) {
-        var imgWrap  = document.getElementById('berre-cal-popup-img-wrap');
-        var catEl    = document.getElementById('berre-cal-popup-cat');
-        var titleEl  = document.getElementById('berre-cal-popup-title');
-        var metaEl   = document.getElementById('berre-cal-popup-meta');
-        var ctaEl    = document.getElementById('berre-cal-popup-cta');
-        var popup    = document.getElementById('berre-cal-popup');
-        var overlay  = document.getElementById('berre-cal-overlay');
-        var cal      = document.getElementById('berre-cal');
+      function showPopup(ev, btn) {
+        var popup   = document.getElementById('berre-cal-popup');
+        var overlay = document.getElementById('berre-cal-overlay');
+        var cal     = document.getElementById('berre-cal');
         if (!popup) return;
-        imgWrap.innerHTML = ev.img ? '<img src="' + ev.img + '" alt="">' : '';
-        catEl.textContent = ev.cats && ev.cats.length ? ev.cats.join(', ') : '';
-        titleEl.textContent = ev.title || '';
-        var dateStr = formatDate(ev.dateStart);
-        if (ev.dateEnd && ev.dateEnd !== ev.dateStart) dateStr += ' – ' + formatDate(ev.dateEnd);
-        if (ev.time) dateStr += ', ' + ev.time;
-        var meta = '<div class="berre-cal__popup-meta-row"><span>' + dateStr + '</span></div>';
-        if (ev.location) meta += '<div class="berre-cal__popup-meta-row"><span>' + escHtml(ev.location) + '</span></div>';
-        metaEl.innerHTML = meta;
-        ctaEl.href = ev.url || '#';
-        document.getElementById('berre-cal-share-fb').href = 'https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(ev.url||'');
-        document.getElementById('berre-cal-share-tw').href = 'https://twitter.com/intent/tweet?url=' + encodeURIComponent(ev.url||'');
-        popup.style.display = 'block';
+        document.getElementById('berre-cal-popup-img-wrap').innerHTML = ev.img ? '<img src="'+ev.img+'" alt="">' : '';
+        document.getElementById('berre-cal-popup-cat').textContent   = (ev.cats||[]).join(', ');
+        document.getElementById('berre-cal-popup-title').textContent = ev.title||'';
+        var ds = ev.dateStart ? new Date((ev.dateStart).replace(/-/g,'/')).toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'long',year:'numeric'}) : '';
+        if (ev.dateEnd && ev.dateEnd!==ev.dateStart) ds += ' \u2013 ' + new Date((ev.dateEnd).replace(/-/g,'/')).toLocaleDateString('fr-FR',{day:'numeric',month:'long'});
+        if (ev.time) ds += ', '+ev.time;
+        var meta = '<div>'+esc(ds)+'</div>';
+        if (ev.location) meta += '<div>'+esc(ev.location)+'</div>';
+        document.getElementById('berre-cal-popup-meta').innerHTML = meta;
+        document.getElementById('berre-cal-popup-cta').href = ev.url||'#';
+        document.getElementById('berre-cal-share-fb').href  = 'https://www.facebook.com/sharer/sharer.php?u='+encodeURIComponent(ev.url||'');
+        document.getElementById('berre-cal-share-tw').href  = 'https://twitter.com/intent/tweet?url='+encodeURIComponent(ev.url||'');
+        popup.style.display   = 'block';
         overlay.style.display = 'block';
-        var rect = anchor.getBoundingClientRect();
-        var calRect = cal.getBoundingClientRect();
-        var top  = rect.bottom - calRect.top + 4;
-        var left = rect.left - calRect.left;
-        if (left + 280 > calRect.width) left = calRect.width - 285;
-        if (left < 0) left = 0;
-        popup.style.top  = top + 'px';
-        popup.style.left = left + 'px';
+        var r = btn.getBoundingClientRect();
+        var c = cal.getBoundingClientRect();
+        var top  = r.bottom - c.top + 4;
+        var left = r.left   - c.left;
+        if (left+280 > c.width) left = c.width-285;
+        if (left<0) left=0;
+        popup.style.top  = top+'px';
+        popup.style.left = left+'px';
       }
 
       function closePopup() {
-        var popup   = document.getElementById('berre-cal-popup');
-        var overlay = document.getElementById('berre-cal-overlay');
-        if (popup)   popup.style.display   = 'none';
-        if (overlay) overlay.style.display = 'none';
+        var p = document.getElementById('berre-cal-popup');
+        var o = document.getElementById('berre-cal-overlay');
+        if (p) p.style.display = 'none';
+        if (o) o.style.display = 'none';
       }
 
-      function navigate(year, month) {
-        curYear  = year;
-        curMonth = month;
-        closePopup();
-        renderCalendar(year, month);
-      }
+      document.getElementById('berre-cal-prev').addEventListener('click',function(){
+        curMonth--; if(curMonth<0){curMonth=11;curYear--;} render(curYear,curMonth);
+      });
+      document.getElementById('berre-cal-next').addEventListener('click',function(){
+        curMonth++; if(curMonth>11){curMonth=0;curYear++;} render(curYear,curMonth);
+      });
+      document.getElementById('berre-cal-today').addEventListener('click',function(){
+        curYear=today.getFullYear(); curMonth=today.getMonth(); render(curYear,curMonth);
+      });
+      document.getElementById('berre-cal-popup-close').addEventListener('click', closePopup);
+      document.getElementById('berre-cal-overlay').addEventListener('click', closePopup);
+      document.addEventListener('keydown', function(e){ if(e.key==='Escape') closePopup(); });
 
-      function init() {
-        var prev   = document.getElementById('berre-cal-prev');
-        var next   = document.getElementById('berre-cal-next');
-        var todayB = document.getElementById('berre-cal-today');
-        var closeB = document.getElementById('berre-cal-popup-close');
-        var overlay= document.getElementById('berre-cal-overlay');
-        if (!prev) return;
-        prev.addEventListener('click', function(){
-          var d = new Date(curYear, curMonth - 1, 1);
-          navigate(d.getFullYear(), d.getMonth());
-        });
-        next.addEventListener('click', function(){
-          var d = new Date(curYear, curMonth + 1, 1);
-          navigate(d.getFullYear(), d.getMonth());
-        });
-        todayB.addEventListener('click', function(){
-          navigate(today.getFullYear(), today.getMonth());
-        });
-        if (closeB)  closeB.addEventListener('click', closePopup);
-        if (overlay) overlay.addEventListener('click', closePopup);
-        document.addEventListener('keydown', function(e){ if(e.key==='Escape') closePopup(); });
-        navigate(curYear, curMonth);
-      }
-
-      function safeInit() {
-        try { init(); }
-        catch(err) {
-          var g = document.getElementById('berre-cal-grid');
-          if (g) g.innerHTML = '<div style="color:#c00;padding:16px;font-size:12px">Erreur calendrier: ' + err.message + '</div>';
-        }
-      }
-      if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', safeInit);
-      } else {
-        safeInit();
-      }
-    })();
+      render(curYear, curMonth);
+    });
     </script>
     <?php
     return ob_get_clean();
