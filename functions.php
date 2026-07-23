@@ -2399,7 +2399,7 @@ add_shortcode( 'berre_calendrier_agenda', function() {
         ];
     }
 
-    $events_json = wp_json_encode( $events );
+    $events_json = wp_json_encode( $events ) ?: '[]';
     ob_start(); ?>
     <div class="berre-cal" id="berre-cal">
 
@@ -2510,7 +2510,8 @@ add_shortcode( 'berre_calendrier_agenda', function() {
           html += '</div>';
         }
         var endDow = (lastDay.getDay() + 6) % 7;
-        for (var n = 1; endDow < 6; n++, endDow++) {
+        var fillCount = endDow < 6 ? (6 - endDow) : 0;
+        for (var n = 1; n <= fillCount; n++) {
           html += '<div class="berre-cal__day berre-cal__day--other"><span class="berre-cal__day-num">' + n + '</span></div>';
         }
         grid.innerHTML = html;
@@ -2596,10 +2597,17 @@ add_shortcode( 'berre_calendrier_agenda', function() {
         navigate(curYear, curMonth);
       }
 
+      function safeInit() {
+        try { init(); }
+        catch(err) {
+          var g = document.getElementById('berre-cal-grid');
+          if (g) g.innerHTML = '<div style="color:#c00;padding:16px;font-size:12px">Erreur calendrier: ' + err.message + '</div>';
+        }
+      }
       if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', init);
+        document.addEventListener('DOMContentLoaded', safeInit);
       } else {
-        init();
+        safeInit();
       }
     })();
     </script>
