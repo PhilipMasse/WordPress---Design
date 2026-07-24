@@ -2373,6 +2373,15 @@ add_action( 'wp_footer', function() {
 } );
 
 /* ── Calendrier agenda — fonction de rendu réutilisable ── */
+
+/* Helper : convertir #hex en rgba */
+function berre_hex_to_rgba( $hex, $alpha = 1.0 ) {
+    $hex = ltrim( $hex, '#' );
+    if ( strlen($hex) === 3 ) $hex = $hex[0].$hex[0].$hex[1].$hex[1].$hex[2].$hex[2];
+    list($r,$g,$b) = array_map('hexdec', str_split($hex,2));
+    return "rgba($r,$g,$b,$alpha)";
+}
+
 function berre_cal_render_grid( $year, $mon ) {
     /* Événements du mois */
     $posts = get_posts(['post_type'=>'agenda','post_status'=>'publish','posts_per_page'=>300,'orderby'=>'date','order'=>'ASC']);
@@ -2419,7 +2428,8 @@ function berre_cal_render_grid( $year, $mon ) {
         $html .= '<div class="berre-cal__day'.($is_t?' berre-cal__day--today':'').'">';
         $html .= '<span class="berre-cal__day-num">'.$d.'</span>';
         foreach (array_slice($evs,0,2) as $ev) {
-            $html .= '<button type="button" class="berre-cal__event" onclick="berreOpenPopup(this)"'
+            $col_style = $ev['cat_color'] ? 'border-left:3px solid '.esc_attr($ev['cat_color']).';background:'.esc_attr(berre_hex_to_rgba($ev['cat_color'],0.1)).';' : '';
+            $html .= '<button type="button" class="berre-cal__event" onclick="berreOpenPopup(this)" style="'.$col_style.'"'
                 .' data-title="'.esc_attr($ev['title']).'"'
                 .' data-url="'.esc_attr($ev['url']).'"'
                 .' data-img="'.esc_attr($ev['img']).'"'
@@ -2433,7 +2443,8 @@ function berre_cal_render_grid( $year, $mon ) {
         }
         if (count($evs)>2) {
             $ev2 = $evs[2];
-            $html .= '<button type="button" class="berre-cal__more" onclick="berreOpenPopup(this)"'
+            $col2_style = $ev2['cat_color'] ? 'color:'.esc_attr($ev2['cat_color']).';' : '';
+            $html .= '<button type="button" class="berre-cal__more" onclick="berreOpenPopup(this)" style="'.$col2_style.'"'
                 .' data-title="'.esc_attr($ev2['title']).'"'
                 .' data-url="'.esc_attr($ev2['url']).'"'
                 .' data-img="'.esc_attr($ev2['img']).'"'
