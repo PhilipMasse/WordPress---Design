@@ -59,9 +59,18 @@ function berreOpenPopup(btn) {
   if (d.loc) meta += '<div style="display:flex;gap:6px"><span>\uD83D\uDCCD</span><span>' + d.loc + '</span></div>';
   document.getElementById('bpp-meta').innerHTML = meta;
 
-  /* Extrait du contenu */
+  /* Contenu réel — affiché seulement s'il existe et diffère du titre */
   var excerptEl = document.getElementById('bpp-excerpt');
-  if (excerptEl) excerptEl.textContent = d.excerpt || '';
+  if (excerptEl) {
+    var excerptText = (d.excerpt || '').trim();
+    if (excerptText && excerptText !== (d.title || '').trim()) {
+      excerptEl.textContent = excerptText;
+      excerptEl.style.display = 'block';
+    } else {
+      excerptEl.textContent = '';
+      excerptEl.style.display = 'none';
+    }
+  }
 
   /* Bouton agenda Google Calendar */
   var gcalBtn = document.getElementById('bpp-gcal');

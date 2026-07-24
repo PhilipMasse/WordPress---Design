@@ -8,7 +8,6 @@
  * Requires PHP: 7.4
  * Author: Mairie de Berre-les-Alpes
  * Text Domain: simple-page-builder
- * Update URI: https://github.com/PhilipMasse/WordPress---Editeur-de-pages/
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -24,26 +23,21 @@ require_once SPB_PATH . 'includes/class-spb-render.php';
 require_once SPB_PATH . 'includes/class-spb-metabox.php';
 
 /**
- * Mises a jour automatiques depuis un depot GitHub (bibliotheque
  * "Plugin Update Checker" par Yahnis Elsts, incluse dans /lib/).
- * Une fois le plugin publie sur GitHub, WordPress verifiera et proposera
  * les mises a jour dans Extensions > Extensions installees, exactement
  * comme pour un plugin du repertoire officiel.
  *
- * A FAIRE : remplacer l'URL ci-dessous par celle de votre depot GitHub.
  */
 if ( file_exists( SPB_PATH . 'lib/plugin-update-checker/plugin-update-checker.php' ) ) {
 	require_once SPB_PATH . 'lib/plugin-update-checker/plugin-update-checker.php';
 
 	$spb_update_checker = YahnisElsts\PluginUpdateChecker\v5\PucFactory::buildUpdateChecker(
-		'https://github.com/PhilipMasse/WordPress---Editeur-de-pages/',
+		'',
 		__FILE__,
 		'simple-page-builder'
 	);
 
-	// Decommenter et renseigner un jeton d'acces personnel GitHub si le
 	// depot est PRIVE (Settings > Developer settings > Personal access
-	// tokens sur GitHub, droit "repo" en lecture suffit) :
 	// $spb_update_checker->setAuthentication( 'ghp_votre_jeton_ici' );
 }
 

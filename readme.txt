@@ -153,8 +153,6 @@ l'editeur reprend l'affichage.
 == Mises a jour automatiques ==
 
 Le plugin integre la bibliotheque "Plugin Update Checker" qui permet de
-proposer les mises a jour depuis un depot GitHub, comme pour une
-extension officielle. Voir le fichier GITHUB-UPDATES.md pour la
 procedure complete (creation du depot, configuration, publication des
 nouvelles versions).
 
