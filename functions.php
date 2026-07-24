@@ -2399,7 +2399,7 @@ function berre_cal_render_grid( $year, $mon ) {
         $html .= '<div class="berre-cal__day'.($is_t?' berre-cal__day--today':'').'">';
         $html .= '<span class="berre-cal__day-num">'.$d.'</span>';
         foreach (array_slice($evs,0,2) as $ev) {
-            $html .= '<button type="button" class="berre-cal__event"'
+            $html .= '<button type="button" class="berre-cal__event" onclick="berreOpenPopup(this)"'
                 .' data-title="'.esc_attr($ev['title']).'"'
                 .' data-url="'.esc_attr($ev['url']).'"'
                 .' data-img="'.esc_attr($ev['img']).'"'
@@ -2411,7 +2411,7 @@ function berre_cal_render_grid( $year, $mon ) {
         }
         if (count($evs)>2) {
             $ev2 = $evs[2];
-            $html .= '<button type="button" class="berre-cal__more"'
+            $html .= '<button type="button" class="berre-cal__more" onclick="berreOpenPopup(this)"'
                 .' data-title="'.esc_attr($ev2['title']).'"'
                 .' data-url="'.esc_attr($ev2['url']).'"'
                 .' data-img="'.esc_attr($ev2['img']).'"'
@@ -2457,123 +2457,122 @@ add_shortcode( 'berre_calendrier_agenda', function() {
     $prev = date('Y-m', mktime(0,0,0,$mon-1,1,$year));
     $next = date('Y-m', mktime(0,0,0,$mon+1,1,$year));
     $today = date('Y-m');
-    $ajax_url = admin_url('admin-ajax.php');
+    $ajax_url = esc_js(admin_url('admin-ajax.php'));
     ob_start(); ?>
-    <div class="berre-cal" id="berre-cal"
-         data-ajax="<?php echo esc_attr($ajax_url); ?>"
-         data-cur="<?php echo esc_attr($raw); ?>">
+    <!-- Popup calendrier (hors du calendrier pour position:fixed propre) -->
+    <div id="berre-popup" onclick="if(event.target===this)berreClosePopup()"
+         style="display:none;position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.55);
+                align-items:center;justify-content:center;padding:16px;box-sizing:border-box">
+      <div style="background:#fff;border-radius:10px;overflow:hidden;width:300px;
+                  max-width:calc(100vw - 32px);box-shadow:0 8px 32px rgba(0,0,0,.25);position:relative">
+        <button onclick="berreClosePopup()"
+                style="position:absolute;top:8px;right:8px;background:rgba(0,0,0,.45);color:#fff;
+                       border:none;border-radius:50%;width:28px;height:28px;cursor:pointer;
+                       font-size:18px;line-height:1;z-index:2">&#215;</button>
+        <div id="bpp-img"></div>
+        <div style="padding:14px 16px 18px">
+          <p id="bpp-cats" style="font-size:10px;font-weight:700;text-transform:uppercase;
+             letter-spacing:.1em;color:#DEA128;margin:0 0 4px"></p>
+          <h3 id="bpp-title" style="font-size:15px;font-weight:700;margin:0 0 10px;
+              color:#111;line-height:1.35"></h3>
+          <div id="bpp-meta" style="font-size:12.5px;color:#555;line-height:1.7;margin-bottom:14px"></div>
+          <a id="bpp-btn" href="#" target="_blank"
+             style="display:block;text-align:center;background:#2D6AB0;color:#fff;
+                    border-radius:6px;padding:10px;font-size:13px;font-weight:600;text-decoration:none">
+            En savoir plus
+          </a>
+        </div>
+      </div>
+    </div>
 
+    <div class="berre-cal" id="berre-cal">
       <div class="berre-cal__header">
         <div class="berre-cal__nav-left">
-          <button type="button" class="berre-cal__btn" id="berre-cal-prev" data-month="<?php echo esc_attr($prev); ?>">&#8249;</button>
-          <span class="berre-cal__month-label" id="berre-cal-label"><?php echo esc_html($months_fr[$mon].' '.$year); ?></span>
-          <button type="button" class="berre-cal__btn" id="berre-cal-next" data-month="<?php echo esc_attr($next); ?>">&#8250;</button>
+          <button type="button" class="berre-cal__btn"
+                  onclick="berreCalNav('<?php echo esc_js($prev); ?>')">&#8249;</button>
+          <span class="berre-cal__month-label" id="berre-cal-label">
+            <?php echo esc_html($months_fr[$mon].' '.$year); ?>
+          </span>
+          <button type="button" class="berre-cal__btn"
+                  onclick="berreCalNav('<?php echo esc_js($next); ?>')">&#8250;</button>
         </div>
-        <button type="button" class="berre-cal__today-btn" id="berre-cal-today" data-month="<?php echo esc_attr($today); ?>">Aujourd'hui</button>
+        <button type="button" class="berre-cal__today-btn"
+                onclick="berreCalNav('<?php echo esc_js($today); ?>')">Aujourd'hui</button>
       </div>
-
       <div class="berre-cal__weekdays">
         <div>lun.</div><div>mar.</div><div>mer.</div>
         <div>jeu.</div><div>ven.</div><div>sam.</div><div>dim.</div>
       </div>
-
       <div class="berre-cal__grid" id="berre-cal-grid">
         <?php echo berre_cal_render_grid($year,$mon); ?>
       </div>
-
-      <!-- Popup événement -->
-      <div id="berre-popup" role="dialog" aria-modal="true"
-           style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.55);align-items:center;justify-content:center;padding:16px">
-        <div style="background:#fff;border-radius:10px;overflow:hidden;width:300px;max-width:100%;box-shadow:0 8px 32px rgba(0,0,0,.25);position:relative">
-          <button id="berre-popup-close"
-                  style="position:absolute;top:8px;right:8px;background:rgba(0,0,0,.45);color:#fff;border:none;border-radius:50%;width:28px;height:28px;cursor:pointer;font-size:18px;line-height:1;z-index:2">&#215;</button>
-          <div id="berre-popup-img"></div>
-          <div style="padding:14px 16px 18px">
-            <p id="berre-popup-cats" style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#DEA128;margin:0 0 4px"></p>
-            <h3 id="berre-popup-title" style="font-size:15px;font-weight:700;margin:0 0 10px;color:#111;line-height:1.35"></h3>
-            <div id="berre-popup-meta" style="font-size:12.5px;color:#555;line-height:1.7;margin-bottom:14px"></div>
-            <a id="berre-popup-btn" href="#"
-               style="display:block;text-align:center;background:#2D6AB0;color:#fff;border-radius:6px;padding:10px;font-size:13px;font-weight:600;text-decoration:none">
-              En savoir plus
-            </a>
-          </div>
-        </div>
-      </div>
-    </div><!-- .berre-cal -->
+    </div>
 
     <script>
-    (function(){
-      var cal     = document.getElementById('berre-cal');
-      var grid    = document.getElementById('berre-cal-grid');
-      var label   = document.getElementById('berre-cal-label');
-      var popup   = document.getElementById('berre-popup');
-      var AJAX    = cal ? cal.dataset.ajax : '';
+    var BERRE_CAL_AJAX = '<?php echo $ajax_url; ?>';
 
-      /* ── Navigation AJAX ── */
-      function loadMonth(month) {
-        if (!grid || !AJAX) return;
-        grid.style.opacity = '.4';
-        fetch(AJAX + '?action=berre_cal_nav&month=' + month)
-          .then(function(r){ return r.json(); })
-          .then(function(d){
+    function berreCalNav(month) {
+      var grid  = document.getElementById('berre-cal-grid');
+      var label = document.getElementById('berre-cal-label');
+      if (!grid) return;
+      grid.style.opacity = '0.4';
+      var xhr = new XMLHttpRequest();
+      xhr.open('GET', BERRE_CAL_AJAX + '?action=berre_cal_nav&month=' + month, true);
+      xhr.onreadystatechange = function() {
+        if (xhr.readyState !== 4) return;
+        grid.style.opacity = '1';
+        if (xhr.status === 200) {
+          try {
+            var d = JSON.parse(xhr.responseText);
             grid.innerHTML = d.html;
-            grid.style.opacity = '1';
             if (label) label.textContent = d.label;
-            document.getElementById('berre-cal-prev').dataset.month = d.prev;
-            document.getElementById('berre-cal-next').dataset.month = d.next;
-          })
-          .catch(function(){ grid.style.opacity = '1'; });
-      }
+            // Mettre à jour les boutons nav
+            var btns = document.querySelectorAll('.berre-cal__btn');
+            if (btns[0]) btns[0].setAttribute('onclick', "berreCalNav('" + d.prev + "')");
+            if (btns[1]) btns[1].setAttribute('onclick', "berreCalNav('" + d.next + "')");
+          } catch(e) { }
+        }
+      };
+      xhr.send();
+    }
 
-      if (document.getElementById('berre-cal-prev')) {
-        document.getElementById('berre-cal-prev').addEventListener('click', function(){ loadMonth(this.dataset.month); });
-        document.getElementById('berre-cal-next').addEventListener('click', function(){ loadMonth(this.dataset.month); });
-        document.getElementById('berre-cal-today').addEventListener('click',function(){ loadMonth(this.dataset.month); });
-      }
-
-      /* ── Popup — délégation sur le calendrier ── */
-      function openPopup(btn) {
-        var d = btn.dataset;
-        document.getElementById('berre-popup-img').innerHTML = d.img
-          ? '<img src="'+d.img+'" style="width:100%;height:160px;object-fit:cover;display:block" alt="">'
-          : '';
-        document.getElementById('berre-popup-cats').textContent  = d.cats  || '';
-        document.getElementById('berre-popup-title').textContent = d.title || '';
-        var meta = '';
-        if (d.start) {
-          var ds = new Date(d.start.replace(/-/g,'/')).toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'long',year:'numeric'});
+    function berreOpenPopup(btn) {
+      var d     = btn.dataset;
+      var popup = document.getElementById('berre-popup');
+      if (!popup) return;
+      var imgEl = document.getElementById('bpp-img');
+      imgEl.innerHTML = d.img
+        ? '<img src="'+d.img+'" style="width:100%;height:160px;object-fit:cover;display:block" alt="">'
+        : '';
+      document.getElementById('bpp-cats').textContent  = d.cats  || '';
+      document.getElementById('bpp-title').textContent = d.title || '';
+      var meta = '';
+      if (d.start) {
+        try {
+          var opts = {weekday:'short',day:'numeric',month:'long',year:'numeric'};
+          var ds = new Date(d.start.replace(/-/g,'/')).toLocaleDateString('fr-FR',opts);
           if (d.end && d.end !== d.start)
-            ds += ' \u2013 '+new Date(d.end.replace(/-/g,'/')).toLocaleDateString('fr-FR',{day:'numeric',month:'long'});
+            ds += '\u2013' + new Date(d.end.replace(/-/g,'/')).toLocaleDateString('fr-FR',{day:'numeric',month:'long'});
           if (d.time) ds += ', '+d.time;
           meta += '<div>\uD83D\uDCC5 '+ds+'</div>';
-        }
-        if (d.loc) meta += '<div>\uD83D\uDCCD '+d.loc+'</div>';
-        document.getElementById('berre-popup-meta').innerHTML = meta;
-        document.getElementById('berre-popup-btn').href = d.url || '#';
-        popup.style.display = 'flex';
-        document.body.style.overflow = 'hidden';
+        } catch(e) { meta += '<div>'+d.start+'</div>'; }
       }
+      if (d.loc) meta += '<div>\uD83D\uDCCD '+d.loc+'</div>';
+      document.getElementById('bpp-meta').innerHTML = meta;
+      document.getElementById('bpp-btn').href = d.url || '#';
+      popup.style.display = 'flex';
+      document.body.style.overflow = 'hidden';
+    }
 
-      function closePopup() {
-        popup.style.display = 'none';
-        document.body.style.overflow = '';
-      }
+    function berreClosePopup() {
+      var popup = document.getElementById('berre-popup');
+      if (popup) popup.style.display = 'none';
+      document.body.style.overflow = '';
+    }
 
-      /* Délégation — fonctionne aussi après le rechargement AJAX du grid */
-      if (cal) {
-        cal.addEventListener('click', function(e) {
-          var btn = e.target.closest('.berre-cal__event, .berre-cal__more');
-          if (btn) { e.preventDefault(); openPopup(btn); return; }
-          if (e.target === popup || e.target.closest('#berre-popup > div') === null && e.target.closest('#berre-popup') !== null)
-            closePopup();
-        });
-      }
-      if (popup) {
-        popup.addEventListener('click', function(e){ if(e.target===popup) closePopup(); });
-        document.getElementById('berre-popup-close').addEventListener('click', closePopup);
-      }
-      document.addEventListener('keydown', function(e){ if(e.key==='Escape') closePopup(); });
-    })();
+    document.addEventListener('keydown', function(e){
+      if (e.key === 'Escape') berreClosePopup();
+    });
     </script>
     <?php
     return ob_get_clean();
