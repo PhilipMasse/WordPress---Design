@@ -1068,7 +1068,6 @@ function berre_delete_fse_templates() {
 
     // Vider tous les caches
     wp_cache_flush();
-    if ( function_exists( 'opcache_reset' ) ) opcache_reset();
 
     return $count;
 }
@@ -2363,6 +2362,16 @@ function berre_rest_agenda_events( WP_REST_Request $request ) {
     return rest_ensure_response( $events );
 }
 
+
+/* ── Enqueue du script calendrier (chargé globalement si shortcode présent) ── */
+add_action( 'wp_footer', function() {
+    if ( ! is_front_page() && ! has_shortcode( get_post()->post_content ?? '', 'berre_calendrier_agenda' ) ) return;
+    wp_enqueue_script( 'berre-cal', get_template_directory_uri() . '/assets/js/cal.js', [], '1.0', true );
+    wp_localize_script( 'berre-cal', 'BERRE_CAL', [
+        'ajax' => admin_url('admin-ajax.php'),
+    ]);
+} );
+
 /* ── Calendrier agenda — fonction de rendu réutilisable ── */
 function berre_cal_render_grid( $year, $mon ) {
     /* Événements du mois */
@@ -2457,7 +2466,7 @@ add_shortcode( 'berre_calendrier_agenda', function() {
     $prev = date('Y-m', mktime(0,0,0,$mon-1,1,$year));
     $next = date('Y-m', mktime(0,0,0,$mon+1,1,$year));
     $today = date('Y-m');
-    $ajax_url = esc_js(admin_url('admin-ajax.php'));
+    // AJAX URL transmis via wp_localize_script('berre-cal')
     ob_start(); ?>
     <!-- Popup calendrier (hors du calendrier pour position:fixed propre) -->
     <div id="berre-popup" onclick="if(event.target===this)berreClosePopup()"
@@ -2508,72 +2517,7 @@ add_shortcode( 'berre_calendrier_agenda', function() {
       </div>
     </div>
 
-    <script>
-    var BERRE_CAL_AJAX = '<?php echo $ajax_url; ?>';
-
-    function berreCalNav(month) {
-      var grid  = document.getElementById('berre-cal-grid');
-      var label = document.getElementById('berre-cal-label');
-      if (!grid) return;
-      grid.style.opacity = '0.4';
-      var xhr = new XMLHttpRequest();
-      xhr.open('GET', BERRE_CAL_AJAX + '?action=berre_cal_nav&month=' + month, true);
-      xhr.onreadystatechange = function() {
-        if (xhr.readyState !== 4) return;
-        grid.style.opacity = '1';
-        if (xhr.status === 200) {
-          try {
-            var d = JSON.parse(xhr.responseText);
-            grid.innerHTML = d.html;
-            if (label) label.textContent = d.label;
-            // Mettre à jour les boutons nav
-            var btns = document.querySelectorAll('.berre-cal__btn');
-            if (btns[0]) btns[0].setAttribute('onclick', "berreCalNav('" + d.prev + "')");
-            if (btns[1]) btns[1].setAttribute('onclick', "berreCalNav('" + d.next + "')");
-          } catch(e) { }
-        }
-      };
-      xhr.send();
-    }
-
-    function berreOpenPopup(btn) {
-      var d     = btn.dataset;
-      var popup = document.getElementById('berre-popup');
-      if (!popup) return;
-      var imgEl = document.getElementById('bpp-img');
-      imgEl.innerHTML = d.img
-        ? '<img src="'+d.img+'" style="width:100%;height:160px;object-fit:cover;display:block" alt="">'
-        : '';
-      document.getElementById('bpp-cats').textContent  = d.cats  || '';
-      document.getElementById('bpp-title').textContent = d.title || '';
-      var meta = '';
-      if (d.start) {
-        try {
-          var opts = {weekday:'short',day:'numeric',month:'long',year:'numeric'};
-          var ds = new Date(d.start.replace(/-/g,'/')).toLocaleDateString('fr-FR',opts);
-          if (d.end && d.end !== d.start)
-            ds += '\u2013' + new Date(d.end.replace(/-/g,'/')).toLocaleDateString('fr-FR',{day:'numeric',month:'long'});
-          if (d.time) ds += ', '+d.time;
-          meta += '<div>\uD83D\uDCC5 '+ds+'</div>';
-        } catch(e) { meta += '<div>'+d.start+'</div>'; }
-      }
-      if (d.loc) meta += '<div>\uD83D\uDCCD '+d.loc+'</div>';
-      document.getElementById('bpp-meta').innerHTML = meta;
-      document.getElementById('bpp-btn').href = d.url || '#';
-      popup.style.display = 'flex';
-      document.body.style.overflow = 'hidden';
-    }
-
-    function berreClosePopup() {
-      var popup = document.getElementById('berre-popup');
-      if (popup) popup.style.display = 'none';
-      document.body.style.overflow = '';
-    }
-
-    document.addEventListener('keydown', function(e){
-      if (e.key === 'Escape') berreClosePopup();
-    });
-    </script>
+    <?php /* Le JS calendrier est enqueué via wp_enqueue_script('berre-cal') */ ?>
     <?php
     return ob_get_clean();
 } );
