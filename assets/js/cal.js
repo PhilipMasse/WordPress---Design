@@ -1,6 +1,4 @@
 /* Calendrier agenda Berre-les-Alpes */
-/* BERRE_CAL.ajax est défini via wp_localize_script */
-
 var berreCalAjaxUrl = (typeof BERRE_CAL !== 'undefined') ? BERRE_CAL.ajax : '';
 
 function berreCalNav(month) {
@@ -18,11 +16,10 @@ function berreCalNav(month) {
       var d = JSON.parse(xhr.responseText);
       grid.innerHTML = d.html;
       if (label) label.textContent = d.label;
-      /* Mettre à jour onclick des boutons nav */
       var btns = document.querySelectorAll('#berre-cal .berre-cal__btn');
       if (btns[0]) btns[0].setAttribute('onclick', "berreCalNav('" + d.prev + "')");
       if (btns[1]) btns[1].setAttribute('onclick', "berreCalNav('" + d.next + "')");
-    } catch(e) { }
+    } catch(e) {}
   };
   xhr.send();
 }
@@ -34,11 +31,15 @@ function berreOpenPopup(btn) {
 
   /* Image */
   document.getElementById('bpp-img').innerHTML = d.img
-    ? '<img src="' + d.img + '" style="width:100%;height:160px;object-fit:cover;display:block" alt="">'
+    ? '<img src="' + d.img + '" style="width:100%;height:150px;object-fit:cover;display:block" alt="">'
     : '';
 
-  /* Catégorie, titre */
-  document.getElementById('bpp-cats').textContent  = d.cats  || '';
+  /* Catégorie colorée */
+  var catEl = document.getElementById('bpp-cats');
+  catEl.textContent = d.cats || '';
+  catEl.style.color = d.catColor || '#DEA128';
+
+  /* Titre */
   document.getElementById('bpp-title').textContent = d.title || '';
 
   /* Méta date + lieu */
@@ -50,16 +51,34 @@ function berreOpenPopup(btn) {
       if (d.end && d.end !== d.start)
         ds += ' \u2013 ' + new Date(d.end.replace(/-/g, '/')).toLocaleDateString('fr-FR', { day:'numeric', month:'long' });
       if (d.time) ds += ', ' + d.time;
-      meta += '<div>\uD83D\uDCC5 ' + ds + '</div>';
+      meta += '<div style="display:flex;gap:6px"><span>\uD83D\uDCC5</span><span>' + ds + '</span></div>';
     } catch(e) {
       meta += '<div>' + (d.start || '') + '</div>';
     }
   }
-  if (d.loc) meta += '<div>\uD83D\uDCCD ' + d.loc + '</div>';
+  if (d.loc) meta += '<div style="display:flex;gap:6px"><span>\uD83D\uDCCD</span><span>' + d.loc + '</span></div>';
   document.getElementById('bpp-meta').innerHTML = meta;
+
+  /* Extrait du contenu */
+  var excerptEl = document.getElementById('bpp-excerpt');
+  if (excerptEl) excerptEl.textContent = d.excerpt || '';
+
+  /* Bouton agenda Google Calendar */
+  var gcalBtn = document.getElementById('bpp-gcal');
+  if (gcalBtn && d.start) {
+    var gcalStart = d.start.replace(/-/g,'');
+    var gcalEnd   = d.end ? d.end.replace(/-/g,'') : gcalStart;
+    gcalBtn.href = 'https://calendar.google.com/calendar/render?action=TEMPLATE'
+      + '&text=' + encodeURIComponent(d.title || '')
+      + '&dates=' + gcalStart + '/' + gcalEnd
+      + (d.loc  ? '&location=' + encodeURIComponent(d.loc) : '')
+      + (d.url  ? '&details='  + encodeURIComponent(d.url) : '');
+    gcalBtn.style.display = 'inline-flex';
+  }
+
+  /* Lien "En savoir plus" */
   document.getElementById('bpp-btn').href = d.url || '#';
 
-  /* Afficher */
   popup.style.display = 'flex';
   document.body.style.overflow = 'hidden';
 }

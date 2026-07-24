@@ -2383,14 +2383,25 @@ function berre_cal_render_grid( $year, $mon ) {
         $time = get_post_meta($post->ID,'berre_event_time',true);
         $loc  = get_post_meta($post->ID,'berre_event_location',true);
         $img  = ($t=get_post_thumbnail_id($post->ID)) ? wp_get_attachment_image_url($t,'thumbnail') : '';
-        $cats = wp_get_object_terms($post->ID,'categorie_agenda',['fields'=>'names']);
-        $cats_s = is_array($cats) ? implode(', ',$cats) : '';
+        $cat_terms = wp_get_object_terms($post->ID, 'categorie_agenda');
+        $cats_s    = '';
+        $cat_color = '';
+        if (!is_wp_error($cat_terms)) {
+            $cat_names = array_map(fn($t) => $t->name, $cat_terms);
+            $cats_s    = implode(', ', $cat_names);
+            foreach ($cat_terms as $ct) {
+                $c = get_term_meta($ct->term_id, 'berre_cat_agenda_color', true);
+                if ($c) { $cat_color = $c; break; }
+            }
+        }
+        $excerpt = wp_trim_words(strip_tags(get_the_content(null, false, $post)), 30, '…');
         $d_cur = new DateTime($s); $d_end = new DateTime($e);
         while ($d_cur <= $d_end) {
             if ((int)$d_cur->format('Y')===$year && (int)$d_cur->format('n')===$mon) {
                 $dk = (int)$d_cur->format('j');
                 $by_day[$dk][] = ['id'=>$post->ID,'title'=>$post->post_title,'url'=>get_permalink($post->ID),
-                    'time'=>$time,'loc'=>$loc,'img'=>$img,'start'=>$s,'end'=>$e,'cats'=>$cats_s];
+                    'time'=>$time,'loc'=>$loc,'img'=>$img,'start'=>$s,'end'=>$e,'cats'=>$cats_s,
+                    'cat_color'=>$cat_color,'excerpt'=>$excerpt];
             }
             $d_cur->modify('+1 day');
         }
@@ -2413,6 +2424,8 @@ function berre_cal_render_grid( $year, $mon ) {
                 .' data-url="'.esc_attr($ev['url']).'"'
                 .' data-img="'.esc_attr($ev['img']).'"'
                 .' data-cats="'.esc_attr($ev['cats']).'"'
+                .' data-cat-color="'.esc_attr($ev['cat_color']).'"'
+                .' data-excerpt="'.esc_attr($ev['excerpt']).'"'
                 .' data-start="'.esc_attr($ev['start']).'"'
                 .' data-end="'.esc_attr($ev['end']).'"'
                 .' data-time="'.esc_attr($ev['time']).'"'
@@ -2425,6 +2438,8 @@ function berre_cal_render_grid( $year, $mon ) {
                 .' data-url="'.esc_attr($ev2['url']).'"'
                 .' data-img="'.esc_attr($ev2['img']).'"'
                 .' data-cats="'.esc_attr($ev2['cats']).'"'
+                .' data-cat-color="'.esc_attr($ev2['cat_color']).'"'
+                .' data-excerpt="'.esc_attr($ev2['excerpt']).'"'
                 .' data-start="'.esc_attr($ev2['start']).'"'
                 .' data-end="'.esc_attr($ev2['end']).'"'
                 .' data-time="'.esc_attr($ev2['time']).'"'
@@ -2468,28 +2483,45 @@ add_shortcode( 'berre_calendrier_agenda', function() {
     $today = date('Y-m');
     // AJAX URL transmis via wp_localize_script('berre-cal')
     ob_start(); ?>
-    <!-- Popup calendrier (hors du calendrier pour position:fixed propre) -->
+    <!-- Popup calendrier -->
     <div id="berre-popup" onclick="if(event.target===this)berreClosePopup()"
          style="display:none;position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.55);
                 align-items:center;justify-content:center;padding:16px;box-sizing:border-box">
-      <div style="background:#fff;border-radius:10px;overflow:hidden;width:300px;
-                  max-width:calc(100vw - 32px);box-shadow:0 8px 32px rgba(0,0,0,.25);position:relative">
+      <div style="background:#fff;border-radius:10px;overflow:hidden;width:320px;
+                  max-width:calc(100vw - 32px);max-height:90vh;overflow-y:auto;
+                  box-shadow:0 8px 32px rgba(0,0,0,.25);position:relative">
         <button onclick="berreClosePopup()"
                 style="position:absolute;top:8px;right:8px;background:rgba(0,0,0,.45);color:#fff;
-                       border:none;border-radius:50%;width:28px;height:28px;cursor:pointer;
-                       font-size:18px;line-height:1;z-index:2">&#215;</button>
+                       border:none;border-radius:50%;width:26px;height:26px;cursor:pointer;
+                       font-size:16px;line-height:1;z-index:2">&#215;</button>
         <div id="bpp-img"></div>
-        <div style="padding:14px 16px 18px">
+        <div style="padding:12px 15px 14px">
           <p id="bpp-cats" style="font-size:10px;font-weight:700;text-transform:uppercase;
-             letter-spacing:.1em;color:#DEA128;margin:0 0 4px"></p>
-          <h3 id="bpp-title" style="font-size:15px;font-weight:700;margin:0 0 10px;
+             letter-spacing:.1em;margin:0 0 3px"></p>
+          <h3 id="bpp-title" style="font-size:14.5px;font-weight:700;margin:0 0 8px;
               color:#111;line-height:1.35"></h3>
-          <div id="bpp-meta" style="font-size:12.5px;color:#555;line-height:1.7;margin-bottom:14px"></div>
-          <a id="bpp-btn" href="#" target="_blank"
-             style="display:block;text-align:center;background:#2D6AB0;color:#fff;
-                    border-radius:6px;padding:10px;font-size:13px;font-weight:600;text-decoration:none">
-            En savoir plus
-          </a>
+          <div id="bpp-meta" style="font-size:12px;color:#555;line-height:1.6;margin-bottom:8px"></div>
+          <p id="bpp-excerpt" style="font-size:12.5px;color:#444;line-height:1.6;
+             margin:0 0 12px;font-style:italic;border-top:1px solid #eee;padding-top:8px"></p>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <a id="bpp-btn" href="#"
+               style="flex:1;min-width:120px;display:inline-flex;align-items:center;justify-content:center;
+                      background:#2D6AB0;color:#fff;border-radius:6px;padding:7px 12px;
+                      font-size:12.5px;font-weight:600;text-decoration:none;white-space:nowrap">
+              En savoir plus
+            </a>
+            <a id="bpp-gcal" href="#" target="_blank" rel="noopener"
+               style="display:none;align-items:center;justify-content:center;gap:5px;
+                      background:#fff;color:#555;border:1.5px solid #ddd;border-radius:6px;
+                      padding:6px 10px;font-size:11.5px;font-weight:600;text-decoration:none;
+                      white-space:nowrap">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/>
+                <line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+              </svg>
+              Agenda
+            </a>
+          </div>
         </div>
       </div>
     </div>
@@ -3453,7 +3485,8 @@ add_action( 'wp_head', function() {
 /* render_block en couche secondaire — modifie le HTML directement si disponible */
 add_filter( 'render_block', function( $html, $block ) {
     if ( ( $block['blockName'] ?? '' ) !== 'core/post-terms' ) return $html;
-    if ( ( $block['attrs']['term'] ?? '' ) !== 'categorie_actu' )  return $html;
+    $term_tax = $block['attrs']['term'] ?? '';
+    if ( $term_tax !== 'categorie_actu' && $term_tax !== 'categorie_agenda' ) return $html;
     if ( empty($html) ) return $html;
 
     $post_id = get_the_ID();
@@ -3462,13 +3495,25 @@ add_filter( 'render_block', function( $html, $block ) {
     $terms = get_the_terms( $post_id, 'categorie_actu' );
     if ( ! $terms || is_wp_error($terms) ) return $html;
 
-    $colors = berre_get_cat_colors();
+    // Couleurs selon la taxonomie
+    if ($term_tax === 'categorie_agenda') {
+        $colors_raw = get_terms(['taxonomy'=>'categorie_agenda','hide_empty'=>false]);
+        $colors = [];
+        if (!is_wp_error($colors_raw)) {
+            foreach ($colors_raw as $t) {
+                $c = get_term_meta($t->term_id,'berre_cat_agenda_color',true);
+                if ($c) $colors[$t->term_id] = ['color'=>$c,'slug'=>$t->slug];
+            }
+        }
+    } else {
+        $colors = berre_get_cat_colors();
+    }
     if ( empty($colors) ) return $html;
 
     $slug_map = [];
     foreach ( $colors as $tid => $info ) {
         $slug_map[ $info['slug'] ] = $info['color'];
-        $slug_map[ $info['slug'] . '-2' ] = $info['color']; // variantes de slug WordPress
+        $slug_map[ $info['slug'] . '-2' ] = $info['color'];
     }
 
     $class = $block['attrs']['className'] ?? '';
@@ -4181,10 +4226,30 @@ add_action( 'categorie_agenda_edit_form_fields', function( $term ) {
     <tr class="form-field">
         <th scope="row"><label for="berre_cat_agenda_color">🎨 Couleur de la catégorie</label></th>
         <td>
-            <input type="color" name="berre_cat_agenda_color" id="berre_cat_agenda_color"
-                   value="<?php echo esc_attr($color); ?>"
-                   style="width:60px;height:32px;cursor:pointer;border:1px solid #ddd;border-radius:4px;padding:2px">
-            <p class="description">Couleur affichée dans le calendrier et les pages agenda.</p>
+            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+                <input type="color" name="berre_cat_agenda_color" id="berre_cat_agenda_color"
+                       value="<?php echo esc_attr($color); ?>"
+                       style="width:48px;height:32px;cursor:pointer;border:1px solid #ddd;border-radius:4px;padding:2px">
+                <!-- Swatches couleurs du thème -->
+                <span style="font-size:11px;color:#888">Couleurs du thème :</span>
+                <?php foreach ([
+                    '#2D6AB0'=>'Bleu',
+                    '#587526'=>'Vert',
+                    '#DEA128'=>'Or',
+                    '#102142'=>'Bleu marine',
+                    '#c0392b'=>'Rouge',
+                    '#8e44ad'=>'Violet',
+                ] as $hex => $lbl): ?>
+                <span onclick="document.getElementById('berre_cat_agenda_color').value='<?php echo esc_js($hex); ?>'"
+                      title="<?php echo esc_attr($lbl); ?>"
+                      style="display:inline-block;width:24px;height:24px;background:<?php echo esc_attr($hex); ?>;
+                             border-radius:50%;cursor:pointer;border:2px solid #fff;
+                             box-shadow:0 0 0 1px rgba(0,0,0,.2);transition:transform .1s"
+                      onmouseover="this.style.transform='scale(1.2)'"
+                      onmouseout="this.style.transform='scale(1)'"></span>
+                <?php endforeach; ?>
+            </div>
+            <p class="description" style="margin-top:6px">Couleur affichée dans le calendrier et les pages agenda.</p>
         </td>
     </tr>
     <?php
