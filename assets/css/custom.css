@@ -2524,3 +2524,53 @@ ul.berre-home-actu-grid,
   display: flex;
   gap: 40px;
 }
+
+/* ── POPUP CALENDRIER — styles garantis ── */
+#berre-popup {
+  display: none;
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 99999 !important;
+  background: rgba(0,0,0,.55) !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 16px !important;
+  box-sizing: border-box !important;
+}
+#berre-popup[style*="flex"] { display: flex !important; }
+
+/* Image — masquée par défaut, aucune hauteur fantôme */
+#bpp-img { display: none; line-height: 0; font-size: 0; }
+#bpp-img img { display: block; width: 100%; height: 150px; object-fit: cover; }
+
+/* Boutons popup — flex et centrés */
+#bpp-btn,
+#bpp-gcal {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+  padding: 7px 14px !important;
+  border-radius: 6px !important;
+  font-size: 12.5px !important;
+  font-weight: 600 !important;
+  text-decoration: none !important;
+  line-height: 1 !important;
+  white-space: nowrap !important;
+  box-sizing: border-box !important;
+}
+#bpp-btn  { background: #2D6AB0; color: #fff !important; flex: 0 0 auto; }
+#bpp-gcal { background: #fff; color: #444 !important; border: 1.5px solid #ddd; flex: 1; }
+#bpp-gcal[style*="none"] { display: none !important; }
+
+/* Contenu événement */
+#bpp-excerpt {
+  font-size: 13px;
+  color: #333;
+  line-height: 1.65;
+  margin: 0 0 13px;
+  border-top: 1px solid #eee;
+  padding-top: 10px;
+}
+#bpp-excerpt p { margin: 0 0 .7em; }
+#bpp-excerpt p:last-child { margin-bottom: 0; }

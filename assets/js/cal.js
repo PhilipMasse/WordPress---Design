@@ -1,8 +1,6 @@
-/* Calendrier agenda Berre-les-Alpes */
+/* Calendrier agenda Berre-les-Alpes v3 */
 var berreCalAjaxUrl = (typeof BERRE_CAL !== 'undefined') ? BERRE_CAL.ajax : '';
-var berreCalRestUrl = (typeof BERRE_CAL !== 'undefined') ? BERRE_CAL.rest : '';
 
-/* ── Navigation AJAX ── */
 function berreCalNav(month) {
   var grid  = document.getElementById('berre-cal-grid');
   var label = document.getElementById('berre-cal-label');
@@ -26,7 +24,6 @@ function berreCalNav(month) {
   xhr.send();
 }
 
-/* ── Ouvrir popup ── */
 function berreOpenPopup(btn) {
   var d     = btn.dataset;
   var popup = document.getElementById('berre-popup');
@@ -34,15 +31,17 @@ function berreOpenPopup(btn) {
 
   /* Image */
   var imgEl = document.getElementById('bpp-img');
-  if (d.img) {
-    imgEl.innerHTML = '<img src="' + d.img + '" style="width:100%;height:150px;object-fit:cover;display:block" alt="">';
-    imgEl.style.display = 'block';
-  } else {
-    imgEl.innerHTML = '';
-    imgEl.style.display = 'none';
+  if (imgEl) {
+    if (d.img) {
+      imgEl.innerHTML = '<img src="' + d.img + '" style="width:100%;height:150px;object-fit:cover;display:block" alt="">';
+      imgEl.style.cssText = 'display:block;line-height:0';
+    } else {
+      imgEl.innerHTML = '';
+      imgEl.style.cssText = 'display:none;height:0;overflow:hidden';
+    }
   }
 
-  /* Catégorie colorée */
+  /* Catégorie */
   var catEl = document.getElementById('bpp-cats');
   catEl.textContent = d.cats || '';
   catEl.style.color = d.catColor || '#DEA128';
@@ -50,29 +49,38 @@ function berreOpenPopup(btn) {
   /* Titre */
   document.getElementById('bpp-title').textContent = d.title || '';
 
-  /* Méta : date + lieu */
+  /* Date + lieu */
   var meta = '';
   if (d.start) {
     try {
-      var opts = { weekday:'short', day:'numeric', month:'long', year:'numeric' };
-      var ds = new Date(d.start.replace(/-/g,'/')).toLocaleDateString('fr-FR', opts);
+      var ds = new Date(d.start.replace(/-/g,'/')).toLocaleDateString('fr-FR',
+        {weekday:'short',day:'numeric',month:'long',year:'numeric'});
       if (d.end && d.end !== d.start)
-        ds += '\u00a0\u2013\u00a0' + new Date(d.end.replace(/-/g,'/')).toLocaleDateString('fr-FR',{day:'numeric',month:'long'});
+        ds += ' \u2013 ' + new Date(d.end.replace(/-/g,'/')).toLocaleDateString('fr-FR',
+          {day:'numeric',month:'long'});
       if (d.time) ds += ', ' + d.time;
-      meta += '<div style="display:flex;align-items:flex-start;gap:5px">'
-            + '<span style="flex-shrink:0">\uD83D\uDCC5</span><span>' + ds + '</span></div>';
-    } catch(e) { meta += '<div>' + (d.start||'') + '</div>'; }
+      meta += '<div style="display:flex;gap:5px;align-items:flex-start"><span>\uD83D\uDCC5</span><span>' + ds + '</span></div>';
+    } catch(e) {}
   }
-  if (d.loc) meta += '<div style="display:flex;align-items:flex-start;gap:5px">'
-                   + '<span style="flex-shrink:0">\uD83D\uDCCD</span><span>' + d.loc + '</span></div>';
+  if (d.loc) meta += '<div style="display:flex;gap:5px;align-items:flex-start"><span>\uD83D\uDCCD</span><span>' + d.loc + '</span></div>';
   document.getElementById('bpp-meta').innerHTML = meta;
 
-  /* Contenu — masquer en attendant le fetch */
+  /* Contenu de la page (via berreCalContent injecté par PHP) */
   var excerptEl = document.getElementById('bpp-excerpt');
-  excerptEl.style.display = 'none';
-  excerptEl.innerHTML = '';
+  if (excerptEl) {
+    var map = (typeof berreCalContent !== 'undefined') ? berreCalContent : {};
+    var postId = parseInt(d.id || 0);
+    var html = postId && map[postId] ? map[postId] : '';
+    if (html) {
+      excerptEl.innerHTML = html;
+      excerptEl.style.display = 'block';
+    } else {
+      excerptEl.innerHTML = '';
+      excerptEl.style.display = 'none';
+    }
+  }
 
-  /* Bouton agenda Google Calendar */
+  /* Google Calendar */
   var gcalBtn = document.getElementById('bpp-gcal');
   if (gcalBtn && d.start) {
     var gs = d.start.replace(/-/g,'');
@@ -85,36 +93,14 @@ function berreOpenPopup(btn) {
     gcalBtn.style.display = 'inline-flex';
   }
 
-  /* Lien "En savoir plus" */
   document.getElementById('bpp-btn').href = d.url || '#';
-
-  /* Afficher popup */
   popup.style.display = 'flex';
   document.body.style.overflow = 'hidden';
-
-  /* Fetch contenu formaté via REST API (async) */
-  if (berreCalRestUrl && d.id) {
-    var xhrC = new XMLHttpRequest();
-    xhrC.open('GET', berreCalRestUrl + '/' + d.id + '?_fields=content', true);
-    xhrC.onreadystatechange = function() {
-      if (xhrC.readyState !== 4 || xhrC.status !== 200) return;
-      try {
-        var r = JSON.parse(xhrC.responseText);
-        var html = (r.content && r.content.rendered) ? r.content.rendered.trim() : '';
-        if (html && html !== '<p></p>') {
-          excerptEl.innerHTML = html;
-          excerptEl.style.display = 'block';
-        }
-      } catch(e) {}
-    };
-    xhrC.send();
-  }
 }
 
-/* ── Fermer popup ── */
 function berreClosePopup() {
-  var popup = document.getElementById('berre-popup');
-  if (popup) popup.style.display = 'none';
+  var p = document.getElementById('berre-popup');
+  if (p) p.style.display = 'none';
   document.body.style.overflow = '';
 }
 
