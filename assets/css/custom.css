@@ -3017,10 +3017,20 @@ html, body {
   max-width: 100% !important;
 }
 
-/* Breadcrumb */
+/* Breadcrumb — espacé sous le header sticky */
 .berre-breadcrumb {
-  padding-top: 20px !important;
-  padding-bottom: 4px !important;
+  padding-top: 28px !important;
+  padding-bottom: 8px !important;
+}
+
+/* Padding-top sur les pages pour éviter l'overlap du header sticky */
+.berre-article-page,
+.berre-event-page {
+  padding-top: 24px !important;
+}
+.admin-bar .berre-article-page,
+.admin-bar .berre-event-page {
+  padding-top: 16px !important;
 }
 
 /* Responsive */
