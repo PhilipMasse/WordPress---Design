@@ -75,10 +75,27 @@ var BCAL = {
     if (d.loc) meta += '<div style="display:flex;gap:5px"><span>\uD83D\uDCCD</span><span>' + d.loc + '</span></div>';
     document.getElementById('bpp-meta').innerHTML = meta;
 
-    /* Contenu — reset en attendant */
+    /* Contenu depuis data-content (base64 encodé en PHP) */
     var contentEl = document.getElementById('bpp-content');
     contentEl.innerHTML = '';
     contentEl.style.display = 'none';
+    if (d.content) {
+      try {
+        /* Décoder base64 UTF-8 */
+        var b64 = d.content;
+        var html = decodeURIComponent(
+          Array.prototype.map.call(atob(b64), function(c) {
+            return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+          }).join('')
+        );
+        var plain = html.replace(/<[^>]*>/g, '').trim();
+        var title = (d.title || '').trim();
+        if (plain && plain !== title && plain.length > 2) {
+          contentEl.innerHTML = html;
+          contentEl.style.display = 'block';
+        }
+      } catch(e) {}
+    }
 
     /* Boutons */
     document.getElementById('bpp-btn').href  = d.url  || '#';
@@ -87,32 +104,6 @@ var BCAL = {
     /* Afficher la popup */
     this.popup.style.display = 'flex';
     document.body.style.overflow = 'hidden';
-
-    /* Charger le contenu via REST */
-    var postId = d.id || '';
-    var restUrl = this.restUrl;
-    var title   = (d.title || '').trim();
-
-    if (postId && restUrl) {
-      var xhr = new XMLHttpRequest();
-      xhr.open('GET', restUrl + postId + '?_fields=content', true);
-      xhr.onreadystatechange = function() {
-        if (xhr.readyState !== 4) return;
-        if (xhr.status === 200) {
-          try {
-            var r = JSON.parse(xhr.responseText);
-            var html = (r.content && r.content.rendered) ? r.content.rendered.trim() : '';
-            var plain = html.replace(/<[^>]*>/g, '').trim();
-            /* Afficher seulement si le contenu est non vide et différent du titre */
-            if (plain && plain !== title && plain.length > 3) {
-              contentEl.innerHTML = html;
-              contentEl.style.display = 'block';
-            }
-          } catch(e) {}
-        }
-      };
-      xhr.send();
-    }
   },
 
   close: function() {

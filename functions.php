@@ -2366,7 +2366,7 @@ function berre_rest_agenda_events( WP_REST_Request $request ) {
 /* ── Enqueue du script calendrier ── */
 add_action( 'wp_footer', function() {
     if ( ! is_front_page() && ! has_shortcode( get_post()->post_content ?? '', 'berre_calendrier_agenda' ) ) return;
-    wp_enqueue_script( 'berre-cal', get_template_directory_uri() . '/assets/js/cal.js', [], '1785085987', true );
+    wp_enqueue_script( 'berre-cal', get_template_directory_uri() . '/assets/js/cal.js', [], '1785086627', true );
     wp_localize_script( 'berre-cal', 'BERRE_CAL', [
         'ajax' => admin_url('admin-ajax.php'),
         'rest' => rest_url('wp/v2/agenda/'),
@@ -2439,9 +2439,12 @@ function berre_cal_render_grid( $year, $mon ) {
                 . '&dates=' . date('Ymd', strtotime($s)) . '/' . date('Ymd', strtotime($e))
                 . ($loc ? '&location=' . rawurlencode($loc) : '')
                 . '&details='  . rawurlencode(get_permalink($post->ID));
+            // Contenu encodé en base64 pour éviter tout problème d'attribut HTML
+            $post_content_html = wp_kses_post( apply_filters('the_content', $post->post_content) );
+            $content_b64 = base64_encode( $post_content_html );
             $by_day[$dk][] = ['id'=>$post->ID,'title'=>$post->post_title,'url'=>get_permalink($post->ID),
                     'time'=>$time,'loc'=>$loc,'img'=>$img,'start'=>$s,'end'=>$e,'cats'=>$cats_s,
-                    'cat_color'=>$cat_color,'gcal_url'=>$gcal_url];
+                    'cat_color'=>$cat_color,'gcal_url'=>$gcal_url,'content_b64'=>$content_b64];
             }
             $d_cur->modify('+1 day');
         }
@@ -2472,6 +2475,7 @@ function berre_cal_render_grid( $year, $mon ) {
                 .' data-end="'.esc_attr($ev['end']).'"'
                 .' data-time="'.esc_attr($ev['time']).'"'
                 .' data-gcal="'.esc_attr($ev['gcal_url']).'"'
+                .' data-content="'.esc_attr($ev['content_b64']).'"'
                 .' data-loc="'.esc_attr($ev['loc']).'">'.esc_html(mb_substr($ev['title'],0,20)).'</button>';
         }
         if (count($evs)>2) {
@@ -2489,6 +2493,7 @@ function berre_cal_render_grid( $year, $mon ) {
                 .' data-end="'.esc_attr($ev2['end']).'"'
                 .' data-time="'.esc_attr($ev2['time']).'"'
                 .' data-gcal="'.esc_attr($ev2['gcal_url']).'"'
+                .' data-content="'.esc_attr($ev2['content_b64']).'"'
                 .' data-loc="'.esc_attr($ev2['loc']).'">+'.(count($evs)-2).' autre'.(count($evs)>3?'s':'').'</button>';
         }
         $html .= '</div>';
