@@ -1,4 +1,4 @@
-/* Calendrier agenda Berre-les-Alpes v3 */
+/* Calendrier agenda Berre-les-Alpes v4 */
 var berreCalAjaxUrl = (typeof BERRE_CAL !== 'undefined') ? BERRE_CAL.ajax : '';
 
 function berreCalNav(month) {
@@ -33,67 +33,57 @@ function berreOpenPopup(btn) {
   var imgEl = document.getElementById('bpp-img');
   if (imgEl) {
     if (d.img) {
-      imgEl.innerHTML = '<img src="' + d.img + '" style="width:100%;height:150px;object-fit:cover;display:block" alt="">';
-      imgEl.style.cssText = 'display:block;line-height:0';
+      imgEl.innerHTML = '<img src="' + d.img + '" alt="">';
+      imgEl.classList.add('has-img');
     } else {
       imgEl.innerHTML = '';
-      imgEl.style.cssText = 'display:none;height:0;overflow:hidden';
+      imgEl.classList.remove('has-img');
     }
   }
 
   /* Catégorie */
   var catEl = document.getElementById('bpp-cats');
-  catEl.textContent = d.cats || '';
-  catEl.style.color = d.catColor || '#DEA128';
+  if (catEl) { catEl.textContent = d.cats || ''; catEl.style.color = d.catColor || '#DEA128'; }
 
   /* Titre */
-  document.getElementById('bpp-title').textContent = d.title || '';
+  var titleEl = document.getElementById('bpp-title');
+  if (titleEl) titleEl.textContent = d.title || '';
 
   /* Date + lieu */
+  var metaEl = document.getElementById('bpp-meta');
   var meta = '';
-  if (d.start) {
+  if (d.start && metaEl) {
     try {
       var ds = new Date(d.start.replace(/-/g,'/')).toLocaleDateString('fr-FR',
         {weekday:'short',day:'numeric',month:'long',year:'numeric'});
       if (d.end && d.end !== d.start)
-        ds += ' \u2013 ' + new Date(d.end.replace(/-/g,'/')).toLocaleDateString('fr-FR',
+        ds += '\u00a0\u2013\u00a0' + new Date(d.end.replace(/-/g,'/')).toLocaleDateString('fr-FR',
           {day:'numeric',month:'long'});
       if (d.time) ds += ', ' + d.time;
-      meta += '<div style="display:flex;gap:5px;align-items:flex-start"><span>\uD83D\uDCC5</span><span>' + ds + '</span></div>';
+      meta += '<div>\uD83D\uDCC5 ' + ds + '</div>';
     } catch(e) {}
+    if (d.loc) meta += '<div>\uD83D\uDCCD ' + d.loc + '</div>';
+    metaEl.innerHTML = meta;
   }
-  if (d.loc) meta += '<div style="display:flex;gap:5px;align-items:flex-start"><span>\uD83D\uDCCD</span><span>' + d.loc + '</span></div>';
-  document.getElementById('bpp-meta').innerHTML = meta;
 
-  /* Contenu de la page (via berreCalContent injecté par PHP) */
+  /* Contenu (via berreCalContent injecté par PHP) */
   var excerptEl = document.getElementById('bpp-excerpt');
   if (excerptEl) {
     var map = (typeof berreCalContent !== 'undefined') ? berreCalContent : {};
-    var postId = parseInt(d.id || 0);
-    var html = postId && map[postId] ? map[postId] : '';
-    if (html) {
-      excerptEl.innerHTML = html;
-      excerptEl.style.display = 'block';
-    } else {
-      excerptEl.innerHTML = '';
-      excerptEl.style.display = 'none';
-    }
+    var pid = parseInt(d.id || 0);
+    var html = pid && map[pid] ? map[pid] : '';
+    if (html) { excerptEl.innerHTML = html; excerptEl.style.display = 'block'; }
+    else       { excerptEl.innerHTML = ''; excerptEl.style.display = 'none'; }
   }
 
-  /* Google Calendar */
+  /* Google Calendar — URL déjà construite en PHP */
   var gcalBtn = document.getElementById('bpp-gcal');
-  if (gcalBtn && d.start) {
-    var gs = d.start.replace(/-/g,'');
-    var ge = d.end ? d.end.replace(/-/g,'') : gs;
-    gcalBtn.href = 'https://calendar.google.com/calendar/render?action=TEMPLATE'
-      + '&text=' + encodeURIComponent(d.title||'')
-      + '&dates=' + gs + '/' + ge
-      + (d.loc ? '&location=' + encodeURIComponent(d.loc) : '')
-      + (d.url ? '&details='  + encodeURIComponent(d.url) : '');
-    gcalBtn.style.display = 'inline-flex';
-  }
+  if (gcalBtn) gcalBtn.href = d.gcal || '#';
 
-  document.getElementById('bpp-btn').href = d.url || '#';
+  /* En savoir plus */
+  var seeBtn = document.getElementById('bpp-btn');
+  if (seeBtn) seeBtn.href = d.url || '#';
+
   popup.style.display = 'flex';
   document.body.style.overflow = 'hidden';
 }

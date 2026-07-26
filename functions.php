@@ -2380,6 +2380,14 @@ add_action( 'wp_footer', function() {
             $map[ $p->ID ] = $html;
         }
     }
+    // Filtrer les contenus identiques au titre
+    foreach ( $map as $pid => $html ) {
+        $plain = trim( wp_strip_all_tags($html) );
+        $post_obj = get_post($pid);
+        if ( $post_obj && $plain === trim($post_obj->post_title) ) {
+            unset($map[$pid]);
+        }
+    }
     if ( ! empty($map) ) {
         wp_add_inline_script( 'berre-cal',
             'var berreCalContent = ' . wp_json_encode($map) . ';',
@@ -2419,18 +2427,20 @@ function berre_cal_render_grid( $year, $mon ) {
                 if ($c) { $cat_color = $c; break; }
             }
         }
-        $raw_content = $post->post_content;
-        $post_content_clean = wp_strip_all_tags(do_shortcode(strip_shortcodes($raw_content)));
-        $excerpt = ( strlen($post_content_clean) > 10 && $post_content_clean !== $post->post_title )
-            ? wp_trim_words($post_content_clean, 35, '…')
-            : '';
+
+
         $d_cur = new DateTime($s); $d_end = new DateTime($e);
         while ($d_cur <= $d_end) {
             if ((int)$d_cur->format('Y')===$year && (int)$d_cur->format('n')===$mon) {
                 $dk = (int)$d_cur->format('j');
-                $by_day[$dk][] = ['id'=>$post->ID,'title'=>$post->post_title,'url'=>get_permalink($post->ID),
+                $gcal_url = 'https://calendar.google.com/calendar/render?action=TEMPLATE'
+                . '&text=' . rawurlencode($post->post_title)
+                . '&dates=' . date('Ymd', strtotime($s)) . '/' . date('Ymd', strtotime($e))
+                . ($loc ? '&location=' . rawurlencode($loc) : '')
+                . '&details='  . rawurlencode(get_permalink($post->ID));
+            $by_day[$dk][] = ['id'=>$post->ID,'title'=>$post->post_title,'url'=>get_permalink($post->ID),
                     'time'=>$time,'loc'=>$loc,'img'=>$img,'start'=>$s,'end'=>$e,'cats'=>$cats_s,
-                    'cat_color'=>$cat_color,'excerpt'=>$excerpt];
+                    'cat_color'=>$cat_color,'gcal_url'=>$gcal_url];
             }
             $d_cur->modify('+1 day');
         }
@@ -2456,10 +2466,11 @@ function berre_cal_render_grid( $year, $mon ) {
                 .' data-img="'.esc_attr($ev['img']).'"'
                 .' data-cats="'.esc_attr($ev['cats']).'"'
                 .' data-cat-color="'.esc_attr($ev['cat_color']).'"'
-                .' data-excerpt="'.esc_attr($ev['excerpt']).'"'
+
                 .' data-start="'.esc_attr($ev['start']).'"'
                 .' data-end="'.esc_attr($ev['end']).'"'
                 .' data-time="'.esc_attr($ev['time']).'"'
+                .' data-gcal="'.esc_attr($ev['gcal_url']).'"'
                 .' data-loc="'.esc_attr($ev['loc']).'">'.esc_html(mb_substr($ev['title'],0,20)).'</button>';
         }
         if (count($evs)>2) {
@@ -2476,6 +2487,7 @@ function berre_cal_render_grid( $year, $mon ) {
                 .' data-start="'.esc_attr($ev2['start']).'"'
                 .' data-end="'.esc_attr($ev2['end']).'"'
                 .' data-time="'.esc_attr($ev2['time']).'"'
+                .' data-gcal="'.esc_attr($ev2['gcal_url']).'"'
                 .' data-loc="'.esc_attr($ev2['loc']).'">+'.(count($evs)-2).' autre'.(count($evs)>3?'s':'').'</button>';
         }
         $html .= '</div>';
@@ -2543,11 +2555,8 @@ add_shortcode( 'berre_calendrier_agenda', function() {
                       font-size:12.5px;font-weight:600;text-decoration:none;line-height:1">
               En savoir plus
             </a>
-            <a id="bpp-gcal" href="#" target="_blank" rel="noopener"
-               style="flex:1;display:none;align-items:center;justify-content:center;gap:6px;
-                      background:#fff;color:#444;border:1.5px solid #ddd;border-radius:6px;
-                      padding:7px 10px;font-size:12px;font-weight:600;text-decoration:none;line-height:1">
-              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;display:block">
+            <a id="bpp-gcal" href="#" target="_blank" rel="noopener">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
                 <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/>
                 <line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
               </svg>
