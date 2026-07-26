@@ -2855,6 +2855,14 @@ html, body {
 
 /* ══ PAGE ÉVÉNEMENT — style Villeneuve-Loubet ══ */
 
+/* Conteneur principal centré */
+.berre-event-page {
+  max-width: 860px !important;
+  margin: 0 auto !important;
+  padding: 0 24px 48px !important;
+  box-sizing: border-box !important;
+}
+
 /* Hero image pleine largeur */
 .berre-event-hero-img img,
 .berre-event-hero-img figure img {
@@ -2863,12 +2871,14 @@ html, body {
   object-fit: cover !important;
   border-radius: 0 !important;
   display: block !important;
+  margin: 0 -24px !important;
+  width: calc(100% + 48px) !important;
 }
-.berre-event-hero-img figure { margin: 0 !important; }
+.berre-event-hero-img figure { margin: 0 !important; overflow: hidden !important; }
 
 /* En-tête événement */
 .berre-event-header {
-  padding: 24px 0 8px !important;
+  padding: 28px 0 8px !important;
   gap: 6px !important;
 }
 .berre-event-section-title {
