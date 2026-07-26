@@ -1,45 +1,42 @@
-/* Calendrier Berre-les-Alpes v5 — popup 100% JS */
+/* Calendrier Berre-les-Alpes v6 */
 var BCAL = {
   ajaxUrl : (typeof BERRE_CAL !== 'undefined') ? BERRE_CAL.ajax : '',
-  restBase: window.location.origin + '/wp-json/wp/v2/agenda/',
+  restUrl : (typeof BERRE_CAL !== 'undefined' && BERRE_CAL.rest) ? BERRE_CAL.rest : '',
   popup   : null,
 
-  /* ── Créer le popup dans le DOM (indépendant du cache PHP) ── */
   buildPopup: function() {
     if (document.getElementById('berre-popup')) return;
     var el = document.createElement('div');
     el.id = 'berre-popup';
-    el.innerHTML = [
-      '<div id="bpp-box">',
-        '<button id="bpp-close">&#215;</button>',
-        '<div id="bpp-img"></div>',
-        '<div id="bpp-body">',
-          '<p id="bpp-cats"></p>',
-          '<h3 id="bpp-title"></h3>',
-          '<div id="bpp-meta"></div>',
-          '<div id="bpp-content" style="display:none"></div>',
-          '<div id="bpp-btns">',
-            '<a id="bpp-btn" href="#">En savoir plus</a>',
-            '<a id="bpp-gcal" href="#" target="_blank" rel="noopener">',
-              '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">',
-                '<rect x="3" y="4" width="18" height="18" rx="2"/>',
-                '<line x1="16" y1="2" x2="16" y2="6"/>',
-                '<line x1="8" y1="2" x2="8" y2="6"/>',
-                '<line x1="3" y1="10" x2="21" y2="10"/>',
-              '</svg>',
-              'Ajouter à l\'agenda',
-            '</a>',
-          '</div>',
-        '</div>',
-      '</div>'
-    ].join('');
+    el.innerHTML =
+      '<div id="bpp-box">' +
+        '<button id="bpp-close">&#215;</button>' +
+        '<div id="bpp-img"></div>' +
+        '<div id="bpp-body">' +
+          '<p id="bpp-cats"></p>' +
+          '<h3 id="bpp-title"></h3>' +
+          '<div id="bpp-meta"></div>' +
+          '<div id="bpp-content"></div>' +
+          '<div id="bpp-btns">' +
+            '<a id="bpp-btn" href="#">En savoir plus</a>' +
+            '<a id="bpp-gcal" href="#" target="_blank" rel="noopener">' +
+              '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">' +
+                '<rect x="3" y="4" width="18" height="18" rx="2"/>' +
+                '<line x1="16" y1="2" x2="16" y2="6"/>' +
+                '<line x1="8" y1="2" x2="8" y2="6"/>' +
+                '<line x1="3" y1="10" x2="21" y2="10"/>' +
+              '</svg>' +
+              'Ajouter\u00a0\u00e0 l\u2019agenda' +
+            '</a>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
     document.body.appendChild(el);
     this.popup = el;
     el.addEventListener('click', function(e) { if (e.target === el) BCAL.close(); });
     document.getElementById('bpp-close').addEventListener('click', function() { BCAL.close(); });
   },
 
-  /* ── Ouvrir le popup ── */
   open: function(btn) {
     this.buildPopup();
     var d = btn.dataset;
@@ -78,47 +75,51 @@ var BCAL = {
     if (d.loc) meta += '<div style="display:flex;gap:5px"><span>\uD83D\uDCCD</span><span>' + d.loc + '</span></div>';
     document.getElementById('bpp-meta').innerHTML = meta;
 
-    /* Liens */
+    /* Contenu — reset en attendant */
+    var contentEl = document.getElementById('bpp-content');
+    contentEl.innerHTML = '';
+    contentEl.style.display = 'none';
+
+    /* Boutons */
     document.getElementById('bpp-btn').href  = d.url  || '#';
     document.getElementById('bpp-gcal').href = d.gcal || '#';
 
-    /* Contenu — masqué, chargé en async */
-    var contentEl = document.getElementById('bpp-content');
-    contentEl.style.display = 'none';
-    contentEl.innerHTML = '';
-
-    /* Afficher */
+    /* Afficher la popup */
     this.popup.style.display = 'flex';
     document.body.style.overflow = 'hidden';
 
-    /* Charger contenu via REST */
-    if (d.id) {
-      var self = this;
+    /* Charger le contenu via REST */
+    var postId = d.id || '';
+    var restUrl = this.restUrl;
+    var title   = (d.title || '').trim();
+
+    if (postId && restUrl) {
       var xhr = new XMLHttpRequest();
-      xhr.open('GET', this.restBase + d.id + '?_fields=content', true);
+      xhr.open('GET', restUrl + postId + '?_fields=content', true);
       xhr.onreadystatechange = function() {
-        if (xhr.readyState !== 4 || xhr.status !== 200) return;
-        try {
-          var r = JSON.parse(xhr.responseText);
-          var html = (r.content && r.content.rendered) ? r.content.rendered.trim() : '';
-          /* Ne pas afficher si identique au titre */
-          if (html && html.replace(/<[^>]+>/g,'').trim() !== (d.title||'').trim()) {
-            contentEl.innerHTML = html;
-            contentEl.style.display = 'block';
-          }
-        } catch(e) {}
+        if (xhr.readyState !== 4) return;
+        if (xhr.status === 200) {
+          try {
+            var r = JSON.parse(xhr.responseText);
+            var html = (r.content && r.content.rendered) ? r.content.rendered.trim() : '';
+            var plain = html.replace(/<[^>]*>/g, '').trim();
+            /* Afficher seulement si le contenu est non vide et différent du titre */
+            if (plain && plain !== title && plain.length > 3) {
+              contentEl.innerHTML = html;
+              contentEl.style.display = 'block';
+            }
+          } catch(e) {}
+        }
       };
       xhr.send();
     }
   },
 
-  /* ── Fermer ── */
   close: function() {
     if (this.popup) this.popup.style.display = 'none';
     document.body.style.overflow = '';
   },
 
-  /* ── Navigation AJAX ── */
   nav: function(month) {
     var grid  = document.getElementById('berre-cal-grid');
     var label = document.getElementById('berre-cal-label');
@@ -143,7 +144,6 @@ var BCAL = {
   }
 };
 
-/* Raccourcis globaux pour les onclick PHP */
 function berreOpenPopup(btn) { BCAL.open(btn); }
 function berreCalNav(month)  { BCAL.nav(month); }
 function berreClosePopup()   { BCAL.close(); }

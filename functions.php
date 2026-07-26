@@ -2366,9 +2366,10 @@ function berre_rest_agenda_events( WP_REST_Request $request ) {
 /* ── Enqueue du script calendrier ── */
 add_action( 'wp_footer', function() {
     if ( ! is_front_page() && ! has_shortcode( get_post()->post_content ?? '', 'berre_calendrier_agenda' ) ) return;
-    wp_enqueue_script( 'berre-cal', get_template_directory_uri() . '/assets/js/cal.js', [], '1785085692', true );
+    wp_enqueue_script( 'berre-cal', get_template_directory_uri() . '/assets/js/cal.js', [], '1785085987', true );
     wp_localize_script( 'berre-cal', 'BERRE_CAL', [
         'ajax' => admin_url('admin-ajax.php'),
+        'rest' => rest_url('wp/v2/agenda/'),
     ]);
     // Injecter le contenu HTML de chaque événement (évite REST API et data-attributes)
     $posts = get_posts(['post_type'=>'agenda','post_status'=>'publish','posts_per_page'=>300]);
