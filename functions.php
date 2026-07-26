@@ -2366,7 +2366,7 @@ function berre_rest_agenda_events( WP_REST_Request $request ) {
 /* ── Enqueue du script calendrier ── */
 add_action( 'wp_footer', function() {
     if ( ! is_front_page() && ! has_shortcode( get_post()->post_content ?? '', 'berre_calendrier_agenda' ) ) return;
-    wp_enqueue_script( 'berre-cal', get_template_directory_uri() . '/assets/js/cal.js', [], '1785088045', true );
+    wp_enqueue_script( 'berre-cal', get_template_directory_uri() . '/assets/js/cal.js', [], '1785088427', true );
     wp_localize_script( 'berre-cal', 'BERRE_CAL', [
         'ajax' => admin_url('admin-ajax.php'),
         'rest' => rest_url('wp/v2/agenda/'),
@@ -2407,31 +2407,24 @@ function berre_ev_content_ajax() {
     $post_obj = get_post($id);
     if ( ! $post_obj || $post_obj->post_type !== 'agenda' ) { wp_send_json(['html'=>'']); return; }
 
-    // Simuler un vrai contexte de boucle WordPress pour que SPB et autres filtres fonctionnent
-    global $post, $wp_query;
-    $saved_post   = $post;
-    $saved_query  = $wp_query;
-    $post         = $post_obj;
+    $html = '';
 
-    // Créer une fausse query pour $wp_query->is_singular = true
-    $fake_query = new WP_Query(['p' => $id, 'post_type' => 'agenda']);
-    if ( $fake_query->have_posts() ) {
-        $fake_query->the_post();
-        $html = apply_filters( 'the_content', get_the_content() );
-        wp_reset_postdata();
-    } else {
-        // Fallback : setup_postdata simple
-        $wp_query->post = $post_obj;
-        setup_postdata( $post_obj );
-        $html = apply_filters( 'the_content', get_the_content(null, false, $post_obj) );
-        wp_reset_postdata();
+    // 1. Essayer le SPB directement (contourne les conditions is_singular/in_the_loop)
+    $spb_stored = get_post_meta( $id, '_spb_layout', true );
+    if ( ! empty($spb_stored) && class_exists('SPB_Render') ) {
+        $layout = SPB_Render::decode_layout( $spb_stored );
+        if ( is_array($layout) ) {
+            $html = SPB_Render::render_layout( $layout );
+        }
     }
 
-    $post     = $saved_post;
-    $wp_query = $saved_query;
+    // 2. Fallback : contenu Gutenberg / classique
+    if ( empty(trim(wp_strip_all_tags($html))) ) {
+        $raw  = do_blocks( $post_obj->post_content );
+        $html = wp_kses_post( $raw );
+    }
 
-    $html = wp_kses_post( $html );
-    wp_send_json(['html' => $html]);
+    wp_send_json(['html' => trim($html)]);
 }
 
 /* ── Calendrier agenda — fonction de rendu réutilisable ── */
