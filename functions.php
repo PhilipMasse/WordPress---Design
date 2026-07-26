@@ -2369,6 +2369,7 @@ add_action( 'wp_footer', function() {
     wp_enqueue_script( 'berre-cal', get_template_directory_uri() . '/assets/js/cal.js', [], '1.0', true );
     wp_localize_script( 'berre-cal', 'BERRE_CAL', [
         'ajax' => admin_url('admin-ajax.php'),
+        'rest' => rest_url('wp/v2/agenda'),
     ]);
 } );
 
@@ -2434,6 +2435,7 @@ function berre_cal_render_grid( $year, $mon ) {
         foreach (array_slice($evs,0,2) as $ev) {
             $col_style = $ev['cat_color'] ? 'border-left:3px solid '.esc_attr($ev['cat_color']).';background:'.esc_attr(berre_hex_to_rgba($ev['cat_color'],0.1)).';' : '';
             $html .= '<button type="button" class="berre-cal__event" onclick="berreOpenPopup(this)" style="'.$col_style.'"'
+                .' data-id="'.esc_attr($ev['id']).'"'
                 .' data-title="'.esc_attr($ev['title']).'"'
                 .' data-url="'.esc_attr($ev['url']).'"'
                 .' data-img="'.esc_attr($ev['img']).'"'
@@ -2449,6 +2451,7 @@ function berre_cal_render_grid( $year, $mon ) {
             $ev2 = $evs[2];
             $col2_style = $ev2['cat_color'] ? 'color:'.esc_attr($ev2['cat_color']).';' : '';
             $html .= '<button type="button" class="berre-cal__more" onclick="berreOpenPopup(this)" style="'.$col2_style.'"'
+                .' data-id="'.esc_attr($ev2['id']).'"'
                 .' data-title="'.esc_attr($ev2['title']).'"'
                 .' data-url="'.esc_attr($ev2['url']).'"'
                 .' data-img="'.esc_attr($ev2['img']).'"'
@@ -2509,8 +2512,7 @@ add_shortcode( 'berre_calendrier_agenda', function() {
                 style="position:absolute;top:8px;right:8px;background:rgba(0,0,0,.45);color:#fff;
                        border:none;border-radius:50%;width:26px;height:26px;cursor:pointer;
                        font-size:16px;line-height:1;z-index:2">&#215;</button>
-        <!-- Image : affichée seulement si disponible, pas de placeholder gris -->
-        <div id="bpp-img"></div>
+        <div id="bpp-img" style="display:none;line-height:0"></div>
         <div style="padding:14px 16px 15px">
           <p id="bpp-cats" style="font-size:10px;font-weight:700;text-transform:uppercase;
              letter-spacing:.1em;margin:0 0 4px"></p>
@@ -2519,21 +2521,18 @@ add_shortcode( 'berre_calendrier_agenda', function() {
           <div id="bpp-meta" style="font-size:12px;color:#555;line-height:1.6;margin-bottom:10px"></div>
           <div id="bpp-excerpt" style="font-size:13px;color:#333;line-height:1.65;
                margin:0 0 13px;border-top:1px solid #eee;padding-top:10px;display:none"></div>
-          <div style="display:flex;gap:8px;align-items:stretch">
+          <div style="display:flex;gap:8px;align-items:center">
             <a id="bpp-btn" href="#"
                style="flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;
-                      background:#2D6AB0;color:#fff;border-radius:6px;padding:6px 14px;
-                      font-size:12.5px;font-weight:600;text-decoration:none;white-space:nowrap;
-                      min-height:34px">
+                      background:#2D6AB0;color:#fff;border-radius:6px;padding:7px 14px;
+                      font-size:12.5px;font-weight:600;text-decoration:none;line-height:1">
               En savoir plus
             </a>
             <a id="bpp-gcal" href="#" target="_blank" rel="noopener"
                style="flex:1;display:none;align-items:center;justify-content:center;gap:6px;
                       background:#fff;color:#444;border:1.5px solid #ddd;border-radius:6px;
-                      padding:6px 10px;font-size:12px;font-weight:600;text-decoration:none;
-                      min-height:34px">
-              <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"
-                   style="flex-shrink:0">
+                      padding:7px 10px;font-size:12px;font-weight:600;text-decoration:none;line-height:1">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;display:block">
                 <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/>
                 <line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
               </svg>
