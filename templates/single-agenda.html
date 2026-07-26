@@ -1,11 +1,7 @@
 <!-- wp:template-part {"slug":"header"} /-->
 
-<!-- wp:group {"className":"berre-event-page","layout":{"type":"default"}} -->
+<!-- wp:group {"className":"berre-event-page","layout":{"type":"constrained","contentSize":"860px"}} -->
 <div class="wp-block-group berre-event-page">
-
-<!-- CONTENEUR CARTE BLANCHE -->
-<!-- wp:group {"className":"berre-article-container","layout":{"type":"constrained","contentSize":"800px"}} -->
-<div class="wp-block-group berre-article-container">
 
 <!-- Fil d'Ariane -->
 <!-- wp:html -->
@@ -16,32 +12,44 @@
 </nav>
 <!-- /wp:html -->
 
-<!-- Catégorie badge -->
+<!-- Image mise en avant — pleine largeur -->
+<!-- wp:post-featured-image {"isLink":false,"className":"berre-event-hero-img","aspectRatio":"16/5"} /-->
+
+<!-- Métadonnées + titre -->
+<!-- wp:group {"className":"berre-event-header","layout":{"type":"flex","orientation":"vertical","flexWrap":"nowrap"}} -->
+<div class="wp-block-group berre-event-header">
+
+<!-- Catégorie -->
 <!-- wp:post-terms {"term":"categorie_agenda","className":"berre-article-cats"} /-->
 
-<!-- Date -->
+<!-- Date | Lieu (ligne) -->
 <!-- wp:post-date {"className":"berre-article-date","format":"l j F Y"} /-->
 
 <!-- Titre -->
 <!-- wp:post-title {"level":1,"className":"berre-article-title"} /-->
+
+</div>
+<!-- /wp:group -->
 
 <!-- Séparateur -->
 <!-- wp:separator {"className":"berre-sep-thin"} -->
 <hr class="wp-block-separator berre-sep-thin"/>
 <!-- /wp:separator -->
 
-<!-- Image mise en avant -->
-<!-- wp:post-featured-image {"isLink":false,"className":"berre-article-featured-img"} /-->
-
-<!-- Infos pratiques -->
+<!-- Bloc infos pratiques (date/lieu + bouton agenda) -->
 <!-- wp:html -->
 <div class="berre-event-infobox">
   <div class="berre-event-infobox__icon">
-    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
+      <rect x="3" y="4" width="18" height="18" rx="2"/>
+      <line x1="16" y1="2" x2="16" y2="6"/>
+      <line x1="8" y1="2" x2="8" y2="6"/>
+      <line x1="3" y1="10" x2="21" y2="10"/>
+    </svg>
   </div>
   <div class="berre-event-infobox__body">
-    <strong>Date &amp; lieu</strong>
-    <span>Consultez le contenu de l'événement ci-dessous</span>
+    <strong class="berre-event-infobox__label">Date &amp; lieu</strong>
+    <span class="berre-event-infobox__hint">Consultez le contenu de l'événement ci-dessous</span>
   </div>
   <a href="#" class="berre-event-infobox__cta"
      onclick="window.open('https://calendar.google.com/calendar/render?action=TEMPLATE&text='+encodeURIComponent(document.title)+'&details='+encodeURIComponent(location.href),'_blank');return false">
@@ -50,18 +58,25 @@
 </div>
 <!-- /wp:html -->
 
-<!-- Contenu -->
-<!-- wp:post-content {"className":"berre-article-content","layout":{"type":"constrained","contentSize":"780px"}} /-->
+<!-- Titre de section contenu -->
+<!-- wp:heading {"level":2,"className":"berre-event-section-title"} -->
+<h2 class="wp-block-heading berre-event-section-title">À propos de l'événement</h2>
+<!-- /wp:heading -->
 
-<!-- Tags -->
-<!-- wp:post-terms {"term":"categorie_agenda","className":"berre-article-tags"} /-->
+<!-- Contenu -->
+<!-- wp:post-content {"className":"berre-article-content","layout":{"type":"constrained","contentSize":"820px"}} /-->
 
 <!-- Séparateur -->
 <!-- wp:separator {"className":"berre-sep-thin"} -->
 <hr class="wp-block-separator berre-sep-thin"/>
 <!-- /wp:separator -->
 
-<!-- Partage -->
+<!-- Catégories + partage -->
+<!-- wp:group {"className":"berre-article-footer-row","layout":{"type":"flex","justifyContent":"space-between","verticalAlignment":"center","flexWrap":"wrap"}} -->
+<div class="wp-block-group berre-article-footer-row">
+
+<!-- wp:post-terms {"term":"categorie_agenda","className":"berre-article-tags"} /-->
+
 <!-- wp:html -->
 <div class="berre-article-share">
   <span class="berre-article-share__label">Partager :</span>
@@ -79,6 +94,8 @@
   </a>
 </div>
 <!-- /wp:html -->
+</div>
+<!-- /wp:group -->
 
 <!-- Retour -->
 <!-- wp:html -->
@@ -94,18 +111,14 @@
 <!-- /wp:group -->
 
 <!-- PROCHAINS ÉVÉNEMENTS -->
-<!-- wp:group {"className":"berre-recents-section","layout":{"type":"constrained","contentSize":"800px"}} -->
+<!-- wp:group {"className":"berre-recents-section","style":{"spacing":{"padding":{"top":"40px","bottom":"48px"}}},"layout":{"type":"constrained","contentSize":"860px"}} -->
 <div class="wp-block-group berre-recents-section">
-
 <!-- wp:group {"className":"berre-recents-head","layout":{"type":"flex","justifyContent":"space-between","verticalAlignment":"center"}} -->
 <div class="wp-block-group berre-recents-head">
-<!-- wp:heading {"level":2,"className":"berre-recents-title"} -->
-<h2 class="wp-block-heading berre-recents-title">Prochains événements</h2>
-<!-- /wp:heading -->
+<!-- wp:heading {"level":2,"className":"berre-recents-title"} --><h2 class="wp-block-heading berre-recents-title">Prochains événements</h2><!-- /wp:heading -->
 <!-- wp:paragraph --><p><a href="/agenda" class="berre-recents-voir-tout">Voir l'agenda complet</a></p><!-- /wp:paragraph -->
 </div>
 <!-- /wp:group -->
-
 <!-- wp:query {"queryId":40,"query":{"perPage":3,"postType":"agenda","order":"asc","orderBy":"date","exclude":[],"inherit":false}} -->
 <div class="wp-block-query">
 <!-- wp:post-template {"className":"berre-recents-grid"} -->
@@ -122,15 +135,9 @@
 </div>
 <!-- /wp:group -->
 <!-- /wp:post-template -->
-<!-- wp:query-no-results -->
-<!-- wp:paragraph --><p></p><!-- /wp:paragraph -->
-<!-- /wp:query-no-results -->
+<!-- wp:query-no-results --><!-- wp:paragraph --><p></p><!-- /wp:paragraph --><!-- /wp:query-no-results -->
 </div>
 <!-- /wp:query -->
-
-</div>
-<!-- /wp:group -->
-
 </div>
 <!-- /wp:group -->
 

@@ -2852,3 +2852,105 @@ html, body {
     border-radius: 0 !important;
   }
 }
+
+/* ══ PAGE ÉVÉNEMENT — style Villeneuve-Loubet ══ */
+
+/* Hero image pleine largeur */
+.berre-event-hero-img img,
+.berre-event-hero-img figure img {
+  width: 100% !important;
+  height: 320px !important;
+  object-fit: cover !important;
+  border-radius: 0 !important;
+  display: block !important;
+}
+.berre-event-hero-img figure { margin: 0 !important; }
+
+/* En-tête événement */
+.berre-event-header {
+  padding: 24px 0 8px !important;
+  gap: 6px !important;
+}
+.berre-event-section-title {
+  font-size: 1rem !important;
+  font-weight: 700 !important;
+  color: #2D6AB0 !important;
+  text-transform: uppercase !important;
+  letter-spacing: .08em !important;
+  margin: 24px 0 12px !important;
+  border-top: none !important;
+}
+
+/* Infobox événement — style carte bleue pâle */
+.berre-event-infobox {
+  display: flex !important;
+  align-items: center !important;
+  gap: 16px !important;
+  background: #EEF4FC !important;
+  border: 1px solid #C5D9EF !important;
+  border-radius: 10px !important;
+  padding: 14px 20px !important;
+  margin: 20px 0 24px !important;
+  flex-wrap: wrap !important;
+}
+.berre-event-infobox__icon {
+  width: 44px !important;
+  height: 44px !important;
+  background: #2D6AB0 !important;
+  border-radius: 50% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  color: #fff !important;
+  flex-shrink: 0 !important;
+}
+.berre-event-infobox__body {
+  flex: 1 !important;
+  min-width: 140px !important;
+}
+.berre-event-infobox__label {
+  display: block !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  color: #2D6AB0 !important;
+  margin-bottom: 2px !important;
+}
+.berre-event-infobox__hint {
+  font-size: 12px !important;
+  color: #666 !important;
+}
+.berre-event-infobox__cta {
+  display: inline-flex !important;
+  align-items: center !important;
+  background: #fff !important;
+  border: 1.5px solid #2D6AB0 !important;
+  color: #2D6AB0 !important;
+  border-radius: 20px !important;
+  padding: 7px 16px !important;
+  font-size: 12.5px !important;
+  font-weight: 600 !important;
+  text-decoration: none !important;
+  white-space: nowrap !important;
+  transition: all .15s !important;
+}
+.berre-event-infobox__cta:hover {
+  background: #2D6AB0 !important;
+  color: #fff !important;
+}
+
+/* Responsive infobox */
+@media (max-width: 600px) {
+  .berre-event-infobox { flex-direction: column !important; align-items: flex-start !important; }
+  .berre-event-infobox__cta { width: 100% !important; justify-content: center !important; }
+  .berre-event-hero-img img,
+  .berre-event-hero-img figure img { height: 200px !important; }
+}
+
+/* ── Ligne footer article : tags + partage ── */
+.berre-article-footer-row {
+  margin: 16px 0 !important;
+  gap: 12px !important;
+}
+@media (max-width: 600px) {
+  .berre-article-footer-row { flex-direction: column !important; align-items: flex-start !important; }
+}
