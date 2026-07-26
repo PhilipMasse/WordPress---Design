@@ -2666,3 +2666,60 @@ ul.berre-home-actu-grid,
     justify-content: center !important;
   }
 }
+
+/* ── FOOTER RESPONSIVE ── */
+@media (max-width: 768px) {
+
+  /* Structure : empiler gauche/droite en colonne */
+  .berre-footer__top {
+    flex-direction: column !important;
+    gap: 32px !important;
+  }
+
+  /* Colonne contact : pleine largeur */
+  .berre-footer__brand {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  /* Ligne tél + réseaux + bouton : wrap */
+  .berre-footer-contact__row {
+    flex-wrap: wrap !important;
+    gap: 10px !important;
+  }
+  .berre-footer-contact__row-spacer { display: none !important; }
+  .berre-footer-social--inline { margin-left: auto !important; }
+
+  /* Colonnes nav : grille 2×2 sur mobile */
+  .berre-footer-nav-cols {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 24px 16px !important;
+    width: 100% !important;
+  }
+
+  /* Bas de footer */
+  .berre-footer__bottom {
+    flex-direction: column !important;
+    gap: 8px !important;
+    align-items: flex-start !important;
+  }
+  .berre-footer__bottom ul {
+    flex-wrap: wrap !important;
+    gap: 8px 14px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  /* Sur très petit écran : 1 seule colonne */
+  .berre-footer-nav-cols {
+    grid-template-columns: 1fr !important;
+    gap: 20px !important;
+  }
+  .berre-footer-contact__row {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+  }
+  .berre-footer-social--inline { margin-left: 0 !important; }
+  .berre-footer-contact__btn { width: 100% !important; text-align: center !important; justify-content: center !important; }
+}
