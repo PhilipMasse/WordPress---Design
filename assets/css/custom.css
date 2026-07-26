@@ -910,16 +910,19 @@ footer .wp-block-navigation__submenu-container .wp-block-navigation-item__conten
 }
 .berre-article-cats .wp-block-post-terms,
 .berre-article-cats a {
-  display: inline-block !important;
-  font-size: 10.5px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  font-size: 10px !important;
   font-weight: 700 !important;
   text-transform: uppercase !important;
-  letter-spacing: .12em !important;
+  letter-spacing: .13em !important;
   color: var(--b) !important;
   background: var(--blt) !important;
-  padding: 3px 10px !important;
-  border-radius: 12px !important;
+  padding: 4px 12px !important;
+  border-radius: 20px !important;
   text-decoration: none !important;
+  line-height: 1 !important;
+  margin-bottom: 6px !important;
 }
 .berre-article-cats a:hover { background: var(--b) !important; color: #fff !important; }
 
