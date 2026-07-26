@@ -82,43 +82,25 @@ var BCAL = {
     var evTitle = (d.title || '').trim();
     var postId  = d.id || '';
 
-    function showContent(html, source) {
-      /* Afficher TOUT contenu non vide, sans filtre titre */
+    function showContent(html) {
       var plain = html ? html.replace(/<[^>]*>/g,'').trim() : '';
-      if (plain && plain.length > 1) {
+      var title = (d.title || '').trim();
+      /* Afficher si contenu non vide ET différent du titre */
+      if (plain && plain !== title && plain.length > 2) {
         contentEl.innerHTML = html;
-        contentEl.style.display = 'block';
-      } else {
-        /* Debug visible si rien à afficher */
-        contentEl.innerHTML = '<p style="color:#999;font-size:11px;font-style:italic">Contenu vide (source:'+source+' id:'+postId+' b64:'+b64.length+')</p>';
         contentEl.style.display = 'block';
       }
     }
 
-    /* Essai 1 : base64 depuis data-content */
-    var b64 = d.content || '';
-    if (b64) {
-      try {
-        var raw = atob(b64);
-        var decoded = decodeURIComponent(
-          Array.prototype.map.call(raw, function(c){
-            return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-          }).join('')
-        );
-        showContent(decoded, "b64");
-      } catch(e) { b64 = ''; }  /* Si décode échoue → essai AJAX */
-    }
-
-    /* Essai 2 : AJAX via admin-ajax.php (toujours fiable) */
-    if (!b64 && postId && this.ajaxUrl) {
+    /* AJAX uniquement — base64 post_content ne capture pas le contenu SPB */
+    if (postId && this.ajaxUrl) {
       var xhr = new XMLHttpRequest();
-      var url = this.ajaxUrl + '?action=berre_ev_content&id=' + postId;
-      xhr.open('GET', url, true);
+      xhr.open('GET', this.ajaxUrl + '?action=berre_ev_content&id=' + postId, true);
       xhr.onreadystatechange = function() {
         if (xhr.readyState !== 4 || xhr.status !== 200) return;
         try {
           var r = JSON.parse(xhr.responseText);
-          showContent(r.html || '', "ajax");
+          showContent(r.html || '');
         } catch(e) {}
       };
       xhr.send();

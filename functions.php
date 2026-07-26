@@ -2366,7 +2366,7 @@ function berre_rest_agenda_events( WP_REST_Request $request ) {
 /* ── Enqueue du script calendrier ── */
 add_action( 'wp_footer', function() {
     if ( ! is_front_page() && ! has_shortcode( get_post()->post_content ?? '', 'berre_calendrier_agenda' ) ) return;
-    wp_enqueue_script( 'berre-cal', get_template_directory_uri() . '/assets/js/cal.js', [], '1785087736', true );
+    wp_enqueue_script( 'berre-cal', get_template_directory_uri() . '/assets/js/cal.js', [], '1785088045', true );
     wp_localize_script( 'berre-cal', 'BERRE_CAL', [
         'ajax' => admin_url('admin-ajax.php'),
         'rest' => rest_url('wp/v2/agenda/'),
@@ -2403,23 +2403,35 @@ add_action( 'wp_ajax_berre_ev_content',        'berre_ev_content_ajax' );
 add_action( 'wp_ajax_nopriv_berre_ev_content', 'berre_ev_content_ajax' );
 function berre_ev_content_ajax() {
     $id = intval( $_GET['id'] ?? 0 );
-    if ( ! $id ) { wp_send_json(['html'=>'','debug'=>'no id']); return; }
-    $post = get_post($id);
-    if ( ! $post || $post->post_type !== 'agenda' ) { wp_send_json(['html'=>'','debug'=>'post not found']); return; }
+    if ( ! $id ) { wp_send_json(['html'=>'']); return; }
+    $post_obj = get_post($id);
+    if ( ! $post_obj || $post_obj->post_type !== 'agenda' ) { wp_send_json(['html'=>'']); return; }
 
-    // Setup du contexte pour que the_content() fonctionne (shortcodes, blocs, SPB...)
-    global $wp_query;
-    $orig = $wp_query->post;
-    $wp_query->post = $post;
-    setup_postdata($post);
+    // Simuler un vrai contexte de boucle WordPress pour que SPB et autres filtres fonctionnent
+    global $post, $wp_query;
+    $saved_post   = $post;
+    $saved_query  = $wp_query;
+    $post         = $post_obj;
 
-    $html = apply_filters( 'the_content', get_the_content(null, false, $post) );
+    // Créer une fausse query pour $wp_query->is_singular = true
+    $fake_query = new WP_Query(['p' => $id, 'post_type' => 'agenda']);
+    if ( $fake_query->have_posts() ) {
+        $fake_query->the_post();
+        $html = apply_filters( 'the_content', get_the_content() );
+        wp_reset_postdata();
+    } else {
+        // Fallback : setup_postdata simple
+        $wp_query->post = $post_obj;
+        setup_postdata( $post_obj );
+        $html = apply_filters( 'the_content', get_the_content(null, false, $post_obj) );
+        wp_reset_postdata();
+    }
 
-    wp_reset_postdata();
-    if ( $orig ) $wp_query->post = $orig;
+    $post     = $saved_post;
+    $wp_query = $saved_query;
 
-    $plain = trim( wp_strip_all_tags($html) );
-    wp_send_json(['html'=>$html,'plain'=>$plain,'debug'=>'ok','title'=>$post->post_title]);
+    $html = wp_kses_post( $html );
+    wp_send_json(['html' => $html]);
 }
 
 /* ── Calendrier agenda — fonction de rendu réutilisable ── */
