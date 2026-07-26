@@ -82,10 +82,15 @@ var BCAL = {
     var evTitle = (d.title || '').trim();
     var postId  = d.id || '';
 
-    function showContent(html) {
+    function showContent(html, source) {
+      /* Afficher TOUT contenu non vide, sans filtre titre */
       var plain = html ? html.replace(/<[^>]*>/g,'').trim() : '';
-      if (plain && plain !== evTitle && plain.length > 2) {
+      if (plain && plain.length > 1) {
         contentEl.innerHTML = html;
+        contentEl.style.display = 'block';
+      } else {
+        /* Debug visible si rien à afficher */
+        contentEl.innerHTML = '<p style="color:#999;font-size:11px;font-style:italic">Contenu vide (source:'+source+' id:'+postId+' b64:'+b64.length+')</p>';
         contentEl.style.display = 'block';
       }
     }
@@ -100,7 +105,7 @@ var BCAL = {
             return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
           }).join('')
         );
-        showContent(decoded);
+        showContent(decoded, "b64");
       } catch(e) { b64 = ''; }  /* Si décode échoue → essai AJAX */
     }
 
@@ -113,7 +118,7 @@ var BCAL = {
         if (xhr.readyState !== 4 || xhr.status !== 200) return;
         try {
           var r = JSON.parse(xhr.responseText);
-          showContent(r.html || '');
+          showContent(r.html || '', "ajax");
         } catch(e) {}
       };
       xhr.send();

@@ -2366,7 +2366,7 @@ function berre_rest_agenda_events( WP_REST_Request $request ) {
 /* ── Enqueue du script calendrier ── */
 add_action( 'wp_footer', function() {
     if ( ! is_front_page() && ! has_shortcode( get_post()->post_content ?? '', 'berre_calendrier_agenda' ) ) return;
-    wp_enqueue_script( 'berre-cal', get_template_directory_uri() . '/assets/js/cal.js', [], '1785087207', true );
+    wp_enqueue_script( 'berre-cal', get_template_directory_uri() . '/assets/js/cal.js', [], '1785087736', true );
     wp_localize_script( 'berre-cal', 'BERRE_CAL', [
         'ajax' => admin_url('admin-ajax.php'),
         'rest' => rest_url('wp/v2/agenda/'),
@@ -2464,8 +2464,8 @@ function berre_cal_render_grid( $year, $mon ) {
                 . '&dates=' . date('Ymd', strtotime($s)) . '/' . date('Ymd', strtotime($e))
                 . ($loc ? '&location=' . rawurlencode($loc) : '')
                 . '&details='  . rawurlencode(get_permalink($post->ID));
-            // Contenu encodé en base64 pour éviter tout problème d'attribut HTML
-            $post_content_html = wp_kses_post( apply_filters('the_content', $post->post_content) );
+            // Contenu encodé en base64 — do_blocks() convertit les blocs Gutenberg en HTML propre
+            $post_content_html = wp_kses_post( do_blocks( $post->post_content ) );
             $content_b64 = base64_encode( $post_content_html );
             $by_day[$dk][] = ['id'=>$post->ID,'title'=>$post->post_title,'url'=>get_permalink($post->ID),
                     'time'=>$time,'loc'=>$loc,'img'=>$img,'start'=>$s,'end'=>$e,'cats'=>$cats_s,
