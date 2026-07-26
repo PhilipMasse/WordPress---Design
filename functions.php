@@ -2366,7 +2366,7 @@ function berre_rest_agenda_events( WP_REST_Request $request ) {
 /* ── Enqueue du script calendrier ── */
 add_action( 'wp_footer', function() {
     if ( ! is_front_page() && ! has_shortcode( get_post()->post_content ?? '', 'berre_calendrier_agenda' ) ) return;
-    wp_enqueue_script( 'berre-cal', get_template_directory_uri() . '/assets/js/cal.js', [], '2.0', true );
+    wp_enqueue_script( 'berre-cal', get_template_directory_uri() . '/assets/js/cal.js', [], '1785085692', true );
     wp_localize_script( 'berre-cal', 'BERRE_CAL', [
         'ajax' => admin_url('admin-ajax.php'),
     ]);
@@ -2528,44 +2528,7 @@ add_shortcode( 'berre_calendrier_agenda', function() {
     $today = date('Y-m');
     // AJAX URL transmis via wp_localize_script('berre-cal')
     ob_start(); ?>
-    <!-- Popup calendrier -->
-    <div id="berre-popup" onclick="if(event.target===this)berreClosePopup()"
-         style="display:none;position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.55);
-                align-items:center;justify-content:center;padding:16px;box-sizing:border-box">
-      <div style="background:#fff;border-radius:10px;overflow:hidden;width:320px;
-                  max-width:calc(100vw - 32px);max-height:88vh;overflow-y:auto;
-                  box-shadow:0 8px 32px rgba(0,0,0,.25);position:relative">
-        <button onclick="berreClosePopup()"
-                style="position:absolute;top:8px;right:8px;background:rgba(0,0,0,.45);color:#fff;
-                       border:none;border-radius:50%;width:26px;height:26px;cursor:pointer;
-                       font-size:16px;line-height:1;z-index:2">&#215;</button>
-        <div id="bpp-img" style="display:none;line-height:0"></div>
-        <div style="padding:14px 16px 15px">
-          <p id="bpp-cats" style="font-size:10px;font-weight:700;text-transform:uppercase;
-             letter-spacing:.1em;margin:0 0 4px"></p>
-          <h3 id="bpp-title" style="font-size:15px;font-weight:700;margin:0 0 8px;
-              color:#111;line-height:1.35"></h3>
-          <div id="bpp-meta" style="font-size:12px;color:#555;line-height:1.6;margin-bottom:10px"></div>
-          <div id="bpp-excerpt" style="font-size:13px;color:#333;line-height:1.65;
-               margin:0 0 13px;border-top:1px solid #eee;padding-top:10px;display:none"></div>
-          <div style="display:flex;gap:8px;align-items:center">
-            <a id="bpp-btn" href="#"
-               style="flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;
-                      background:#2D6AB0;color:#fff;border-radius:6px;padding:7px 14px;
-                      font-size:12.5px;font-weight:600;text-decoration:none;line-height:1">
-              En savoir plus
-            </a>
-            <a id="bpp-gcal" href="#" target="_blank" rel="noopener">
-              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
-                <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/>
-                <line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
-              </svg>
-              Ajouter à l'agenda
-            </a>
-          </div>
-        </div>
-      </div>
-    </div>
+    <?php /* Popup créé dynamiquement par cal.js */ ?>
 
     <div class="berre-cal" id="berre-cal">
       <div class="berre-cal__header">
