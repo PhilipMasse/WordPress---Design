@@ -3566,8 +3566,12 @@ add_filter( 'render_block', function( $html, $block ) {
         $rgb   = sscanf( $color, '#%02x%02x%02x' );
         $light = sprintf( 'rgba(%d,%d,%d,0.13)', $rgb[0], $rgb[1], $rgb[2] );
         $slug  = preg_quote( $term->slug, '/' );
+        // berre-article-cats = pill sans border, berre-article-tags = avec border
+        $is_tags_badge = strpos($class, 'berre-article-tags') !== false;
         $style = $is_article_badge
-            ? 'color:' . $color . ';background:' . $light . ';border-color:' . $color
+            ? ( $is_tags_badge
+                ? 'color:' . $color . ';background:' . $light . ';border-color:' . $color
+                : 'color:' . $color . ';background:' . $light )
             : 'color:' . $color;
         // Ajouter le style sur le lien contenant le slug
         $html = preg_replace(

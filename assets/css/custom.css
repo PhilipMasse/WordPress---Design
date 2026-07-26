@@ -920,6 +920,7 @@ footer .wp-block-navigation__submenu-container .wp-block-navigation-item__conten
   background: var(--blt) !important;
   padding: 4px 12px !important;
   border-radius: 20px !important;
+  border: none !important;
   text-decoration: none !important;
   line-height: 1 !important;
   margin-bottom: 6px !important;
