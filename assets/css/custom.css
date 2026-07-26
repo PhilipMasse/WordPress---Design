@@ -2964,3 +2964,74 @@ html, body {
 @media (max-width: 600px) {
   .berre-article-footer-row { flex-direction: column !important; align-items: flex-start !important; }
 }
+
+/* ══ MISE EN PAGE CENTRÉE — tous types de pages ══ */
+
+/* Conteneur article actualité */
+.berre-article-page,
+.berre-article-container,
+.berre-page-container {
+  max-width: 860px !important;
+  margin: 0 auto !important;
+  padding: 0 24px 48px !important;
+  box-sizing: border-box !important;
+}
+
+/* Image mise en avant — pleine largeur dans le conteneur */
+.berre-article-featured-img img,
+.berre-article-featured-img figure img {
+  width: 100% !important;
+  max-height: 400px !important;
+  object-fit: cover !important;
+  border-radius: 8px !important;
+  display: block !important;
+  margin-bottom: 24px !important;
+}
+
+/* Archives — conteneur centré */
+.berre-archive-page,
+.berre-archive-container {
+  max-width: 1100px !important;
+  margin: 0 auto !important;
+  padding: 0 24px 48px !important;
+  box-sizing: border-box !important;
+}
+
+/* Recents section centrée */
+.berre-recents-section {
+  max-width: 1100px !important;
+  margin: 0 auto !important;
+  padding: 40px 24px 48px !important;
+  box-sizing: border-box !important;
+}
+
+/* Page standard */
+.berre-page-content {
+  max-width: 860px !important;
+  margin: 0 auto !important;
+}
+
+/* Assurer que les groupes WordPress ne débordent pas */
+.berre-article-page > .wp-block-group,
+.berre-event-page > .wp-block-group {
+  max-width: 100% !important;
+}
+
+/* Breadcrumb */
+.berre-breadcrumb {
+  padding-top: 20px !important;
+  padding-bottom: 4px !important;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .berre-article-page,
+  .berre-article-container,
+  .berre-page-container,
+  .berre-event-page,
+  .berre-archive-page,
+  .berre-recents-section {
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+  }
+}
