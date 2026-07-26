@@ -2607,3 +2607,62 @@ ul.berre-home-actu-grid,
   line-height: 1;
 }
 #bpp-gcal svg { flex-shrink: 0; display: block; }
+
+/* ── CALENDRIER — responsive amélioré ── */
+
+/* Tablette (560–900px) */
+@media (max-width: 900px) and (min-width: 561px) {
+  .berre-cal__day { min-height: 64px !important; padding: 4px 3px !important; }
+  .berre-cal__event { font-size: 9.5px !important; padding: 2px 4px !important; }
+  .berre-cal__day-num { font-size: 11px !important; }
+}
+
+/* Mobile (≤560px) — vue compacte lisible */
+@media (max-width: 560px) {
+  /* Grille : cellules sans hauteur fixe */
+  .berre-cal__grid {
+    grid-template-rows: auto !important;
+  }
+  .berre-cal__day {
+    min-height: 44px !important;
+    padding: 2px 1px !important;
+  }
+  /* Masquer les titres d'événements sur très petit écran */
+  .berre-cal__event {
+    font-size: 0 !important;
+    width: 8px !important;
+    height: 8px !important;
+    min-width: 8px !important;
+    padding: 0 !important;
+    border-radius: 50% !important;
+    display: inline-block !important;
+    margin: 1px !important;
+    border-left: none !important;
+  }
+  .berre-cal__more {
+    font-size: 7px !important;
+    padding: 0 !important;
+  }
+}
+
+/* Popup — plein écran sur mobile */
+@media (max-width: 600px) {
+  #bpp-box {
+    width: 100% !important;
+    max-width: 100% !important;
+    border-radius: 12px 12px 0 0 !important;
+    max-height: 80vh !important;
+  }
+  #berre-popup {
+    align-items: flex-end !important;
+    padding: 0 !important;
+  }
+  #bpp-btns {
+    flex-direction: column !important;
+  }
+  #bpp-btn, #bpp-gcal {
+    width: 100% !important;
+    flex: none !important;
+    justify-content: center !important;
+  }
+}
