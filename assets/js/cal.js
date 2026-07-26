@@ -75,26 +75,48 @@ var BCAL = {
     if (d.loc) meta += '<div style="display:flex;gap:5px"><span>\uD83D\uDCCD</span><span>' + d.loc + '</span></div>';
     document.getElementById('bpp-meta').innerHTML = meta;
 
-    /* Contenu depuis data-content (base64 encodé en PHP) */
+    /* Contenu — d'abord base64, sinon AJAX */
     var contentEl = document.getElementById('bpp-content');
     contentEl.innerHTML = '';
     contentEl.style.display = 'none';
-    if (d.content) {
+    var evTitle = (d.title || '').trim();
+    var postId  = d.id || '';
+
+    function showContent(html) {
+      var plain = html ? html.replace(/<[^>]*>/g,'').trim() : '';
+      if (plain && plain !== evTitle && plain.length > 2) {
+        contentEl.innerHTML = html;
+        contentEl.style.display = 'block';
+      }
+    }
+
+    /* Essai 1 : base64 depuis data-content */
+    var b64 = d.content || '';
+    if (b64) {
       try {
-        /* Décoder base64 UTF-8 */
-        var b64 = d.content;
-        var html = decodeURIComponent(
-          Array.prototype.map.call(atob(b64), function(c) {
+        var raw = atob(b64);
+        var decoded = decodeURIComponent(
+          Array.prototype.map.call(raw, function(c){
             return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
           }).join('')
         );
-        var plain = html.replace(/<[^>]*>/g, '').trim();
-        var title = (d.title || '').trim();
-        if (plain && plain !== title && plain.length > 2) {
-          contentEl.innerHTML = html;
-          contentEl.style.display = 'block';
-        }
-      } catch(e) {}
+        showContent(decoded);
+      } catch(e) { b64 = ''; }  /* Si décode échoue → essai AJAX */
+    }
+
+    /* Essai 2 : AJAX via admin-ajax.php (toujours fiable) */
+    if (!b64 && postId && this.ajaxUrl) {
+      var xhr = new XMLHttpRequest();
+      var url = this.ajaxUrl + '?action=berre_ev_content&id=' + postId;
+      xhr.open('GET', url, true);
+      xhr.onreadystatechange = function() {
+        if (xhr.readyState !== 4 || xhr.status !== 200) return;
+        try {
+          var r = JSON.parse(xhr.responseText);
+          showContent(r.html || '');
+        } catch(e) {}
+      };
+      xhr.send();
     }
 
     /* Boutons */

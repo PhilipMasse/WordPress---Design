@@ -2366,7 +2366,7 @@ function berre_rest_agenda_events( WP_REST_Request $request ) {
 /* ── Enqueue du script calendrier ── */
 add_action( 'wp_footer', function() {
     if ( ! is_front_page() && ! has_shortcode( get_post()->post_content ?? '', 'berre_calendrier_agenda' ) ) return;
-    wp_enqueue_script( 'berre-cal', get_template_directory_uri() . '/assets/js/cal.js', [], '1785086627', true );
+    wp_enqueue_script( 'berre-cal', get_template_directory_uri() . '/assets/js/cal.js', [], '1785087207', true );
     wp_localize_script( 'berre-cal', 'BERRE_CAL', [
         'ajax' => admin_url('admin-ajax.php'),
         'rest' => rest_url('wp/v2/agenda/'),
@@ -2396,6 +2396,31 @@ add_action( 'wp_footer', function() {
         );
     }
 } );
+
+
+/* ── AJAX : contenu d'un événement agenda pour la popup ── */
+add_action( 'wp_ajax_berre_ev_content',        'berre_ev_content_ajax' );
+add_action( 'wp_ajax_nopriv_berre_ev_content', 'berre_ev_content_ajax' );
+function berre_ev_content_ajax() {
+    $id = intval( $_GET['id'] ?? 0 );
+    if ( ! $id ) { wp_send_json(['html'=>'','debug'=>'no id']); return; }
+    $post = get_post($id);
+    if ( ! $post || $post->post_type !== 'agenda' ) { wp_send_json(['html'=>'','debug'=>'post not found']); return; }
+
+    // Setup du contexte pour que the_content() fonctionne (shortcodes, blocs, SPB...)
+    global $wp_query;
+    $orig = $wp_query->post;
+    $wp_query->post = $post;
+    setup_postdata($post);
+
+    $html = apply_filters( 'the_content', get_the_content(null, false, $post) );
+
+    wp_reset_postdata();
+    if ( $orig ) $wp_query->post = $orig;
+
+    $plain = trim( wp_strip_all_tags($html) );
+    wp_send_json(['html'=>$html,'plain'=>$plain,'debug'=>'ok','title'=>$post->post_title]);
+}
 
 /* ── Calendrier agenda — fonction de rendu réutilisable ── */
 
