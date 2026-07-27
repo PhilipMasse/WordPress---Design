@@ -914,24 +914,25 @@ footer .wp-block-navigation__submenu-container .wp-block-navigation-item__conten
 .berre-article-tags a {
   display: inline-flex !important;
   align-items: center !important;
-  font-size: 10px !important;
-  font-weight: 700 !important;
+  font-size: 10.5px !important;
+  font-weight: 600 !important;
   text-transform: uppercase !important;
-  letter-spacing: .13em !important;
-  color: #2D6AB0 !important;
-  background: rgba(45,106,176,0.10) !important;
-  padding: 5px 13px !important;
-  border-radius: 20px !important;
+  letter-spacing: .12em !important;
+  color: #4A7CB5 !important;
+  background: rgba(45,106,176,0.08) !important;
+  padding: 5px 14px !important;
+  border-radius: 30px !important;
   border: none !important;
+  outline: none !important;
   text-decoration: none !important;
-  line-height: 1 !important;
+  line-height: 1.2 !important;
   margin-bottom: 6px !important;
   margin-right: 4px !important;
 }
 .berre-article-cats a:hover,
 .berre-article-tags a:hover {
-  background: #2D6AB0 !important;
-  color: #fff !important;
+  background: rgba(45,106,176,0.16) !important;
+  color: #2D6AB0 !important;
 }
 
 /* Date */

@@ -3566,10 +3566,11 @@ add_filter( 'render_block', function( $html, $block ) {
         $rgb   = sscanf( $color, '#%02x%02x%02x' );
         $light = sprintf( 'rgba(%d,%d,%d,0.13)', $rgb[0], $rgb[1], $rgb[2] );
         $slug  = preg_quote( $term->slug, '/' );
-        // Pill coloré pour cats et tags, texte coloré pour les cards
-        $style = $is_article_badge
-            ? 'color:' . $color . ';background:' . $light
-            : 'color:' . $color;
+        // Sur les pages détail (berre-article-cats/tags) : pas d'injection de couleur
+        // → le CSS garantit un style constant identique sur toutes les pages
+        // Sur les cards (grilles archives/home) : couleur de catégorie injectée
+        if ( $is_article_badge ) continue;
+        $style = 'color:' . $color;
         // Ajouter le style sur le lien contenant le slug
         $html = preg_replace(
             '#(<a\b[^>]*\bhref=[^>]*' . $slug . '[^>]*)>#i',
