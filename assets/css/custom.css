@@ -909,23 +909,30 @@ footer .wp-block-navigation__submenu-container .wp-block-navigation-item__conten
   margin-bottom: 8px !important;
 }
 .berre-article-cats .wp-block-post-terms,
-.berre-article-cats a {
+.berre-article-cats a,
+.berre-article-tags .wp-block-post-terms,
+.berre-article-tags a {
   display: inline-flex !important;
   align-items: center !important;
   font-size: 10px !important;
   font-weight: 700 !important;
   text-transform: uppercase !important;
   letter-spacing: .13em !important;
-  color: var(--b) !important;
-  background: var(--blt) !important;
-  padding: 4px 12px !important;
+  color: #2D6AB0 !important;
+  background: rgba(45,106,176,0.10) !important;
+  padding: 5px 13px !important;
   border-radius: 20px !important;
   border: none !important;
   text-decoration: none !important;
   line-height: 1 !important;
   margin-bottom: 6px !important;
+  margin-right: 4px !important;
 }
-.berre-article-cats a:hover { background: var(--b) !important; color: #fff !important; }
+.berre-article-cats a:hover,
+.berre-article-tags a:hover {
+  background: #2D6AB0 !important;
+  color: #fff !important;
+}
 
 /* Date */
 .berre-article-date,
@@ -1012,30 +1019,7 @@ footer .wp-block-navigation__submenu-container .wp-block-navigation-item__conten
   margin: 1.2em auto !important;
 }
 
-/* Tags bas d'article */
-.berre-article-tags {
-  margin: 22px 0 18px !important;
-}
-.berre-article-tags .wp-block-post-terms,
-.berre-article-tags a {
-  display: inline-block !important;
-  font-size: 10.5px !important;
-  font-weight: 600 !important;
-  text-transform: uppercase !important;
-  letter-spacing: .1em !important;
-  color: #666 !important;
-  border: 1px solid #ccc !important;
-  padding: 4px 10px !important;
-  border-radius: 14px !important;
-  text-decoration: none !important;
-  transition: all .15s !important;
-  margin-right: 5px !important;
-}
-.berre-article-tags a:hover {
-  background: var(--b) !important;
-  color: #fff !important;
-  border-color: var(--b) !important;
-}
+
 
 /* Boutons de partage — compacts */
 .berre-article-share {
