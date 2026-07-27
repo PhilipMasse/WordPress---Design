@@ -2208,11 +2208,13 @@ add_shortcode('berre_hero', function() {
         $ytid = $yt[1] ?? '';
         if ($ytid) {
             echo '<div style="position:absolute;inset:0;width:100%;height:100%;overflow:hidden;pointer-events:none;">';
+            $origin = urlencode(home_url());
             echo '<iframe src="https://www.youtube-nocookie.com/embed/' . esc_attr($ytid)
                . '?autoplay=1&mute=1&loop=1&playlist=' . esc_attr($ytid)
-               . '&controls=0&showinfo=0&rel=0&modestbranding=1&iv_load_policy=3" '
+               . '&controls=0&showinfo=0&rel=0&modestbranding=1&iv_load_policy=3'
+               . '&enablejsapi=0&origin=' . $origin . '" '
                . 'style="position:absolute;top:50%;left:50%;width:177.78%;height:100%;min-height:56.25vw;transform:translate(-50%,-50%);" '
-               . 'frameborder="0" allow="autoplay;encrypted-media" allowfullscreen></iframe>';
+               . 'frameborder="0" allow="autoplay;encrypted-media" loading="lazy"></iframe>';
             echo '</div>';
         }
 
