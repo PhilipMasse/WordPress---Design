@@ -724,15 +724,29 @@ function berre_save_acces_rapides() {
         $colors  = (array)( $_POST["ar_{$group}_color"]  ?? [] );
         $targets = (array)( $_POST["ar_{$group}_target"] ?? [] );
 
+        $logos       = (array)($_POST["ar_{$group}_logo"]     ?? []);
+        $url_types   = (array)($_POST["ar_{$group}_url_type"]  ?? []);
+        $url_ext     = (array)($_POST["ar_{$group}_url_external"] ?? []);
+        $url_int     = (array)($_POST["ar_{$group}_url_internal"] ?? []);
+
         foreach ( $labels as $i => $label ) {
             $label = sanitize_text_field( $label );
             if ( empty( $label ) ) continue;
+            // Résoudre l'URL selon le type choisi
+            $url_type = $url_types[$i] ?? 'external';
+            if ( $url_type === 'internal' ) {
+                $final_url = esc_url_raw( $url_int[$i] ?? '#' );
+            } else {
+                $final_url = esc_url_raw( $url_ext[$i] ?? ( $urls[$i] ?? '#' ) );
+            }
+            if ( empty($final_url) ) $final_url = esc_url_raw( $urls[$i] ?? '#' );
             $data[$group][] = [
-                "label"  => $label,
-                "url"    => esc_url_raw( $urls[$i] ?? "#" ),
-                "icon"   => sanitize_key( $icons[$i] ?? "document" ),
-                "color"  => in_array( $colors[$i] ?? "", ["bleu","vert","or"] ) ? $colors[$i] : "bleu",
-                "target" => ( isset( $targets[$i] ) && $targets[$i] === "_blank" ) ? "_blank" : "_self",
+                "label"    => $label,
+                "url"      => $final_url,
+                "icon"     => sanitize_key( $icons[$i] ?? "document" ),
+                "color"    => in_array( $colors[$i] ?? "", ["bleu","vert","or"] ) ? $colors[$i] : "bleu",
+                "target"   => ( isset( $targets[$i] ) && $targets[$i] === "_blank" ) ? "_blank" : "_self",
+                "logo_url" => esc_url_raw( $logos[$i] ?? '' ),
             ];
         }
     }
@@ -954,7 +968,54 @@ function berre_admin_page() {
             }
         });
     });
-    </script>
+    
+    // Toggle URL type pour les lignes existantes et nouvelles
+    document.addEventListener('change', function(e){
+        if (!e.target.classList.contains('berre-ar-url-type')) return;
+        var td = e.target.closest('td');
+        if (!td) return;
+        td.querySelector('.berre-ar-url-ext').style.display = e.target.value === 'external' ? '' : 'none';
+        td.querySelector('.berre-ar-url-int').style.display = e.target.value === 'internal' ? '' : 'none';
+    });
+
+    // Médiathèque WordPress pour le logo
+    document.addEventListener('click', function(e){
+        if (e.target.classList.contains('berre-ar-logo-btn') || e.target.closest('.berre-ar-logo-btn')) {
+            var btn = e.target.closest('.berre-ar-logo-btn') || e.target;
+            var td  = btn.closest('td');
+            var inp = td.querySelector('.berre-ar-logo-input');
+            var preview = td.querySelector('.berre-icon-preview-cell');
+            var frame = wp.media({title: 'Choisir un logo', button: {text: 'Utiliser ce logo'}, multiple: false});
+            frame.on('select', function(){
+                var att = frame.state().get('selection').first().toJSON();
+                inp.value = att.url;
+                btn.textContent = '🖼 Changer';
+                if (preview) {
+                    preview.innerHTML = '<img src="'+att.url+'" style="width:22px;height:22px;object-fit:contain" alt="">';
+                }
+                var clear = td.querySelector('.berre-ar-logo-clear');
+                if (!clear) {
+                    var c = document.createElement('button');
+                    c.type='button'; c.className='button button-small berre-ar-logo-clear';
+                    c.style.color='#c00'; c.title='Supprimer le logo'; c.textContent='✕';
+                    btn.parentNode.insertBefore(c, btn.nextSibling);
+                }
+            });
+            frame.open();
+        }
+        if (e.target.classList.contains('berre-ar-logo-clear')) {
+            var td = e.target.closest('td');
+            var inp = td.querySelector('.berre-ar-logo-input');
+            var preview = td.querySelector('.berre-icon-preview-cell');
+            inp.value = '';
+            e.target.remove();
+            var btn = td.querySelector('.berre-ar-logo-btn');
+            if (btn) btn.textContent = '🖼 Logo';
+            // Restaurer SVG preview (couleur actuelle)
+            if (preview) preview.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>';
+        }
+    });
+</script>
     <?php
     do_action( 'berre_after_acces_rapides_form' );
 }
@@ -966,15 +1027,61 @@ function berre_admin_row( $link, $group, $icons, $colors ) {
     $color_hex = ['bleu'=>'#2D6AB0','vert'=>'#587526','or'=>'#DEA128'][$color] ?? '#2D6AB0';
     $svg      = $icons[$icon_key]['svg'] ?? '';
     ob_start(); ?>
+    <?php
+    $logo_url = $link['logo_url'] ?? '';
+    $url_val  = $link['url'] ?? '#';
+    $url_type = (str_starts_with($url_val,'http') || str_starts_with($url_val,'//')) ? 'external' : 'internal';
+    ?>
     <tr class="berre-ar-row" draggable="true">
         <td><span class="berre-drag">⠿</span></td>
         <td>
-            <div class="berre-icon-preview berre-icon-preview-cell" style="background:<?php echo esc_attr($color_hex); ?>">
+            <div class="berre-icon-preview berre-icon-preview-cell" style="background:<?php echo esc_attr($color_hex); ?>" title="Icône">
+                <?php if ($logo_url): ?>
+                <img src="<?php echo esc_attr($logo_url); ?>" style="width:22px;height:22px;object-fit:contain" alt="">
+                <?php else: ?>
                 <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8"><?php echo $svg; ?></svg>
+                <?php endif; ?>
+            </div>
+            <!-- Logo personnalisé -->
+            <div style="margin-top:4px">
+                <input type="hidden" name="ar_<?php echo $group; ?>_logo[]"
+                       class="berre-ar-logo-input" value="<?php echo esc_attr($logo_url); ?>">
+                <button type="button" class="button button-small berre-ar-logo-btn"
+                        data-title="Choisir un logo">
+                    <?php echo $logo_url ? '🖼 Changer' : '🖼 Logo'; ?>
+                </button>
+                <?php if ($logo_url): ?>
+                <button type="button" class="button button-small berre-ar-logo-clear" style="color:#c00" title="Supprimer le logo">✕</button>
+                <?php endif; ?>
             </div>
         </td>
         <td><input type="text" name="ar_<?php echo $group; ?>_label[]" value="<?php echo esc_attr($link['label']); ?>" class="regular-text" style="width:100%" required></td>
-        <td><?php echo berre_url_picker_html('ar_' . $group . '_url', $link['url'] ?? '#', $i); ?></td>
+        <td>
+            <!-- URL simplifiée : type toggle + champ unique -->
+            <div style="display:flex;flex-direction:column;gap:4px">
+                <div style="display:flex;gap:6px;margin-bottom:2px">
+                    <label style="font-size:11px"><input type="radio" name="ar_<?php echo $group; ?>_url_type[]" value="internal" <?php checked($url_type,'internal'); ?> class="berre-ar-url-type"> 🏠 Interne</label>
+                    <label style="font-size:11px"><input type="radio" name="ar_<?php echo $group; ?>_url_type[]" value="external" <?php checked($url_type,'external'); ?> class="berre-ar-url-type"> 🌐 Externe</label>
+                </div>
+                <input type="text" name="ar_<?php echo $group; ?>_url_external[]"
+                       class="berre-ar-url-ext"
+                       value="<?php echo ($url_type==='external') ? esc_attr($url_val) : ''; ?>"
+                       placeholder="https://..."
+                       style="width:100%;<?php echo ($url_type!=='external') ? 'display:none' : ''; ?>">
+                <select name="ar_<?php echo $group; ?>_url_internal[]"
+                        class="berre-ar-url-int"
+                        style="width:100%;<?php echo ($url_type!=='internal') ? 'display:none' : ''; ?>">
+                    <?php foreach ( berre_get_page_options() as $o ): ?>
+                    <option value="<?php echo esc_attr($o['value']); ?>"
+                            <?php selected(($url_type==='internal'?$url_val:''), $o['value']); ?>>
+                        <?php echo esc_html($o['label']); ?>
+                    </option>
+                    <?php endforeach; ?>
+                </select>
+                <!-- Champ caché pour compat ancien code -->
+                <input type="hidden" name="ar_<?php echo $group; ?>_url[]" value="<?php echo esc_attr($url_val); ?>">
+            </div>
+        </td>
         <td>
             <select name="ar_<?php echo $group; ?>_color[]" style="width:100%">
                 <?php foreach ($colors as $val => $lbl) : ?>
@@ -1029,9 +1136,14 @@ function berre_ar_grid( $links, $icons, $secondary = false ) {
         $color    = $link['color'] ?? 'bleu';
         $target   = ( ($link['target'] ?? '_self') === '_blank' ) ? ' target="_blank" rel="noopener noreferrer"' : '';
         $svg      = $icons[$icon_key]['svg'] ?? $icons['document']['svg'];
+        $logo_url = $link['logo_url'] ?? '';
         $html .= '<a href="' . esc_url( $link['url'] ?? '#' ) . '"' . $target . ' class="berre-ar__item">';
         $html .= '<span class="berre-ar__circle berre-ar__circle--' . esc_attr( $color ) . '">';
-        $html .= '<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="white" stroke-width="1.7">' . $svg . '</svg>';
+        if ( $logo_url ) {
+            $html .= '<img src="' . esc_url($logo_url) . '" alt="' . esc_attr($link['label']??'') . '" style="width:28px;height:28px;object-fit:contain;">';
+        } else {
+            $html .= '<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="white" stroke-width="1.7">' . $svg . '</svg>';
+        }
         $html .= '</span>';
         $html .= '<span class="berre-ar__label">' . esc_html( $link['label'] ?? '' ) . '</span>';
         $html .= '</a>';
