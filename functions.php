@@ -1529,8 +1529,9 @@ add_action( 'admin_init', function() {
     }
 
     // Newsletter
-    $d['newsletter']['title'] = sanitize_text_field($_POST['nl_title'] ?? '');
-    $d['newsletter']['desc']  = sanitize_textarea_field($_POST['nl_desc'] ?? '');
+    $d['newsletter']['title']    = sanitize_text_field($_POST['nl_title'] ?? '');
+    $d['newsletter']['desc']     = sanitize_textarea_field($_POST['nl_desc'] ?? '');
+    $d['newsletter']['embed']    = wp_kses_post(stripslashes($_POST['nl_embed'] ?? '')); // code d'intégration externe
 
     // Footer
     $d['footer']['description'] = sanitize_textarea_field($_POST['footer_description'] ?? '');
@@ -1730,7 +1731,12 @@ function berre_page_editor_page() {
             <!-- ══ NEWSLETTER ══ -->
             <div class="berre-panel" id="panel-newsletter">
                 <div class="berre-field"><label>Titre</label><input type="text" name="nl_title" value="<?php echo esc_attr($c['newsletter']['title']); ?>" data-preview="nl-title"></div>
-                <div class="berre-field"><label>Description</label><textarea name="nl_desc" data-preview="nl-desc"><?php echo esc_textarea($c['newsletter']['desc']); ?></textarea></div>
+                <div class="berre-field"><label>Description courte</label><textarea name="nl_desc" rows="2" data-preview="nl-desc"><?php echo esc_textarea($c['newsletter']['desc']); ?></textarea></div>
+                <div class="berre-field">
+                    <label>🔌 Code d'intégration (Brevo / Mailchimp / autre)</label>
+                    <p style="font-size:11px;color:#888;margin:2px 0 6px">Collez ici le code HTML/script fourni par votre service de newsletter. Il remplacera le formulaire par défaut si renseigné.</p>
+                    <textarea name="nl_embed" rows="6" style="font-family:monospace;font-size:12px;width:100%;resize:vertical"><?php echo htmlspecialchars($c['newsletter']['embed'] ?? ''); ?></textarea>
+                </div>
                 <div style="background:#587526;border-radius:8px;padding:16px;color:#fff;margin-top:12px">
                     <div id="nl-preview-title" style="font-size:15px;font-weight:800;margin-bottom:4px"><?php echo esc_html($c['newsletter']['title']); ?></div>
                     <div id="nl-preview-desc" style="font-size:12px;opacity:.7"><?php echo esc_html($c['newsletter']['desc']); ?></div>
@@ -2011,13 +2017,17 @@ add_shortcode('berre_newsletter_content', function() {
     <div class="wp-block-columns are-vertically-aligned-center berre-nl-cols">
         <div class="wp-block-column">
             <h3 class="wp-block-heading berre-nl-title"><?php echo esc_html($nl['title']); ?></h3>
-            <p class="berre-nl-desc"><?php echo esc_html($nl['desc']); ?></p>
+            <?php if (!empty($nl['desc'])): ?><p class="berre-nl-desc"><?php echo esc_html($nl['desc']); ?></p><?php endif; ?>
         </div>
         <div class="wp-block-column">
+            <?php if (!empty($nl['embed'])): ?>
+            <div class="berre-nl-embed"><?php echo $nl['embed']; /* code embed externe, déjà filtré par wp_kses_post */ ?></div>
+            <?php else: ?>
             <form class="berre-nl-form" onsubmit="return false">
                 <input type="email" placeholder="Votre adresse e-mail" class="berre-nl-input" required aria-label="Adresse e-mail">
                 <button type="submit" class="berre-nl-btn">S'inscrire</button>
             </form>
+            <?php endif; ?>
         </div>
     </div>
     <?php return ob_get_clean();
@@ -4612,3 +4622,130 @@ add_filter( 'render_block', function( $html, $block, $instance ) {
 }, 10, 3 );
 
 
+
+
+/* ============================================================
+   BLOCS PERSONNALISÉS PAGE D'ACCUEIL
+   Post type : berre_bloc
+   ============================================================ */
+
+/* ── Enregistrement du post type ── */
+add_action( 'init', function() {
+    register_post_type( 'berre_bloc', [
+        'label'               => 'Blocs accueil',
+        'labels'              => [
+            'name'          => 'Blocs Accueil',
+            'singular_name' => 'Bloc Accueil',
+            'add_new'       => 'Ajouter un bloc',
+            'add_new_item'  => 'Ajouter un bloc',
+            'edit_item'     => 'Modifier le bloc',
+        ],
+        'public'              => false,
+        'show_ui'             => true,
+        'show_in_menu'        => false,   // intégré dans le menu Berre
+        'show_in_rest'        => true,    // Gutenberg
+        'supports'            => ['title','editor','thumbnail','custom-fields'],
+        'rewrite'             => false,
+        'capability_type'     => 'post',
+        'hierarchical'        => false,
+        'menu_icon'           => 'dashicons-welcome-widgets-menus',
+    ]);
+} );
+
+/* ── Sous-menu admin ── */
+add_action( 'admin_menu', function() {
+    add_submenu_page(
+        'berre-admin',
+        'Blocs Accueil',
+        '🧩 Blocs Accueil',
+        'manage_options',
+        'edit.php?post_type=berre_bloc'
+    );
+}, 25 );
+
+/* ── Metabox : actif/inactif + ordre ── */
+add_action( 'add_meta_boxes', function() {
+    add_meta_box(
+        'berre_bloc_settings',
+        '⚙️ Paramètres du bloc',
+        function( $post ) {
+            wp_nonce_field( 'berre_bloc_save', 'berre_bloc_nonce' );
+            $active = get_post_meta( $post->ID, '_berre_bloc_active', true ) !== '0';
+            $order  = (int) get_post_meta( $post->ID, '_berre_bloc_order', true ) ?: 10;
+            ?>
+            <div style="display:flex;gap:24px;align-items:center;padding:4px 0">
+                <label style="display:flex;align-items:center;gap:8px;font-weight:600">
+                    <input type="checkbox" name="berre_bloc_active" value="1" <?php checked($active); ?>>
+                    Afficher sur la page d'accueil
+                </label>
+                <label style="display:flex;align-items:center;gap:8px">
+                    Ordre : <input type="number" name="berre_bloc_order" value="<?php echo $order; ?>"
+                        style="width:70px;padding:4px 8px;border:1px solid #ddd;border-radius:4px">
+                    <span style="color:#888;font-size:11px">(ordre croissant)</span>
+                </label>
+            </div>
+            <?php
+        },
+        'berre_bloc', 'side', 'high'
+    );
+} );
+
+add_action( 'save_post_berre_bloc', function( $post_id ) {
+    if ( ! isset($_POST['berre_bloc_nonce']) || ! wp_verify_nonce($_POST['berre_bloc_nonce'], 'berre_bloc_save') ) return;
+    if ( defined('DOING_AUTOSAVE') && DOING_AUTOSAVE ) return;
+    if ( ! current_user_can('edit_post', $post_id) ) return;
+    update_post_meta( $post_id, '_berre_bloc_active', isset($_POST['berre_bloc_active']) ? '1' : '0' );
+    update_post_meta( $post_id, '_berre_bloc_order',  (int)($_POST['berre_bloc_order'] ?? 10) );
+} );
+
+/* ── Colonne "Actif" dans la liste ── */
+add_filter( 'manage_berre_bloc_posts_columns', function( $cols ) {
+    return array_merge(
+        ['cb' => $cols['cb'], 'title' => $cols['title']],
+        ['berre_active' => '✅ Actif', 'berre_order' => 'Ordre'],
+        array_slice($cols, 2)
+    );
+} );
+add_action( 'manage_berre_bloc_posts_custom_column', function( $col, $post_id ) {
+    if ( $col === 'berre_active' ) {
+        $active = get_post_meta($post_id,'_berre_bloc_active',true) !== '0';
+        echo $active
+            ? '<span style="color:#587526;font-weight:700">✓ Oui</span>'
+            : '<span style="color:#bbb">Non</span>';
+    }
+    if ( $col === 'berre_order' ) {
+        echo (int) get_post_meta($post_id,'_berre_bloc_order',true) ?: 10;
+    }
+}, 10, 2 );
+add_filter( 'manage_edit-berre_bloc_sortable_columns', fn($c) => array_merge($c, ['berre_order'=>'berre_order']) );
+
+/* ── Shortcode [berre_blocs_accueil] ── */
+add_shortcode( 'berre_blocs_accueil', function() {
+    $posts = get_posts([
+        'post_type'      => 'berre_bloc',
+        'post_status'    => 'publish',
+        'posts_per_page' => -1,
+        'meta_key'       => '_berre_bloc_order',
+        'orderby'        => 'meta_value_num',
+        'order'          => 'ASC',
+        'meta_query'     => [
+            ['key'=>'_berre_bloc_active','value'=>'0','compare'=>'!='],
+        ],
+    ]);
+
+    if ( empty($posts) ) return '';
+
+    $html = '<div class="berre-blocs-accueil">';
+    foreach ( $posts as $post ) {
+        $html .= '<section class="berre-bloc-section">';
+        $html .= '<div class="berre-bloc-section__inner">';
+        if ( $post->post_title ) {
+            $html .= '<h2 class="berre-bloc-section__title">' . esc_html($post->post_title) . '</h2>';
+        }
+        $html .= '<div class="berre-bloc-section__content">';
+        $html .= apply_filters( 'the_content', $post->post_content );
+        $html .= '</div></div></section>';
+    }
+    $html .= '</div>';
+    return $html;
+} );
