@@ -4482,7 +4482,7 @@ add_filter( 'render_block', function( $html, $block, $instance ) {
             return (int)date('j',$ts) . ' ' . $mfr[(int)date('n',$ts)] . ' ' . date('Y',$ts);
         };
         $label = ( $end && $end !== $start )
-            ? $fmt($start) . ' \u2192 ' . $fmt($end)
+            ? $fmt($start) . ' → ' . $fmt($end)
             : $fmt($start);
         return '<div class="wp-block-post-date berre-agenda-event-date">' . esc_html($label) . '</div>';
     }

@@ -3058,3 +3058,63 @@ html, body {
   margin-top: 1px;
 }
 .berre-event-meta__text { flex: 1; }
+
+/* ── ARCHIVE AGENDA — responsive cards ── */
+
+/* Mobile : carte en colonne */
+@media (max-width: 700px) {
+  .berre-agenda-event-card {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    padding: 14px !important;
+    gap: 12px !important;
+  }
+  /* Badge date : rester horizontal */
+  .berre-agenda-date-badge {
+    width: auto !important;
+    min-width: 0 !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 4px !important;
+    padding: 6px 12px !important;
+  }
+  .berre-agenda-date-day   { font-size: 18px !important; }
+  .berre-agenda-date-month { font-size: 10px !important; margin-top: 0 !important; }
+
+  /* Image : pleine largeur */
+  .berre-agenda-event-img,
+  .berre-agenda-event-img img {
+    width: 100% !important;
+    height: 160px !important;
+    border-radius: 6px !important;
+  }
+
+  /* Corps : pleine largeur */
+  .berre-agenda-event-body {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  /* Titre : pas de troncature */
+  .berre-agenda-event-title,
+  .berre-agenda-event-title a {
+    font-size: 15px !important;
+    white-space: normal !important;
+    overflow: visible !important;
+    text-overflow: unset !important;
+  }
+
+  /* Date et lieu */
+  .berre-agenda-event-date,
+  .berre-agenda-event-location {
+    font-size: 12px !important;
+    white-space: normal !important;
+  }
+
+  /* Bouton voir détails */
+  .berre-agenda-event-link {
+    width: 100% !important;
+    text-align: center !important;
+    margin-top: 4px !important;
+  }
+}
