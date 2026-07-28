@@ -3034,3 +3034,27 @@ html, body {
     padding-right: 16px !important;
   }
 }
+
+/* ── Meta événement (dates, heure, lieu) ── */
+.berre-event-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin: 4px 0 16px;
+}
+.berre-event-meta__row {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  font-size: 14px;
+  color: #444;
+  line-height: 1.4;
+}
+.berre-event-meta__icon {
+  display: flex;
+  align-items: center;
+  color: #2D6AB0;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.berre-event-meta__text { flex: 1; }
