@@ -4395,3 +4395,59 @@ add_shortcode( 'berre_event_meta', function() {
     <?php
     return ob_get_clean();
 } );
+
+
+/* ============================================================
+   BARRE D'ADMIN — Raccourcis Berre-les-Alpes dans la top bar
+   ============================================================ */
+add_action( 'admin_bar_menu', function( WP_Admin_Bar $bar ) {
+    if ( ! current_user_can('manage_options') ) return;
+
+    // Nœud parent
+    $bar->add_node([
+        'id'    => 'berre-admin-bar',
+        'title' => '<span class="ab-icon dashicons dashicons-admin-home" style="top:2px"></span> Berre',
+        'href'  => admin_url('admin.php?page=berre-admin'),
+        'meta'  => ['title' => 'Administration Berre-les-Alpes'],
+    ]);
+
+    // Raccourcis — même liste que le menu latéral
+    $items = [
+        ['id'=>'berre-bar-hero',      'title'=>'🎬 Photo / Vidéo Hero',       'page'=>'berre-hero'],
+        ['id'=>'berre-bar-ar',        'title'=>'⚡ Accès rapides',             'page'=>'berre-acces-rapides'],
+        ['id'=>'berre-bar-commune',   'title'=>'🏘 La Commune',               'page'=>'berre-commune'],
+        ['id'=>'berre-bar-services',  'title'=>'⚙️ Services municipaux',       'page'=>'berre-services'],
+        ['id'=>'berre-bar-mairie',    'title'=>'🏛 Infos Mairie',             'page'=>'berre-mairie-info'],
+        ['id'=>'berre-bar-social',    'title'=>'📣 Réseaux sociaux',          'page'=>'berre-footer-social'],
+        ['id'=>'berre-bar-footer-nav','title'=>'🔗 Footer Liens',             'page'=>'berre-footer-nav'],
+        ['id'=>'berre-bar-outils',    'title'=>'🛠 Outils Thème',             'page'=>'berre-outils'],
+        // Séparateur
+        ['sep' => true],
+        ['id'=>'berre-bar-actualites','title'=>'📰 Actualités',               'href'=> admin_url('edit.php?post_type=actualite')],
+        ['id'=>'berre-bar-agenda',    'title'=>'📅 Agenda',                   'href'=> admin_url('edit.php?post_type=agenda')],
+        ['id'=>'berre-bar-cats-actu', 'title'=>'🏷 Catégories actualités',    'href'=> admin_url('edit-tags.php?taxonomy=categorie_actu&post_type=actualite')],
+        ['id'=>'berre-bar-cats-agen', 'title'=>'🏷 Catégories agenda',        'href'=> admin_url('edit-tags.php?taxonomy=categorie_agenda&post_type=agenda')],
+    ];
+
+    foreach ( $items as $item ) {
+        if ( ! empty($item['sep']) ) {
+            $bar->add_node([
+                'id'     => 'berre-bar-sep-' . rand(1000,9999),
+                'parent' => 'berre-admin-bar',
+                'title'  => '<hr style="border-color:rgba(255,255,255,.15);margin:4px 0">',
+                'href'   => false,
+                'meta'   => ['class' => 'ab-item--nosub'],
+            ]);
+            continue;
+        }
+        $href = ! empty($item['href'])
+            ? $item['href']
+            : admin_url('admin.php?page=' . $item['page']);
+        $bar->add_node([
+            'id'     => $item['id'],
+            'parent' => 'berre-admin-bar',
+            'title'  => $item['title'],
+            'href'   => $href,
+        ]);
+    }
+}, 200 );
