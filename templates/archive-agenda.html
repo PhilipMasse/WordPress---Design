@@ -51,8 +51,8 @@
 <!-- Pastille date -->
 <!-- wp:group {"className":"berre-agenda-date-badge","layout":{"type":"flex","orientation":"vertical","verticalAlignment":"center","justifyContent":"center"}} -->
 <div class="wp-block-group berre-agenda-date-badge">
-<!-- wp:shortcode -->[berre_event_badge_day]<!-- /wp:shortcode -->
-<!-- wp:shortcode -->[berre_event_badge_month]<!-- /wp:shortcode -->
+<!-- wp:post-date {"className":"berre-agenda-date-day","format":"j"} /-->
+<!-- wp:post-date {"className":"berre-agenda-date-month","format":"M"} /-->
 </div>
 <!-- /wp:group -->
 
@@ -65,7 +65,8 @@
 <!-- wp:post-terms {"term":"categorie_agenda","className":"berre-agenda-event-cat"} /-->
 <!-- wp:post-title {"isLink":true,"level":2,"className":"berre-agenda-event-title"} /-->
 
-<!-- wp:shortcode -->[berre_event_date_display]<!-- /wp:shortcode -->
+<!-- wp:post-date {"className":"berre-agenda-event-date","format":"l j F Y"} /-->
+<!-- wp:post-excerpt {"numberOfWords":1,"className":"berre-agenda-event-location","moreText":""} /-->
 </div>
 <!-- /wp:group -->
 

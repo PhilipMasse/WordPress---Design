@@ -4452,40 +4452,51 @@ add_action( 'admin_bar_menu', function( WP_Admin_Bar $bar ) {
     }
 }, 200 );
 
-/* ── Shortcode [berre_event_date_display] — pour l'archive agenda ── */
-add_shortcode( 'berre_event_date_display', function() {
-    $pid   = get_the_ID();
-    $start = get_post_meta($pid, 'berre_event_date_start', true);
-    $end   = get_post_meta($pid, 'berre_event_date_end',   true);
-
-    // Fallback : date de publication
-    if (!$start) $start = get_the_date('Y-m-d');
+/* ── render_block : dates et lieu réels dans l'archive agenda ── */
+add_filter( 'render_block', function( $html, $block, $instance ) {
+    $class = $block['attrs']['className'] ?? '';
+    // Récupérer le postId depuis le contexte de bloc FSE (correct dans les boucles query)
+    $pid = $instance->context['postId'] ?? 0;
+    if ( ! $pid ) return $html;
 
     $mfr = ['','jan.','fév.','mars','avr.','mai','juin','juil.','août','sept.','oct.','nov.','déc.'];
 
-    $fmt = function($ymd) use ($mfr) {
-        $ts = strtotime($ymd);
-        return (int)date('j',$ts) . ' ' . $mfr[(int)date('n',$ts)] . ' ' . date('Y',$ts);
-    };
+    /* ── Badge jour ── */
+    if ( $class === 'berre-agenda-date-day' && $block['blockName'] === 'core/post-date' ) {
+        $start = get_post_meta($pid,'berre_event_date_start',true) ?: get_the_date('Y-m-d',$pid);
+        return '<div class="wp-block-post-date berre-agenda-date-day">' . date('j', strtotime($start)) . '</div>';
+    }
 
-    $s = $fmt($start);
-    $e = ($end && $end !== $start) ? $fmt($end) : '';
+    /* ── Badge mois abrégé ── */
+    if ( $class === 'berre-agenda-date-month' && $block['blockName'] === 'core/post-date' ) {
+        $start = get_post_meta($pid,'berre_event_date_start',true) ?: get_the_date('Y-m-d',$pid);
+        return '<div class="wp-block-post-date berre-agenda-date-month">' . $mfr[(int)date('n', strtotime($start))] . '</div>';
+    }
 
-    $label = $e ? $s . ' → ' . $e : $s;
-    return '<span class="berre-agenda-event-date-real">' . esc_html($label) . '</span>';
-} );
+    /* ── Date de l'événement (ligne sous le titre) ── */
+    if ( $class === 'berre-agenda-event-date' && $block['blockName'] === 'core/post-date' ) {
+        $start = get_post_meta($pid,'berre_event_date_start',true) ?: get_the_date('Y-m-d',$pid);
+        $end   = get_post_meta($pid,'berre_event_date_end',  true);
+        $fmt   = function($ymd) use ($mfr) {
+            $ts = strtotime($ymd);
+            return (int)date('j',$ts) . ' ' . $mfr[(int)date('n',$ts)] . ' ' . date('Y',$ts);
+        };
+        $label = ( $end && $end !== $start )
+            ? $fmt($start) . ' \u2192 ' . $fmt($end)
+            : $fmt($start);
+        return '<div class="wp-block-post-date berre-agenda-event-date">' . esc_html($label) . '</div>';
+    }
+
+    /* ── Lieu de l'événement ── */
+    if ( $class === 'berre-agenda-event-location' && $block['blockName'] === 'core/post-excerpt' ) {
+        $loc = get_post_meta($pid,'berre_event_location',true);
+        if ( ! $loc ) return '';
+        return '<div class="wp-block-post-excerpt berre-agenda-event-location">'
+             . '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:4px"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>'
+             . esc_html($loc) . '</div>';
+    }
+
+    return $html;
+}, 10, 3 );
 
 
-
-/* ── Shortcodes pour le badge date (jour / mois abrégé) ── */
-add_shortcode( 'berre_event_badge_day', function() {
-    $pid   = get_the_ID();
-    $start = get_post_meta($pid,'berre_event_date_start',true) ?: get_the_date('Y-m-d');
-    return '<span class="berre-agenda-date-day">' . date('j', strtotime($start)) . '</span>';
-} );
-add_shortcode( 'berre_event_badge_month', function() {
-    $pid   = get_the_ID();
-    $start = get_post_meta($pid,'berre_event_date_start',true) ?: get_the_date('Y-m-d');
-    $m = ['','jan.','fév.','mars','avr.','mai','juin','juil.','août','sept.','oct.','nov.','déc.'];
-    return '<span class="berre-agenda-date-month">' . $m[(int)date('n', strtotime($start))] . '</span>';
-} );
