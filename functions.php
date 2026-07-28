@@ -4451,3 +4451,41 @@ add_action( 'admin_bar_menu', function( WP_Admin_Bar $bar ) {
         ]);
     }
 }, 200 );
+
+/* ── Shortcode [berre_event_date_display] — pour l'archive agenda ── */
+add_shortcode( 'berre_event_date_display', function() {
+    $pid   = get_the_ID();
+    $start = get_post_meta($pid, 'berre_event_date_start', true);
+    $end   = get_post_meta($pid, 'berre_event_date_end',   true);
+
+    // Fallback : date de publication
+    if (!$start) $start = get_the_date('Y-m-d');
+
+    $mfr = ['','jan.','fév.','mars','avr.','mai','juin','juil.','août','sept.','oct.','nov.','déc.'];
+
+    $fmt = function($ymd) use ($mfr) {
+        $ts = strtotime($ymd);
+        return (int)date('j',$ts) . ' ' . $mfr[(int)date('n',$ts)] . ' ' . date('Y',$ts);
+    };
+
+    $s = $fmt($start);
+    $e = ($end && $end !== $start) ? $fmt($end) : '';
+
+    $label = $e ? $s . ' → ' . $e : $s;
+    return '<span class="berre-agenda-event-date-real">' . esc_html($label) . '</span>';
+} );
+
+
+
+/* ── Shortcodes pour le badge date (jour / mois abrégé) ── */
+add_shortcode( 'berre_event_badge_day', function() {
+    $pid   = get_the_ID();
+    $start = get_post_meta($pid,'berre_event_date_start',true) ?: get_the_date('Y-m-d');
+    return '<span class="berre-agenda-date-day">' . date('j', strtotime($start)) . '</span>';
+} );
+add_shortcode( 'berre_event_badge_month', function() {
+    $pid   = get_the_ID();
+    $start = get_post_meta($pid,'berre_event_date_start',true) ?: get_the_date('Y-m-d');
+    $m = ['','jan.','fév.','mars','avr.','mai','juin','juil.','août','sept.','oct.','nov.','déc.'];
+    return '<span class="berre-agenda-date-month">' . $m[(int)date('n', strtotime($start))] . '</span>';
+} );
