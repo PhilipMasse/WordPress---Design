@@ -419,8 +419,24 @@ footer .wp-block-navigation__submenu-container .wp-block-navigation-item__conten
 .berre-section--bg{background:var(--bg)}
 .berre-sec-head{margin-bottom:22px!important;align-items:baseline!important}
 .berre-sec-title{font-family:var(--serif)!important;font-size:1.4rem!important;font-weight:800!important;color:var(--t)!important;letter-spacing:-.03em!important;margin:0!important;padding-bottom:8px!important;border-bottom:2px solid var(--blt)!important}
-.berre-more-link{font-size:12px!important;color:var(--b)!important;font-weight:500!important;transition:color .15s!important}
-.berre-more-link:hover{color:var(--bd)!important}
+.berre-more-link {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  color: #2D6AB0 !important;
+  text-decoration: none !important;
+  padding: 8px 18px !important;
+  border: 1.5px solid #2D6AB0 !important;
+  border-radius: 20px !important;
+  transition: background .15s, color .15s !important;
+  white-space: nowrap !important;
+}
+.berre-more-link:hover {
+  background: #2D6AB0 !important;
+  color: #fff !important;
+}
 
 /* ── ACTUALITÉS ── */
 .berre-actualites-grid{display:grid;grid-template-columns:2fr 1fr 1fr;gap:4px}
